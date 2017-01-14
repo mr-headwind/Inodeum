@@ -1,0 +1,75 @@
+ LICENSE
+ -------
+    Copyright (C) 2017 Anthony Buckley
+
+    This file is part of Inodeum.
+
+    Inodeum is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Inodeum is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Inodeum.  If not, see <http://www.gnu.org/licenses/>.
+
+
+ DESCRIPTION
+ -----------
+    Inodeum (Internode Usage Monitor) is an application designed to view 
+    ISP usage data.
+
+    THIS IS WORK IN PROGRESS - development just started - more to follow
+
+ INSTALL
+ -------
+    xxx
+
+ 1. DISTRIBUTION PACKAGE
+ -----------------------
+    This is probably the easiest and best way for installation only.
+
+    Download the latest distribution archive from here: 
+    	https://github.com/mr-headwind/Inodeum/tree/master/DIST_PACKAGES 
+    to your download directory (eg. $HOME/Downloads).
+
+    Start a terminal or xterm session
+    cd $HOME/Downloads (or your download directory)
+    tar xvzf inodeum-x.xx.tar.gz (where x.xx is the version number)
+    ./configure --prefix=/usr
+    make
+    sudo make install
+
+    Reading the next section may help if you encounter errors during this process.
+
+ 2. BUILD FROM SOURCE
+ --------------------
+    xxx
+
+ THINGS TO BE DONE
+ -----------------
+    Everything
+
+ THINGS TO BE CHECKED OR REVIEWED
+ --------------------------------
+
+ KNOWN ISSUES / BUGS
+ -------------------
+    . xxx
+
+ THE TECHNICAL STUFF
+ -------------------
+    Inodeum has been developed in c and uses GTK+ 3.0 for user interfaces.
+
+ BUGS & SUGGESTIONS
+ ------------------
+    Email any bugs, requests or suggestions to tony.buckley000@gmail.com
+
+ ITEMS FOR IMPROVEMENT
+ ---------------------
+    . xxx
+
