@@ -71,16 +71,18 @@ int service_details(IspData *isp_data, MainUi *m_ui)
     char url[500];
 
     /* Initial */
-    if (isp_ip(ispdata, m_ui) == FALSE)
+    if (isp_ip(isp_data, m_ui) == FALSE)
     	return FALSE;
 
-    if (create_socket(ispdata, m_ui) == FALSE)
+    if (create_socket(isp_data, m_ui) == FALSE)
     	return FALSE;
+
+    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
 
     /* 1. Service Listing */
     sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
     
-    if (send_request(url, ispdata, m_ui) == FALSE)
+    if (send_request(url, isp_data, m_ui) == FALSE)
     	return FALSE;
 
     /* 2. Service Type - Personal ADSL */
@@ -157,6 +159,8 @@ int create_socket(IspData *isp_data, MainUi *m_ui)
 
 int send_request(char *url, IspData *isp_data, MainUi *m_ui)
 {  
+    char *get_qry;
+
     /* Connect */
     if (connect(isp_data->tcp_sock, (struct sockaddr *) isp_data->isp_addr, sizeof(struct sockaddr)) < 0)
     {
@@ -165,6 +169,31 @@ int send_request(char *url, IspData *isp_data, MainUi *m_ui)
     }
 
     /* Construct GET */
+    get_qry = setup_get(HOST, url);
+
+    /* Send query */
+
+    /* Receive data */
+
+    return TRUE;
+}  
+
+
+/* Create a socket */
+
+char * setup_get(IspData *isp_data, MainUi *m_ui)
+{  
+    char *query;
+    char *getpage = page;
+    char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
+    if(getpage[0] == '/'){
+    getpage = getpage + 1;
+    fprintf(stderr,"Removing leading \"/\", converting %s to %s\n", page, getpage);
+    }
+    // -5 is to consider the %s %s %s in tpl and the ending \0
+    query = (char *)malloc(strlen(host)+strlen(getpage)+strlen(USERAGENT)+strlen(tpl)-5);
+    sprintf(query, tpl, getpage, host, USERAGENT);
+    return query;
 
     return TRUE;
 }  

@@ -38,10 +38,27 @@
 #define ISP_HDR
 #endif
 
+
+/* Fixed Info */
+#define PORT 80
+#define HOST "customer-webtools-api.internode.on.net"
+#define REALM "internode-api"
+
+
+/* Service URL */
+#define API_VER 1.5
+#define API_PROTO "https://"
+
+
 /* Structure to contain isp details */
 
 typedef struct _isp_data
 {
     char username[100];
     char password[100];
+    char user_agent[50];
+    char *ip;
+    int tcp_sock;
+    struct sockaddr_in *isp_addr;
+
 } IspData;
