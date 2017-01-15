@@ -40,14 +40,21 @@
 
 
 /* Fixed Info */
-#define PORT 80
+
+//#define API_PROTO "https://"
+#define API_VER 1.5
+#define PORT 443						// 443 = https, 80 = http
 #define HOST "customer-webtools-api.internode.on.net"
 #define REALM "internode-api"
-
-
-/* Service URL */
-#define API_VER 1.5
-#define API_PROTO "https://"
+#define GET_TPL "GET " \					// Method
+	        "%s " \						// URI requested
+	        "HTTP/1.0\r\n" \				// HTTP Version
+	        "Host: %s\r\n" \				// Host
+	        "User-Agent: %s\r\n" \				// User Agent
+	        "Authorization: BASIC %s\r\n" \			// username:password in base 64
+	        "WWW-Authenticate: BASIC realm=\"%s\"\r\n" \	// Realm
+	        "Accept-Language: en\r\n" \			// Language
+	        "\r\n"						// End of query
 
 
 /* Structure to contain isp details */
@@ -56,6 +63,7 @@ typedef struct _isp_data
 {
     char username[100];
     char password[100];
+    char *enc64;
     char user_agent[50];
     char *ip;
     int tcp_sock;

@@ -52,6 +52,7 @@ int service_details(IspData *, MainUi *);
 int isp_ip(IspData *, MainUi *);
 int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
+char * setup_get(char *, IspData *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -80,7 +81,8 @@ int service_details(IspData *isp_data, MainUi *m_ui)
     sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
 
     /* 1. Service Listing */
-    sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
+    sprintf(url, "/api/%s/", HOST, API_VER);
+    //sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
     
     if (send_request(url, isp_data, m_ui) == FALSE)
     	return FALSE;
@@ -169,33 +171,35 @@ int send_request(char *url, IspData *isp_data, MainUi *m_ui)
     }
 
     /* Construct GET */
-    get_qry = setup_get(HOST, url);
+    get_qry = setup_get(url);
 
     /* Send query */
 
     /* Receive data */
 
+    /* Clean up */
+    free(get_qry);
+
     return TRUE;
 }  
 
 
-/* Create a socket */
+/* Set up the query */
 
-char * setup_get(IspData *isp_data, MainUi *m_ui)
+char * setup_get(char *url, IspData *isp_data)
 {  
     char *query;
-    char *getpage = page;
-    char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
-    if(getpage[0] == '/'){
-    getpage = getpage + 1;
-    fprintf(stderr,"Removing leading \"/\", converting %s to %s\n", page, getpage);
-    }
-    // -5 is to consider the %s %s %s in tpl and the ending \0
-    query = (char *)malloc(strlen(host)+strlen(getpage)+strlen(USERAGENT)+strlen(tpl)-5);
-    sprintf(query, tpl, getpage, host, USERAGENT);
-    return query;
 
-    return TRUE;
+    query = (char *) malloc(strlen(url) +
+			    strlen(HOST) +
+			    strlen(isp_data->user_agent) +
+			    strlen(isp_data->enc64) +
+			    strlen(REALM) +
+			    strlen(GET_TPL) - 7);	// Note 7 accounts for 4 x %s in template plus \0
+
+    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, REALM);
+
+    return query;
 }  
 
 

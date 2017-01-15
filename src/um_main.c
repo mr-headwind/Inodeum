@@ -49,7 +49,7 @@
 /* Prototypes */
 
 void initialise(IspData *, MainUi *);
-void final();
+void final(IspData *);
 
 extern void main_ui(IspData *, MainUi *);
 extern int check_app_dir();
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 
     gtk_main();  
 
-    final();
+    final(&isp_data);
 
     exit(0);
 }  
@@ -111,11 +111,16 @@ void initialise(IspData *isp_data, MainUi *m_ui)
 
 /* Final work */
 
-void final()
+void final(IspData *isp_data)
 {
     /* Close log file */
     log_msg("MSG0002", NULL, NULL, NULL);
     close_log();
+
+    /* Clean up */
+    free(isp_data->enc64);
+    free(isp_data->isp_addr);
+    free(isp_data->ip);
 
     return;
 }
