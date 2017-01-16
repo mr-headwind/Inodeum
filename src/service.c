@@ -39,6 +39,7 @@
 #include <netdb.h>
 #include <libgen.h>  
 #include <gtk/gtk.h>  
+#include <glib/gbase64.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -53,6 +54,7 @@ int isp_ip(IspData *, MainUi *);
 int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
 char * setup_get(char *, IspData *);
+void encode_un_pw(IspData *, MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -79,6 +81,8 @@ int service_details(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
 
     sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
+
+    encode_un_pw(isp_data, m_ui);
 
     /* 1. Service Listing */
     sprintf(url, "/api/%s/", HOST, API_VER);
@@ -157,6 +161,20 @@ int create_socket(IspData *isp_data, MainUi *m_ui)
 }  
 
 
+/* Encode the username and password in base64 */
+
+void encode_un_pw(IspData *isp_data, MainUi *m_ui)
+{  
+g_base64_encode ()
+gchar *
+g_base64_encode (const guchar *data,
+                 gsize len);
+g_free(xx);
+
+    return;
+}  
+
+
 /* Construct and send a GET request */
 
 int send_request(char *url, IspData *isp_data, MainUi *m_ui)
@@ -171,7 +189,7 @@ int send_request(char *url, IspData *isp_data, MainUi *m_ui)
     }
 
     /* Construct GET */
-    get_qry = setup_get(url);
+    get_qry = setup_get(url, isp_data);
 
     /* Send query */
 

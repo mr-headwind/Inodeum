@@ -63,7 +63,7 @@ typedef struct _isp_data
 {
     char username[100];
     char password[100];
-    char *enc64;
+    gchar *enc64;
     char user_agent[50];
     char *ip;
     int tcp_sock;
