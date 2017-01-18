@@ -118,7 +118,7 @@ void final(IspData *isp_data)
     close_log();
 
     /* Clean up */
-    free(isp_data->enc64);
+    g_free(isp_data->enc64);
     free(isp_data->isp_addr);
     free(isp_data->ip);
 

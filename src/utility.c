@@ -108,10 +108,12 @@ static const char *app_messages[][2] =
     { "ERR0007", "%s is not a valid address family. "},
     { "ERR0008", "Failed to create socket. "},
     { "ERR0009", "Socket failed to connect. "},
+    { "ERR0010", "Failed to send query. "},
+    { "ERR0011", "Error receiving data. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 12;
+static const int Msg_Count = 13;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

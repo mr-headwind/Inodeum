@@ -44,7 +44,7 @@
 //#define API_PROTO "https://"
 #define API_VER 1.5
 #define PORT 443						// 443 = https, 80 = http
-#define HOST "customer-webtools-api.internode.on.net"
+#define HOST "https://customer-webtools-api.internode.on.net"
 #define REALM "internode-api"
 #define GET_TPL "GET " \					// Method
 	        "%s " \						// URI requested
@@ -68,5 +68,6 @@ typedef struct _isp_data
     char *ip;
     int tcp_sock;
     struct sockaddr_in *isp_addr;
+    char *xml_recv;
 
 } IspData;
