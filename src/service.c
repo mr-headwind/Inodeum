@@ -34,9 +34,6 @@
 #include <stdio.h>  
 #include <stdlib.h>  
 #include <string.h>  
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <libgen.h>  
 #include <gtk/gtk.h>  
 #include <glib/gbase64.h>
@@ -44,11 +41,23 @@
 #include <isp.h>
 #include <defs.h>
 #include <version.h>
+#include <sys/socket.h>
+#include <resolv.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 
 
 
 /* Prototypes */
 
+int ssl_service_details(IspData *, MainUi *);
 int service_details(IspData *, MainUi *);
 int isp_ip(IspData *, MainUi *);
 int create_socket(IspData *, MainUi *);
@@ -70,6 +79,16 @@ static const char *debug_hdr = "DEBUG-service.c ";
 
 
 /* Get all the Service details - each request is discrete */
+
+int ssl_service_details(IspData *isp_data, MainUi *m_ui)
+{  
+    char url[500];
+
+    return TRUE;
+}  
+
+
+/* Get all the Service details - each request is discrete - NON SECURE */
 
 int service_details(IspData *isp_data, MainUi *m_ui)
 {  
