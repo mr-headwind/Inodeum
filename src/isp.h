@@ -70,5 +70,7 @@ typedef struct _isp_data
     int tcp_sock;
     struct sockaddr_in *isp_addr;
     char *xml_recv;
-
+    SSL_CTX* ctx;
+    BIO *url;
+    SSL *ssl;
 } IspData;

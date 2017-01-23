@@ -110,10 +110,12 @@ static const char *app_messages[][2] =
     { "ERR0009", "Socket failed to connect. "},
     { "ERR0010", "Failed to send query. "},
     { "ERR0011", "Error receiving data. "},
+    { "ERR0012", "SSLv23_method failed. "},
+    { "ERR0013", "Unable to create a new SSL context structure. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 13;
+static const int Msg_Count = 15;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

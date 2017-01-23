@@ -59,6 +59,7 @@
 
 int ssl_service_details(IspData *, MainUi *);
 int service_details(IspData *, MainUi *);
+int ssl_service_init(IspData *, MainUi *);
 int isp_ip(IspData *, MainUi *);
 int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
@@ -78,11 +79,22 @@ static const char *debug_hdr = "DEBUG-service.c ";
 /* API Webtools service requests */
 
 
-/* Get all the Service details - each request is discrete */
+/* Get all the Service details using a secure connection - each request is discrete */
 
 int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 {  
     char url[500];
+
+    /* Initial */
+    if (ssl_service_init(isp_data, m_ui) == FALSE)
+    	return FALSE;
+
+    /* Certificate chain */
+    if (! SSL_CTX_load_verify_locations(ctx, "random-org-chain.pem", NULL))
+    {
+	log_msg("ERR0012", NULL, "ERR0012", m_ui->window);
+    	return FALSE;
+    }
 
     return TRUE;
 }  
@@ -113,6 +125,39 @@ int service_details(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
 
     /* 2. Service Type - Personal ADSL */
+
+    return TRUE;
+}  
+
+
+/* Initialise the ssl and bio setup */
+
+int ssl_service_init(IspData *isp_data, MainUi *m_ui)
+{  
+    isp_data->ctx = NULL;
+    isp_data->url = NULL;
+    isp_data->ssl = NULL;
+
+    init_openssl_library();
+
+    const SSL_METHOD* method = SSLv23_method();
+
+    if (!(NULL != method))
+    {
+	log_msg("ERR0012", NULL, "ERR0012", m_ui->window);
+    	return FALSE;
+    }
+
+    isp_data->ctx = SSL_CTX_new(method);
+
+    if (!(ctx != NULL))
+    {
+	log_msg("ERR0013", NULL, "ERR0013", m_ui->window);
+    	return FALSE;
+    }
+
+    const long flags = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+    SSL_CTX_set_options(sp_data->ctx, flags);
 
     return TRUE;
 }  
