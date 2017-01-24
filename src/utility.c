@@ -112,10 +112,19 @@ static const char *app_messages[][2] =
     { "ERR0011", "Error receiving data. "},
     { "ERR0012", "SSLv23_method failed. "},
     { "ERR0013", "Unable to create a new SSL context structure. "},
+    { "ERR0014", "Unable to load certificate location. "},
+    { "ERR0015", "Unable to make SSL connection. "},
+    { "ERR0016", "Unable to set Hostname and Port. "},
+    { "ERR0017", "Unable to fetch ssl connection object. "},
+    { "ERR0018", "Unable to select cipher. "},
+    { "ERR0019", "Unable to set SNI Hostname extension. "},
+    { "ERR0020", "Error: Connection failed. "},
+    { "ERR0021", "Error: Server did not issue a certificate. "},
+    { "ERR0022", "Error: Unable to verify certificate. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 15;
+static const int Msg_Count = 25;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

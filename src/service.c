@@ -60,13 +60,16 @@
 int ssl_service_details(IspData *, MainUi *);
 int service_details(IspData *, MainUi *);
 int ssl_service_init(IspData *, MainUi *);
+int ssl_isp_connect(IspData *, MainUi *);
 int isp_ip(IspData *, MainUi *);
 int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
 char * setup_get(char *, IspData *);
 void encode_un_pw(IspData *, MainUi *);
 int send_query(char *, MainUi *);
+int bio_send_query(BIO *, char *, MainUi *);
 int recv_data(MainUi *);
+int service_list(IspData *, MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -83,18 +86,23 @@ static const char *debug_hdr = "DEBUG-service.c ";
 
 int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 {  
-    char url[500];
-
     /* Initial */
     if (ssl_service_init(isp_data, m_ui) == FALSE)
     	return FALSE;
 
-    /* Certificate chain */
-    if (! SSL_CTX_load_verify_locations(ctx, "random-org-chain.pem", NULL))
-    {
-	log_msg("ERR0012", NULL, "ERR0012", m_ui->window);
+    /* Connection */
+    if (ssl_isp_connect(isp_data, m_ui) == FALSE)
     	return FALSE;
-    }
+
+    /* User Agent and encoded username/password */
+    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
+    encode_un_pw(isp_data, m_ui);
+
+    /* 1. Service Listing */
+    if (service_list(isp_data, m_ui) == FALSE)
+    	return FALSE;
+
+    /* 2. Service Type - Personal ADSL */
 
     return TRUE;
 }  
@@ -112,10 +120,6 @@ int service_details(IspData *isp_data, MainUi *m_ui)
 
     if (create_socket(isp_data, m_ui) == FALSE)
     	return FALSE;
-
-    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
-
-    encode_un_pw(isp_data, m_ui);
 
     /* 1. Service Listing */
     sprintf(url, "/api/%s/", HOST, API_VER);
@@ -135,12 +139,14 @@ int service_details(IspData *isp_data, MainUi *m_ui)
 int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 {  
     isp_data->ctx = NULL;
-    isp_data->url = NULL;
+    isp_data->web = NULL;
     isp_data->ssl = NULL;
 
+    /* Initialise the ssl and crypto libraries and load required algorithms */
     init_openssl_library();
 
-    const SSL_METHOD* method = SSLv23_method();
+    /* Set SSLv2 client hello, also announce SSLv3 and TLSv1 */
+    const SSL_METHOD* method = SSLv23_method();		// SSLv23_client_method ?
 
     if (!(NULL != method))
     {
@@ -148,6 +154,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
     }
 
+    /* Create a new SSL context */
     isp_data->ctx = SSL_CTX_new(method);
 
     if (!(ctx != NULL))
@@ -156,8 +163,90 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
     }
 
+    /* Options for negotiation */
     const long flags = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
     SSL_CTX_set_options(sp_data->ctx, flags);
+
+    /* Certificate chain */
+    if (! SSL_CTX_load_verify_locations(ctx, NULL, SSL_CERT_PATH))
+    {
+	log_msg("ERR0014", SSL_CERT_PATH, "ERR0014", m_ui->window);
+    	return FALSE;
+    }
+
+    return TRUE;
+}  
+
+
+/* Setup the BIO connection and verify */
+
+int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
+{  
+    /* New connection */
+    if ((isp_data->web = BIO_new_ssl_connect(isp_data->ctx)) == NULL)
+    {
+	log_msg("ERR0015", NULL, "ERR0015", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Host and port */
+    if (! BIO_set_conn_hostname(web, HOST_NAME ":" SSL_PORT))
+    {
+	log_msg("ERR0016", NULL, "ERR0016", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Connection object */
+    BIO_get_ssl(isp_data->web, &(isp_data->ssl));
+
+    if (isp_data->ssl == NULL)
+    {
+	log_msg("ERR0017", NULL, "ERR0017", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Remove unwanted ciphers */
+    const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+
+    if (! SSL_set_cipher_list(isp_data->ssl, PREFERRED_CIPHERS))
+    {
+	log_msg("ERR0018", NULL, "ERR0018", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Fine tune host if possible */
+    if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST_NAME))
+    {
+	log_msg("ERR0019", NULL, "ERR0019", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Connection and handshake */
+    if (BIO_do_connect(isp_data->web) <= 0)
+    {
+	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Verify a server certificate was presented during the negotiation */
+    X509* cert = SSL_get_peer_certificate(isp_data->ssl);
+
+    if (cert) 
+    {
+    	X509_free(cert); 			// Free immediately
+    }
+    else if (NULL == cert)
+    {
+	log_msg("ERR0021", NULL, "ERR0021", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Verify the certificate */
+    if (SSL_get_verify_result(isp_data->ssl) != X509_V_OK)
+    {
+	log_msg("ERR0022", NULL, "ERR0021", m_ui->window);
+    	return FALSE;
+    }
 
     return TRUE;
 }  
@@ -251,6 +340,40 @@ void encode_un_pw(IspData *isp_data, MainUi *m_ui)
 }  
 
 
+/* ISP service listing */
+
+int service_list(IspData *isp_data, MainUi *m_ui)
+{  
+    char *get_qry;
+
+    sprintf(isp_data->url, "/api/%s/", HOST, API_VER);
+    //sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
+    
+    /* Construct GET */
+    get_qry = setup_get(isp_data->url, isp_data);
+
+    /* Send the query */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    BIO_puts(web, get_qry);
+
+int len = 0;
+do
+{
+  char buff[1536] = {};
+  len = BIO_read(web, buff, sizeof(buff));
+            
+  if(len > 0)
+    BIO_write(out, buff, len);
+
+} while (len > 0 || BIO_should_retry(web));
+    if (send_request(url, isp_data, m_ui) == FALSE)
+    	return FALSE;
+
+
+    return TRUE;
+}  
+
+
 /* Construct and send a GET request */
 
 int send_request(char *url, IspData *isp_data, MainUi *m_ui)
@@ -304,6 +427,32 @@ char * setup_get(char *url, IspData *isp_data)
 /* Send the query to the server */
 
 int send_query(char *get_qry, MainUi *m_ui)
+{  
+    int r, sent;
+
+    sent = 0;
+
+    while(sent < strlen(get_qry))
+    {
+	r = send(sock, get_qry + sent, strlen(get_qry) - sent, 0);
+
+	if (r == -1)
+	{
+	    log_msg("ERR0010", NULL, "ERR0010", m_ui->window);
+	    return FALSE;
+	}
+	else
+	{
+	    sent += r;
+	}
+
+    return TRUE;
+}  
+
+
+/* Send the query to the server - encrypted */
+
+int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 {  
     int r, sent;
 

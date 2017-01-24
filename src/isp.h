@@ -45,11 +45,12 @@
 #define API_VER 1.5
 #define PORT 80							// 80 = http
 #define SSL_PORT 443						// 443 = https
+#define SSL_CERT_PATH "/etc/ssl/certs"				
 #define HOST "customer-webtools-api.internode.on.net"
 #define REALM "internode-api"
 #define GET_TPL "GET " \					// Method
 	        "%s " \						// URI requested
-	        "HTTP/1.0\r\n" \				// HTTP Version
+	        "HTTP/1.0\r\n" \				// HTTP Version (1.1 ?)
 	        "Host: %s\r\n" \				// Host
 	        "User-Agent: %s\r\n" \				// User Agent
 	        "Authorization: BASIC %s\r\n" \			// username:password in base 64
@@ -58,7 +59,7 @@
 	        "\r\n"						// End of query
 
 
-/* Structure to contain isp details */
+/* Structure to contain isp and related details */
 
 typedef struct _isp_data
 {
@@ -66,11 +67,12 @@ typedef struct _isp_data
     char password[100];
     gchar *enc64;
     char user_agent[50];
+    char url[500];
     char *ip;
     int tcp_sock;
     struct sockaddr_in *isp_addr;
     char *xml_recv;
     SSL_CTX* ctx;
-    BIO *url;
+    BIO *web;
     SSL *ssl;
 } IspData;
