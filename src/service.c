@@ -58,7 +58,7 @@
 /* Prototypes */
 
 int ssl_service_details(IspData *, MainUi *);
-int service_details(IspData *, MainUi *);
+int get_url(char *, IspData *, MainUi *);
 int ssl_service_init(IspData *, MainUi *);
 int ssl_isp_connect(IspData *, MainUi *);
 int isp_ip(IspData *, MainUi *);
@@ -67,9 +67,10 @@ int send_request(char *, IspData *, MainUi *);
 char * setup_get(char *, IspData *);
 void encode_un_pw(IspData *, MainUi *);
 int send_query(char *, MainUi *);
-int bio_send_query(BIO *, char *, MainUi *);
 int recv_data(MainUi *);
 int service_list(IspData *, MainUi *);
+int bio_send_query(BIO *, char *, MainUi *);
+int bio_read_xml(BIO *, MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -108,9 +109,9 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-/* Get all the Service details - each request is discrete - NON SECURE */
+/* Get a requested url */
 
-int service_details(IspData *isp_data, MainUi *m_ui)
+int get_url(char *url, IspData *isp_data, MainUi *m_ui)
 {  
     char url[500];
 
@@ -121,14 +122,9 @@ int service_details(IspData *isp_data, MainUi *m_ui)
     if (create_socket(isp_data, m_ui) == FALSE)
     	return FALSE;
 
-    /* 1. Service Listing */
-    sprintf(url, "/api/%s/", HOST, API_VER);
-    //sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
-    
+    /* Send url get request */
     if (send_request(url, isp_data, m_ui) == FALSE)
     	return FALSE;
-
-    /* 2. Service Type - Personal ADSL */
 
     return TRUE;
 }  
@@ -346,7 +342,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 {  
     char *get_qry;
 
-    sprintf(isp_data->url, "/api/%s/", HOST, API_VER);
+    sprintf(isp_data->url, "/api/%s/", API_VER);
     //sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
     
     /* Construct GET */
@@ -354,21 +350,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 
     /* Send the query */
     bio_send_query(isp_data->web, get_qry, m_ui);
-    BIO_puts(web, get_qry);
-
-int len = 0;
-do
-{
-  char buff[1536] = {};
-  len = BIO_read(web, buff, sizeof(buff));
-            
-  if(len > 0)
-    BIO_write(out, buff, len);
-
-} while (len > 0 || BIO_should_retry(web));
-    if (send_request(url, isp_data, m_ui) == FALSE)
-    	return FALSE;
-
+    bio_read_xml(isp_data->web, m_ui);
 
     return TRUE;
 }  
@@ -450,33 +432,7 @@ int send_query(char *get_qry, MainUi *m_ui)
 }  
 
 
-/* Send the query to the server - encrypted */
-
-int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
-{  
-    int r, sent;
-
-    sent = 0;
-
-    while(sent < strlen(get_qry))
-    {
-	r = send(sock, get_qry + sent, strlen(get_qry) - sent, 0);
-
-	if (r == -1)
-	{
-	    log_msg("ERR0010", NULL, "ERR0010", m_ui->window);
-	    return FALSE;
-	}
-	else
-	{
-	    sent += r;
-	}
-
-    return TRUE;
-}  
-
-
-/* Receive xml from the server */
+/* Receive xml from the server and add to the text view */
 
 int recv_data(MainUi *m_ui)
 {  
@@ -484,8 +440,11 @@ int recv_data(MainUi *m_ui)
     int xmlstart = FALSE;
     char buf[BUFSIZ + 1];
     char *xml;
+    GtkTextBuffer *txt_buffer;  
+    GtkTextIter iter;
 
     memset(buf, 0, sizeof(buf));
+    txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));
 
     while((r = recv(sock, buf, BUFSIZ, 0)) > 0)
     {
@@ -510,17 +469,73 @@ int recv_data(MainUi *m_ui)
 
 	if (xmlstart)
 	{
-	    fprintf(stdout, xml);
+	    gtk_text_buffer_get_end_iter (txt_buffer, &iter);
+	    gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);
+	    gtk_text_iter_forward_to_end (&iter);
 	}
 
 	memset(buf, 0, r);
     }
 
-    if(r < 0)
+    if (r < 0)
     {
 	log_msg("ERR0011", NULL, "ERR0011", m_ui->window);
 	return FALSE;
     }
 
+    return TRUE;
+}  
+
+
+/* Send the query to the server - encrypted */
+
+int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
+{  
+    int r;
+    char s[20];
+
+    r = BIO_puts(web, get_qry);		// Try this for starters - perhaps BIO_write may better
+
+    if (r >= 0 && r < strlen(get_qry))
+    {
+    	sprintf(s, "%d", r);
+	log_msg("ERR0023", s, "ERR0023", m_ui->window);
+	return FALSE;
+    }
+
+    if (r < 0)
+    {
+	log_msg("ERR0024", NULL, "ERR0024", m_ui->window);
+	return FALSE;
+    }
+    
+    return TRUE;
+}  
+
+
+/* Read the encrypted output from the server */
+
+int bio_read_xml(BIO *web, MainUi *m_ui)
+{  
+    int len = 0;
+    char buf[BUFSIZ + 1];
+    GtkTextBuffer *txt_buffer;  
+    GtkTextIter iter;
+
+    txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));
+
+    do
+    {
+	memset(buf, 0, sizeof(buf));
+	len = BIO_read(web, buf, sizeof(buf));
+            
+	if (len > 0)
+	{
+	    gtk_text_buffer_get_end_iter (txt_buffer, &iter);
+	    gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);
+	    gtk_text_iter_forward_to_end (&iter);
+	}
+    } while (len > 0 || BIO_should_retry(web));
+    
     return TRUE;
 }  

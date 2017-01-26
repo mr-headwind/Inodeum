@@ -121,10 +121,12 @@ static const char *app_messages[][2] =
     { "ERR0020", "Error: Connection failed. "},
     { "ERR0021", "Error: Server did not issue a certificate. "},
     { "ERR0022", "Error: Unable to verify certificate. "},
+    { "ERR0023", "Failed to send full query to server. "},
+    { "ERR0024", "Error: Unable send query to server. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 25;
+static const int Msg_Count = 27;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
