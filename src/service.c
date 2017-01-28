@@ -113,8 +113,6 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 
 int get_url(char *url, IspData *isp_data, MainUi *m_ui)
 {  
-    char url[500];
-
     /* Initial */
     if (isp_ip(isp_data, m_ui) == FALSE)
     	return FALSE;
@@ -153,7 +151,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     /* Create a new SSL context */
     isp_data->ctx = SSL_CTX_new(method);
 
-    if (!(ctx != NULL))
+    if (!(isp_data->ctx != NULL))
     {
 	log_msg("ERR0013", NULL, "ERR0013", m_ui->window);
     	return FALSE;
@@ -161,10 +159,10 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 
     /* Options for negotiation */
     const long flags = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-    SSL_CTX_set_options(sp_data->ctx, flags);
+    SSL_CTX_set_options(isp_data->ctx, flags);
 
     /* Certificate chain */
-    if (! SSL_CTX_load_verify_locations(ctx, NULL, SSL_CERT_PATH))
+    if (! SSL_CTX_load_verify_locations(isp_data->ctx, NULL, SSL_CERT_PATH))
     {
 	log_msg("ERR0014", SSL_CERT_PATH, "ERR0014", m_ui->window);
     	return FALSE;
@@ -186,7 +184,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Host and port */
-    if (! BIO_set_conn_hostname(web, HOST_NAME ":" SSL_PORT))
+    if (! BIO_set_conn_hostname(isp_data->web, HOST ":" SSL_PORT))
     {
 	log_msg("ERR0016", NULL, "ERR0016", m_ui->window);
     	return FALSE;
@@ -211,7 +209,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Fine tune host if possible */
-    if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST_NAME))
+    if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST))
     {
 	log_msg("ERR0019", NULL, "ERR0019", m_ui->window);
     	return FALSE;
@@ -264,7 +262,7 @@ int isp_ip(IspData *isp_data, MainUi *m_ui)
 	return FALSE;
     }
 
-    if (inet_ntop(AF_INET, (void *) hent->h_addr_list[0], ip, len) == NULL)
+    if (inet_ntop(AF_INET, (void *) hent->h_addr_list[0], isp_data->ip, len) == NULL)
     {
 	log_msg("ERR0005", HOST, "ERR0005", m_ui->window);
 	return FALSE;
