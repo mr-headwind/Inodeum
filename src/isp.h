@@ -50,7 +50,7 @@
 //#define API_PROTO "https://"
 #define API_VER "1.5"
 #define PORT 80							// 80 = http
-#define SSL_PORT 443						// 443 = https
+#define SSL_PORT "443"						// 443 = https
 #define SSL_CERT_PATH "/etc/ssl/certs"				
 #define HOST "customer-webtools-api.internode.on.net"
 #define REALM "internode-api"

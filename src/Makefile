@@ -22,14 +22,14 @@ CFLAGS2=-Wno-deprecated-declarations
 DEPS = defs.h main.h isp.h version.h
 OBJ = um_main.o callbacks.o main_ui.o utility.o service.o about_ui.o
 LIBS = `pkg-config --libs gtk+-3.0`
+LIBS2 = -lssl -lcrypto
 #LIBS2 = -lpthread
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(CFLAGS2)
 
 inodeum: $(OBJ)
-	$(CC) -o $@ $^ $(LIBS)
-# 	$(CC) -o $@ $^ $(LIBS) $(LIBS2) $(LIBS3)
+	$(CC) -o $@ $^ $(LIBS) $(LIBS2)
 
 clean:
 	rm -f $(OBJ)

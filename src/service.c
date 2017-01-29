@@ -66,8 +66,8 @@ int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
 char * setup_get(char *, IspData *);
 void encode_un_pw(IspData *, MainUi *);
-int send_query(char *, MainUi *);
-int recv_data(MainUi *);
+int send_query(char *, IspData *, MainUi *);
+int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int bio_read_xml(BIO *, MainUi *);
@@ -137,7 +137,9 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     isp_data->ssl = NULL;
 
     /* Initialise the ssl and crypto libraries and load required algorithms */
-    init_openssl_library();
+    SSL_library_init();
+    SSL_load_error_strings();
+    ERR_load_BIO_strings();
 
     /* Set SSLv2 client hello, also announce SSLv3 and TLSv1 */
     const SSL_METHOD* method = SSLv23_method();		// SSLv23_client_method ?
@@ -371,11 +373,11 @@ int send_request(char *url, IspData *isp_data, MainUi *m_ui)
     get_qry = setup_get(url, isp_data);
 
     /* Send query */
-    if (send_query(get_gry, m_ui) == FALSE)
+    if (send_query(get_qry, isp_data, m_ui) == FALSE)
     	return FALSE;
 
     /* Receive data */
-    if (recv_data(m_ui) == FALSE)
+    if (recv_data(isp_data, m_ui) == FALSE)
     	return FALSE;
 
     /* Clean up */
@@ -398,7 +400,7 @@ char * setup_get(char *url, IspData *isp_data)
 			    strlen(REALM) +
 			    strlen(GET_TPL) - 7);	// Note 7 accounts for 4 x %s in template plus \0
 
-    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, REALM);
+    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, isp_data->enc64, REALM);
 
     return query;
 }  
@@ -406,7 +408,7 @@ char * setup_get(char *url, IspData *isp_data)
 
 /* Send the query to the server */
 
-int send_query(char *get_qry, MainUi *m_ui)
+int send_query(char *get_qry, IspData *isp_data, MainUi *m_ui)
 {  
     int r, sent;
 
@@ -414,7 +416,7 @@ int send_query(char *get_qry, MainUi *m_ui)
 
     while(sent < strlen(get_qry))
     {
-	r = send(sock, get_qry + sent, strlen(get_qry) - sent, 0);
+	r = send(isp_data->tcp_sock, get_qry + sent, strlen(get_qry) - sent, 0);
 
 	if (r == -1)
 	{
@@ -427,12 +429,13 @@ int send_query(char *get_qry, MainUi *m_ui)
 	}
 
     return TRUE;
+    }  
 }  
 
 
 /* Receive xml from the server and add to the text view */
 
-int recv_data(MainUi *m_ui)
+int recv_data(IspData *isp_data, MainUi *m_ui)
 {  
     int r;
     int xmlstart = FALSE;
@@ -444,7 +447,7 @@ int recv_data(MainUi *m_ui)
     memset(buf, 0, sizeof(buf));
     txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));
 
-    while((r = recv(sock, buf, BUFSIZ, 0)) > 0)
+    while((r = recv(isp_data->tcp_sock, buf, BUFSIZ, 0)) > 0)
     {
 	if (xmlstart == 0)
 	{
