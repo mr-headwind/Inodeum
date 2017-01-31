@@ -56,8 +56,10 @@ extern void free_window_reg();
 extern void close_open_ui();
 extern int is_ui_reg(char *, int);
 extern int about_main(GtkWidget *);
+extern int ssl_service_details(IspData *, MainUi *);
 
 /* ??? */
+/*
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern char * log_name();
@@ -65,6 +67,7 @@ extern int val_str2numb(char *, int *, char *, GtkWidget *);
 extern int set_eos(MainUi *);
 extern int close_ui(char *);
 extern gint query_dialog(GtkWidget *, char *, char *);
+*/
 
 
 /* Globals */
@@ -90,7 +93,8 @@ void OnOK(GtkWidget *ok_btn, gpointer user_data)
     strcpy(isp_data->password, gtk_entry_get_text (GTK_ENTRY (m_ui->pw_ent)));
 
     /* Submit a service request */
-    g_print("***** OnOK not available yet\n");
+    if (ssl_service_details(isp_data, m_ui) == FALSE)
+    	return;
 
     return;
 }  

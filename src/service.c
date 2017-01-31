@@ -103,6 +103,8 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
     if (service_list(isp_data, m_ui) == FALSE)
     	return FALSE;
 
+    BIO_reset(isp_data->web);
+
     /* 2. Service Type - Personal ADSL */
 
     return TRUE;
@@ -351,6 +353,9 @@ int service_list(IspData *isp_data, MainUi *m_ui)
     /* Send the query */
     bio_send_query(isp_data->web, get_qry, m_ui);
     bio_read_xml(isp_data->web, m_ui);
+
+    /* Clean up */
+    free(get_qry);
 
     return TRUE;
 }  
