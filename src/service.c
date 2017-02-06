@@ -204,6 +204,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Remove unwanted ciphers */
+    /*
     const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 
     if (! SSL_set_cipher_list(isp_data->ssl, PREFERRED_CIPHERS))
@@ -213,6 +214,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Fine tune host if possible */
+    /*
     if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST))
     {
 	log_msg("ERR0019", NULL, "ERR0019", m_ui->window);
