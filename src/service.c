@@ -204,17 +204,17 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Remove unwanted ciphers */
-    /*
-    const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+    /* PRETTY SURE RC4-MD5 IS OK, but connection still fails if the list below is set 
+    const char* const PREFERRED_CIPHERS = "HIGH:RC4:MD5:!aNULL:!kRSA:!PSK:!SRP";
 
     if (! SSL_set_cipher_list(isp_data->ssl, PREFERRED_CIPHERS))
     {
 	log_msg("ERR0018", NULL, "ERR0018", m_ui->window);
     	return FALSE;
     }
+    */
 
     /* Fine tune host if possible */
-    /*
     if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST))
     {
 	log_msg("ERR0019", NULL, "ERR0019", m_ui->window);
@@ -347,7 +347,6 @@ int service_list(IspData *isp_data, MainUi *m_ui)
     char *get_qry;
 
     sprintf(isp_data->url, "/api/%s/", API_VER);
-    //sprintf(url, "%s%s/api/%s/", API_PROTO, HOST, API_VER);
     
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
@@ -499,11 +498,30 @@ int recv_data(IspData *isp_data, MainUi *m_ui)
 
 int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 {  
-    int r;
+    int r, sent, qlen;
     char s[20];
 
-    r = BIO_puts(web, get_qry);		// Try this for starters - perhaps BIO_write may better
+    sent = 0;
+    qlen = strlen(get_qry);
 
+    while(sent < qlen)
+    {
+	r = BIO_write(web, get_qry + sent, qlen - sent);
+
+	if (r <= 0)
+	{
+	    log_msg("ERR0010", NULL, "ERR0010", m_ui->window);
+	    return FALSE;
+	}
+	else
+	{
+	    sent += r;
+	}
+    }
+
+    //r = BIO_puts(web, get_qry);		// Try this for starters - perhaps BIO_write may better
+
+    /*
     if (r >= 0 && r < strlen(get_qry))
     {
     	sprintf(s, "%d", r);
@@ -516,6 +534,7 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 	log_msg("ERR0024", NULL, "ERR0024", m_ui->window);
 	return FALSE;
     }
+    */
     
     return TRUE;
 }  
@@ -530,6 +549,7 @@ int bio_read_xml(BIO *web, MainUi *m_ui)
     GtkTextBuffer *txt_buffer;  
     GtkTextIter iter;
 
+printf("%s xml 1\n", debug_hdr);fflush(stdout);
     txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));
 
     do
@@ -545,5 +565,6 @@ int bio_read_xml(BIO *web, MainUi *m_ui)
 	}
     } while (len > 0 || BIO_should_retry(web));
     
+printf("%s xml 2\n", debug_hdr);fflush(stdout);
     return TRUE;
 }  
