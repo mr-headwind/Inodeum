@@ -70,7 +70,8 @@ int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
-int bio_read_xml(BIO *, MainUi *);
+int get_serv_list(BIO *, MainUi *);
+char * bio_read_xml(BIO *, MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -344,8 +345,10 @@ void encode_un_pw(IspData *isp_data, MainUi *m_ui)
 
 int service_list(IspData *isp_data, MainUi *m_ui)
 {  
+    int r;
     char *get_qry;
 
+    r = TRUE;
     sprintf(isp_data->url, "/api/%s/", API_VER);
     
     /* Construct GET */
@@ -353,12 +356,12 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 
     /* Send the query */
     bio_send_query(isp_data->web, get_qry, m_ui);
-    bio_read_xml(isp_data->web, m_ui);
+    r = get_serv_list(isp_data->web, m_ui);
 
     /* Clean up */
     free(get_qry);
 
-    return TRUE;
+    return r;
 }  
 
 
@@ -540,18 +543,41 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 }  
 
 
+/* Parse xml and set up a list of services */
+
+int get_serv_list(BIO *web, MainUi *m_ui)
+{  
+    char *txt = NULL;
+
+    txt = bio_read_xml(web, m_ui);
+
+    if (txt == NULL)
+    	return FALSE;
+
+    free(txt);
+    
+    return TRUE;
+}  
+
+
 /* Read the encrypted output from the server */
 
-int bio_read_xml(BIO *web, MainUi *m_ui)
+char * bio_read_xml(BIO *web, MainUi *m_ui)
 {  
-    int len = 0;
+    int len = 0, txt_sz;
     char buf[BUFSIZ + 1];
-    GtkTextBuffer *txt_buffer;  
-    GtkTextIter iter;
+    char *txt, *p;
+    GtkTextBuffer *txt_buffer;  		// tmp
+    GtkTextIter iter;				// tmp
 
 printf("%s xml 1\n", debug_hdr);fflush(stdout);
-    txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));
+    /* Initial */
+    txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));	// tmp
+    txt = NULL;
+    p = NULL;
+    txt_sz = 0;
 
+    /* Get the return text */
     do
     {
 	memset(buf, 0, sizeof(buf));
@@ -559,12 +585,19 @@ printf("%s xml 1\n", debug_hdr);fflush(stdout);
             
 	if (len > 0)
 	{
-	    gtk_text_buffer_get_end_iter (txt_buffer, &iter);
-	    gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);
-	    gtk_text_iter_forward_to_end (&iter);
+	    txt = (char *) realloc(txt, txt_sz + len + 1);
+	    p = txt + txt_sz;
+	    txt_sz += len;
+	    *(txt + txt_sz) = '\0';
+	    memcpy((char *) p, (char *) buf, len);
+	    	
+	    gtk_text_buffer_get_end_iter (txt_buffer, &iter);			// tmp
+	    gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);		// tmp
+	    gtk_text_iter_forward_to_end (&iter);				// tmp
 	}
     } while (len > 0 || BIO_should_retry(web));
     
-printf("%s xml 2\n", debug_hdr);fflush(stdout);
-    return TRUE;
+printf("%s xml 2 - %d %s\n", debug_hdr, txt_sz, txt);fflush(stdout);
+
+    return txt;
 }  

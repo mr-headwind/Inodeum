@@ -57,7 +57,7 @@
 // GET message template is as follows:
 //		"GET "\						Method (POST is more secure - below)
 //		"%s "\						URI requested
-//		"HTTP/1.0\r\n"\					HTTP Version (use 1.1 - below)
+//		"HTTP/1.0\r\n"\					HTTP Version (1.1 - gives error)
 //		"Host: %s\r\n"\					Host
 //		"User-Agent: %s\r\n"\				User Agent
 //		"Authorization: BASIC %s\r\n"\			username:password in base 64
@@ -66,7 +66,7 @@
 //		"\r\n"						End of query
 #define GET_TPL "POST "\
 	        "%s "\
-	        "HTTP/1.1\r\n"\
+	        "HTTP/1.0\r\n"\
 	        "Host: %s\r\n"\
 	        "User-Agent: %s\r\n"\
 	        "Authorization: BASIC %s\r\n"\
@@ -77,13 +77,26 @@
 
 /* Structure to contain isp and related details */
 
+typedef struct _service_list
+{
+    char *service_type;
+    char *href;
+    char *service_id;
+} IspServ;
+
+
+/* Structure to contain isp related details, connection fields & results */
+
 typedef struct _isp_data
 {
+    /* Base detail */
     char username[100];
     char password[100];
     gchar *enc64;
     char user_agent[50];
     char url[500];
+
+    /* Standard and SSL connection */
     char *ip;
     int tcp_sock;
     struct sockaddr_in *isp_addr;
@@ -91,4 +104,8 @@ typedef struct _isp_data
     SSL_CTX* ctx;
     BIO *web;
     SSL *ssl;
+
+    /* Result related */
+    int service_cnt;
+    GList *srv_list;
 } IspData;
