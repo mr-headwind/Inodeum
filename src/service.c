@@ -72,6 +72,7 @@ int service_list(IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
+char * get_tag_attr(char *, char *, char *, char *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -543,18 +544,24 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 }  
 
 
-/* Parse xml and set up a list of services */
+/* Read and Parse xml and set up a list of services */
 
 int get_serv_list(BIO *web, MainUi *m_ui)
 {  
-    char *txt = NULL;
+    char *xml = NULL;
+    char *p;
+    char s_val[10];
 
-    txt = bio_read_xml(web, m_ui);
+    /* Read xml */
+    xml = bio_read_xml(web, m_ui);
 
     if (txt == NULL)
     	return FALSE;
 
-    free(txt);
+    /* Services count */
+    p = get_tag_attr(xml, "services", "count", s_val);
+
+    free(xml);
     
     return TRUE;
 }  
@@ -600,4 +607,16 @@ printf("%s xml 1\n", debug_hdr);fflush(stdout);
 printf("%s xml 2 - %d %s\n", debug_hdr, txt_sz, txt);fflush(stdout);
 
     return txt;
+}  
+
+
+/* Return a pointer to a tag and a an attibute value if present */
+
+char * get_tag_attr(char *xml, char *tag, char *attr, char *s_val)
+{  
+    char *p;
+
+    p = get_element_attr("services", "count", s_val);
+
+    return p;
 }  
