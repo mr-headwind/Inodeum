@@ -72,7 +72,8 @@ int service_list(IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
-char * get_tag_attr(char *, char *, char *, char *);
+char * get_tag(char *, char *, MainUi *);
+char * get_tag_attr(char *, char *, char *, MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -549,8 +550,9 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 int get_serv_list(BIO *web, MainUi *m_ui)
 {  
     char *xml = NULL;
-    char *p;
+    char *p, *p2;
     char s_val[10];
+    int i, srv_cnt;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
@@ -559,7 +561,15 @@ int get_serv_list(BIO *web, MainUi *m_ui)
     	return FALSE;
 
     /* Services count */
-    p = get_tag_attr(xml, "services", "count", s_val);
+    p = get_tag(xml, "<services ", m_ui);
+    p2 = get_tag_attr(p, "count", s_val, m_ui);
+    srv_cnt = atoi(s_val);
+
+    for(i = 0; i < srv_cnt; i++)
+    {
+	p = get_tag_attr(p, "<service ", "type", s_val);
+	p = get_tag_attr(p, "<service ", "type", s_val);
+    }
 
     free(xml);
     
@@ -577,7 +587,6 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
     GtkTextBuffer *txt_buffer;  		// tmp
     GtkTextIter iter;				// tmp
 
-printf("%s xml 1\n", debug_hdr);fflush(stdout);
     /* Initial */
     txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));	// tmp
     txt = NULL;
@@ -604,19 +613,46 @@ printf("%s xml 1\n", debug_hdr);fflush(stdout);
 	}
     } while (len > 0 || BIO_should_retry(web));
     
-printf("%s xml 2 - %d %s\n", debug_hdr, txt_sz, txt);fflush(stdout);
-
     return txt;
 }  
 
 
-/* Return a pointer to a tag and a an attibute value if present */
+/* Return a pointer to a tag */
 
-char * get_tag_attr(char *xml, char *tag, char *attr, char *s_val)
+char * get_tag(char *xml, char *tag, MainUi *m_ui)
 {  
     char *p;
 
-    p = get_element_attr("services", "count", s_val);
+    if ((p = strstr(xml, tag)) == NULL)
+	log_msg("ERR0030", tag, "ERR0030", m_ui->window);
+
+    return p;
+}  
+
+
+/* Return a position pointer and an attibute value */
+
+char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
+{  
+    char *p, *p2;
+
+    s_val == NULL;
+
+    if ((p = strstr(xml, tag)) == NULL)
+    	return NULL;
+
+    if (attr == NULL)
+    	return p;
+
+    if ((p2 = strstr(p, attr "=\"")) != NULL)
+    {
+    	p2 += 7;
+
+    	while(*p2 != "\"")
+	    *sval++ = *p2++;
+
+	*p2 = '\0';
+    }
 
     return p;
 }  
