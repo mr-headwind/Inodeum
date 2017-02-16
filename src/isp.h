@@ -79,9 +79,9 @@
 
 typedef struct _service_list
 {
-    char *service_type;
+    char *type;
     char *href;
-    char *service_id;
+    char *id;
 } IspServ;
 
 
@@ -106,6 +106,6 @@ typedef struct _isp_data
     SSL *ssl;
 
     /* Result related */
-    int service_cnt;
+    int srv_cnt;
     GList *srv_list;
 } IspData;

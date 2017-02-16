@@ -70,7 +70,7 @@ int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
-int get_serv_list(BIO *, MainUi *);
+int get_serv_list(BIO *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
@@ -81,6 +81,8 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-service.c ";
+static GList *srv_list_head = NULL;
+static GList *srv_list = NULL;
 
 
 /* API Webtools service requests */
@@ -358,7 +360,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 
     /* Send the query */
     bio_send_query(isp_data->web, get_qry, m_ui);
-    r = get_serv_list(isp_data->web, m_ui);
+    r = get_serv_list(isp_data->web, isp_data, m_ui);
 
     /* Clean up */
     free(get_qry);
@@ -547,12 +549,13 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 
 /* Read and Parse xml and set up a list of services */
 
-int get_serv_list(BIO *web, MainUi *m_ui)
+int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 {  
     char *xml = NULL;
-    char *p, *p2;
-    char s_val[10];
-    int i, srv_cnt;
+    char *p;
+    char s_val[200];
+    int i, srv_cnt, r;
+    IspServ *isp_srv;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
@@ -561,14 +564,57 @@ int get_serv_list(BIO *web, MainUi *m_ui)
     	return FALSE;
 
     /* Services count */
-    p = get_tag(xml, "<services ", m_ui);
-    p2 = get_tag_attr(p, "count", s_val, m_ui);
-    srv_cnt = atoi(s_val);
-
-    for(i = 0; i < srv_cnt; i++)
+    if ((p = get_tag(xml, "<services ", m_ui)) == NULL)
     {
-	p = get_tag_attr(p, "<service ", "type", s_val);
-	p = get_tag_attr(p, "<service ", "type", s_val);
+    	free(xml);
+    	return FALSE;
+    }
+
+    if ((p = get_tag_attr(p + 9, "count", s_val, m_ui)) == NULL)
+    {
+    	free(xml);
+    	return FALSE;
+    }
+
+    isp_data->srv_cnt = atoi(s_val);
+    r = TRUE;
+
+    /* Create a service list */
+    for(i = 0; i < isp_data->srv_cnt; i++)
+    {
+	if ((p = get_tag(p, "<service ", m_ui)) == NULL)
+	{
+	    r = FALSE;
+	    break;
+	}
+
+	isp_srv = (IspServ *) malloc(sizeof(IspServ));
+
+	if ((p = get_tag_attr(p, "type", s_val)) == NULL)
+	{
+	    free(isp_srv);
+	    r = FALSE;
+	    break;
+	}
+
+	isp_srv->type = (char *) malloc(strlen(s_val) + 1);
+	strcpy(isp_srv->type, s_val);
+
+	if ((p = get_tag_attr(p, "href", s_val)) == NULL)
+	{
+	    free(isp_srv->type);
+	    free(isp_srv);
+	    r = FALSE;
+	    break;
+	}
+
+	isp_srv->href = (char *) malloc(strlen(s_val) + 1);
+	strcpy(isp_srv->href, s_val);
+	
+	srv_list = g_list_append (srv_list_head, isp_srv);
+
+	if (srv_list_head == NULL)
+	    srv_list_head = srv_list;
     }
 
     free(xml);
@@ -634,24 +680,22 @@ char * get_tag(char *xml, char *tag, MainUi *m_ui)
 
 char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
 {  
-    char *p, *p2;
+    char *p;
 
     s_val == NULL;
 
-    if ((p = strstr(xml, tag)) == NULL)
-    	return NULL;
-
-    if (attr == NULL)
-    	return p;
-
-    if ((p2 = strstr(p, attr "=\"")) != NULL)
+    if ((p = strstr(xml, attr "=\"")) != NULL)
     {
-    	p2 += 7;
+    	p += 7;
 
-    	while(*p2 != "\"")
-	    *sval++ = *p2++;
+    	while(*p != "\"")
+	    *sval++ = *p++;
 
-	*p2 = '\0';
+	*sval = '\0';
+    }
+    else
+    {
+	log_msg("ERR0031", attr, "ERR0031", m_ui->window);
     }
 
     return p;

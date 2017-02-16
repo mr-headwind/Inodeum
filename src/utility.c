@@ -124,10 +124,11 @@ static const char *app_messages[][2] =
     { "ERR0023", "Failed to send full query to server. "},
     { "ERR0024", "Error: Unable send query to server. "},
     { "ERR0030", "Error: XML tag %s not found. "},
+    { "ERR0031", "Error: XML tag attribute %s not found. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 28;
+static const int Msg_Count = 29;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
