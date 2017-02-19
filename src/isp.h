@@ -108,4 +108,5 @@ typedef struct _isp_data
     /* Result related */
     int srv_cnt;
     GList *srv_list;
+    GList *srv_list_head;
 } IspData;

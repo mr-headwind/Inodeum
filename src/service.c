@@ -74,6 +74,8 @@ int get_serv_list(BIO *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
+int get_tag_val(char *, char **, MainUi *);
+int check_srv(IspData **);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -81,8 +83,6 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-service.c ";
-static GList *srv_list_head = NULL;
-static GList *srv_list = NULL;
 
 
 /* API Webtools service requests */
@@ -560,7 +560,7 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
 
-    if (txt == NULL)
+    if (xml == NULL)
     	return FALSE;
 
     /* Services count */
@@ -577,49 +577,85 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     }
 
     isp_data->srv_cnt = atoi(s_val);
+
+    if (isp_data->srv_cnt == 0)
+    {
+	log_msg("ERR0033", NULL, "ERR0033", m_ui->window);
+    	return FALSE;
+    }
+
     r = TRUE;
 
     /* Create a service list */
     for(i = 0; i < isp_data->srv_cnt; i++)
     {
-	if ((p = get_tag(p, "<service ", m_ui)) == NULL)
+	if ((p = get_tag(p, "<service ", m_ui)) != NULL)
 	{
+	    isp_srv = (IspServ *) malloc(sizeof(IspServ));
+	    memset(isp_srv, 0, sizeof(IspServ));
+
+	    /* Service Type */
+	    if ((p = get_tag_attr(p, "type", s_val, m_ui)) != NULL)
+	    {
+		isp_srv->type = (char *) malloc(strlen(s_val) + 1);
+		strcpy(isp_srv->type, s_val);
+	    }
+
+	    /* Service URL */
+	    if ((p = get_tag_attr(p, "href", s_val, m_ui)) != NULL)
+	    {
+		isp_srv->href = (char *) malloc(strlen(s_val) + 1);
+		strcpy(isp_srv->href, s_val);
+	    }
+
+	    /* Service Id */
+	    get_tag_val(p + strlen(s_val) + 1, &(isp_srv->id), m_ui);
+
+	    /* List */
+	    if (check_srv(&(isp_srv)) == FALSE)
+	    {
+		r = FALSE;
+		break;
+	    }
+
+	    isp_data->srv_list = g_list_append (isp_data->srv_list_head, isp_srv);
+
+	    if (isp_data->srv_list_head == NULL)
+		isp_data->srv_list_head = isp_data->srv_list;
+	}
+	else
+	{
+	    log_msg("ERR0030", "<service ", "ERR0030", m_ui->window);
 	    r = FALSE;
 	    break;
 	}
-
-	isp_srv = (IspServ *) malloc(sizeof(IspServ));
-
-	if ((p = get_tag_attr(p, "type", s_val)) == NULL)
-	{
-	    free(isp_srv);
-	    r = FALSE;
-	    break;
-	}
-
-	isp_srv->type = (char *) malloc(strlen(s_val) + 1);
-	strcpy(isp_srv->type, s_val);
-
-	if ((p = get_tag_attr(p, "href", s_val)) == NULL)
-	{
-	    free(isp_srv->type);
-	    free(isp_srv);
-	    r = FALSE;
-	    break;
-	}
-
-	isp_srv->href = (char *) malloc(strlen(s_val) + 1);
-	strcpy(isp_srv->href, s_val);
-	
-	srv_list = g_list_append (srv_list_head, isp_srv);
-
-	if (srv_list_head == NULL)
-	    srv_list_head = srv_list;
     }
 
     free(xml);
     
-    return TRUE;
+    return r;
+}  
+
+
+/* Check the service structure is valid */
+
+int check_srv(IspServ **isp_srv)
+{  
+    if ((*isp_srv)->type && (*isp_srv)->href && (*isp_srv)->id)
+	return TRUE;
+
+    if (&(isp_srv->type))
+    	free(isp_srv->type);
+    
+    if (isp_srv->href)
+    	free(isp_srv->href);
+    
+    if (isp_srv->id)
+    	free(isp_srv->id);
+
+    free(isp_srv);
+    
+    return FALSE;
 }  
 
 
@@ -699,4 +735,32 @@ char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
     }
 
     return p;
+}  
+
+
+/* Determine a tag value */
+
+int get_tag_val(char *xml, char **s, MainUi *m_ui)
+{  
+    char *p, *p2;
+
+    s_val == NULL;
+
+    if ((p = strchr(xml,'>')) == NULL)
+    {
+	log_msg("ERR0032", attr, "ERR0032", m_ui->window);
+    	return FALSE;
+    }
+
+    if ((p2 = strchr(xml,'<')) == NULL)
+    {
+	log_msg("ERR0032", attr, "ERR0032", m_ui->window);
+    	return FALSE;
+    }
+
+    &(*s) = (char *) malloc(p2 - p + 1);
+    &(*s[p2 - p + 1] = '\0';
+    memcpy(&(*s), p + 1, p2 - p);
+
+    return TRUE;
 }  
