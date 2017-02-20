@@ -75,7 +75,7 @@ char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
-int check_srv(IspData **);
+int check_srv(IspServ **);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -570,13 +570,14 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     	return FALSE;
     }
 
-    if ((p = get_tag_attr(p + 9, "count", s_val, m_ui)) == NULL)
+    if ((p = get_tag_attr(p + 10, "count=\"", s_val, m_ui)) == NULL)
     {
     	free(xml);
     	return FALSE;
     }
 
     isp_data->srv_cnt = atoi(s_val);
+printf("%s srv cnt %d\n", debug_hdr, isp_data->srv_cnt); fflush(stdout);
 
     if (isp_data->srv_cnt == 0)
     {
@@ -595,24 +596,27 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 	    memset(isp_srv, 0, sizeof(IspServ));
 
 	    /* Service Type */
-	    if ((p = get_tag_attr(p, "type", s_val, m_ui)) != NULL)
+	    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
 	    {
 		isp_srv->type = (char *) malloc(strlen(s_val) + 1);
 		strcpy(isp_srv->type, s_val);
+printf("%s srv type %s\n", debug_hdr, isp_srv->type); fflush(stdout);
 	    }
 
 	    /* Service URL */
-	    if ((p = get_tag_attr(p, "href", s_val, m_ui)) != NULL)
+	    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
 	    {
 		isp_srv->href = (char *) malloc(strlen(s_val) + 1);
 		strcpy(isp_srv->href, s_val);
+printf("%s srv href %s\n", debug_hdr, isp_srv->href); fflush(stdout);
 	    }
 
 	    /* Service Id */
 	    get_tag_val(p + strlen(s_val) + 1, &(isp_srv->id), m_ui);
+printf("%s srv id %s\n", debug_hdr, isp_srv->id); fflush(stdout);
 
 	    /* List */
-	    if (check_srv(&(isp_srv)) == FALSE)
+	    if (check_srv(&isp_srv) == FALSE)
 	    {
 		r = FALSE;
 		break;
@@ -644,14 +648,14 @@ int check_srv(IspServ **isp_srv)
     if ((*isp_srv)->type && (*isp_srv)->href && (*isp_srv)->id)
 	return TRUE;
 
-    if (&(isp_srv->type))
-    	free(isp_srv->type);
+    if (&(*isp_srv)->type)
+    	free((*isp_srv)->type);
     
-    if (isp_srv->href)
-    	free(isp_srv->href);
+    if (&(*isp_srv)->href)
+    	free((*isp_srv)->href);
     
-    if (isp_srv->id)
-    	free(isp_srv->id);
+    if (&(*isp_srv)->id)
+    	free((*isp_srv)->id);
 
     free(isp_srv);
     
@@ -720,14 +724,14 @@ char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
 
     s_val == NULL;
 
-    if ((p = strstr(xml, attr "=\"")) != NULL)
+    if ((p = strstr(xml, attr)) != NULL)
     {
-    	p += 7;
+    	p += strlen(attr);
 
-    	while(*p != "\"")
-	    *sval++ = *p++;
+    	while(*p != '\"')
+	    *s_val++ = *p++;
 
-	*sval = '\0';
+	*s_val = '\0';
     }
     else
     {
@@ -744,22 +748,22 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
 {  
     char *p, *p2;
 
-    s_val == NULL;
+    *s == NULL;
 
     if ((p = strchr(xml,'>')) == NULL)
     {
-	log_msg("ERR0032", attr, "ERR0032", m_ui->window);
+	log_msg("ERR0032", NULL, "ERR0032", m_ui->window);
     	return FALSE;
     }
 
-    if ((p2 = strchr(xml,'<')) == NULL)
+    if ((p2 = strchr(p,'<')) == NULL)
     {
-	log_msg("ERR0032", attr, "ERR0032", m_ui->window);
+	log_msg("ERR0032", NULL, "ERR0032", m_ui->window);
     	return FALSE;
     }
 
-    &(*s) = (char *) malloc(p2 - p + 1);
-    &(*s[p2 - p + 1] = '\0';
+    *s = (char *) malloc(p2 - p + 1);
+    (*s)[p2 - p + 1] = '\0';
     memcpy(&(*s), p + 1, p2 - p);
 
     return TRUE;
