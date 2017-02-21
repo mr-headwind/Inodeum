@@ -612,7 +612,7 @@ printf("%s srv href %s\n", debug_hdr, isp_srv->href); fflush(stdout);
 	    }
 
 	    /* Service Id */
-	    get_tag_val(p + strlen(s_val) + 1, &(isp_srv->id), m_ui);
+	    get_tag_val(p, &(isp_srv->id), m_ui);
 printf("%s srv id %s\n", debug_hdr, isp_srv->id); fflush(stdout);
 
 	    /* List */
@@ -762,9 +762,14 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     	return FALSE;
     }
 
-    *s = (char *) malloc(p2 - p + 1);
-    (*s)[p2 - p + 1] = '\0';
-    memcpy(&(*s), p + 1, p2 - p);
+printf("%s val 1  sz %ld\n", debug_hdr, p2 - p); fflush(stdout);
+    *s = (char *) malloc(p2 - p);
+printf("%s val 2\n", debug_hdr); fflush(stdout);
+    //(*s)[p2 - p] = '\0';
+    memset(*s, 0, p2 - p);
+printf("%s val 3\n", debug_hdr); fflush(stdout);
+    memcpy(&(*s), p + 1, p2 - p - 1);
+printf("%s val 4 id %s\n", debug_hdr, *s); fflush(stdout);
 
     return TRUE;
 }  
