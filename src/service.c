@@ -577,7 +577,6 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     }
 
     isp_data->srv_cnt = atoi(s_val);
-printf("%s srv cnt %d\n", debug_hdr, isp_data->srv_cnt); fflush(stdout);
 
     if (isp_data->srv_cnt == 0)
     {
@@ -600,7 +599,6 @@ printf("%s srv cnt %d\n", debug_hdr, isp_data->srv_cnt); fflush(stdout);
 	    {
 		isp_srv->type = (char *) malloc(strlen(s_val) + 1);
 		strcpy(isp_srv->type, s_val);
-printf("%s srv type %s\n", debug_hdr, isp_srv->type); fflush(stdout);
 	    }
 
 	    /* Service URL */
@@ -608,12 +606,10 @@ printf("%s srv type %s\n", debug_hdr, isp_srv->type); fflush(stdout);
 	    {
 		isp_srv->href = (char *) malloc(strlen(s_val) + 1);
 		strcpy(isp_srv->href, s_val);
-printf("%s srv href %s\n", debug_hdr, isp_srv->href); fflush(stdout);
 	    }
 
 	    /* Service Id */
 	    get_tag_val(p, &(isp_srv->id), m_ui);
-printf("%s srv id %s\n", debug_hdr, isp_srv->id); fflush(stdout);
 
 	    /* List */
 	    if (check_srv(&isp_srv) == FALSE)
@@ -762,14 +758,9 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     	return FALSE;
     }
 
-printf("%s val 1  sz %ld\n", debug_hdr, p2 - p); fflush(stdout);
     *s = (char *) malloc(p2 - p);
-printf("%s val 2\n", debug_hdr); fflush(stdout);
-    //(*s)[p2 - p] = '\0';
     memset(*s, 0, p2 - p);
-printf("%s val 3\n", debug_hdr); fflush(stdout);
-    memcpy(&(*s), p + 1, p2 - p - 1);
-printf("%s val 4 id %s\n", debug_hdr, *s); fflush(stdout);
+    memcpy(*s, p + 1, p2 - p - 1);
 
     return TRUE;
 }  
