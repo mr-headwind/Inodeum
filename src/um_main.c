@@ -56,6 +56,7 @@ extern int check_app_dir();
 extern int reset_log();
 extern void close_log();
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void clear_srv_list(IspData *);
 
 
 /* Globals */
@@ -137,6 +138,8 @@ void final(IspData *isp_data)
     if (isp_data->ssl != NULL)
 	SSL_free(isp_data->ssl);
 	*/
+
+    clear_srv_list(isp_data);
 
     return;
 }

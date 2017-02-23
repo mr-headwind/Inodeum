@@ -76,6 +76,8 @@ char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 int check_srv(IspServ **);
+void clear_srv_list(IspData *);
+GDestroyNotify * free_srv_list(IspServ *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -763,4 +765,29 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     memcpy(*s, p + 1, p2 - p - 1);
 
     return TRUE;
+}  
+
+
+/* Clear any service lists */
+
+void clear_srv_list(IspData *isp_data)
+{  
+    g_list_free_full(isp_data->srv_list_head, free_srv_list);
+    //g_list_free_full(isp_data->srv_list_head, (GDestroyNotify *) free_srv_list);
+
+    return;
+}  
+
+
+/* Free a service list item */
+
+GDestroyNotify * free_srv_list(IspServ *isp_srv)
+{  
+    free(isp_srv->id);
+    free(isp_srv->href);
+    free(isp_srv->type);
+
+    free(isp_srv);
+
+    return;
 }  
