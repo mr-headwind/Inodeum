@@ -69,6 +69,7 @@ void encode_un_pw(IspData *, MainUi *);
 int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
+int srv_resource_list(IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
@@ -77,7 +78,7 @@ char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 int check_srv(IspServ **);
 void clear_srv_list(IspData *);
-GDestroyNotify * free_srv_list(IspServ *);
+void free_srv_list(gpointer);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
@@ -112,7 +113,11 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 
     BIO_reset(isp_data->web);
 
-    /* 2. Service Type - Personal ADSL */
+    /* 2. Service Resource Listing */
+    if (srv_resource_list(isp_data, m_ui) == FALSE)
+    	return FALSE;
+
+    BIO_reset(isp_data->web);
 
     return TRUE;
 }  
@@ -350,6 +355,30 @@ void encode_un_pw(IspData *isp_data, MainUi *m_ui)
 /* ISP service listing */
 
 int service_list(IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char *get_qry;
+
+    r = TRUE;
+    sprintf(isp_data->url, "/api/%s/", API_VER);
+    
+    /* Construct GET */
+    get_qry = setup_get(isp_data->url, isp_data);
+
+    /* Send the query */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    r = get_serv_list(isp_data->web, isp_data, m_ui);
+
+    /* Clean up */
+    free(get_qry);
+
+    return r;
+}  
+
+
+/* ISP service resource listing */
+
+int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 {  
     int r;
     char *get_qry;
@@ -772,8 +801,7 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
 
 void clear_srv_list(IspData *isp_data)
 {  
-    g_list_free_full(isp_data->srv_list_head, free_srv_list);
-    //g_list_free_full(isp_data->srv_list_head, (GDestroyNotify *) free_srv_list);
+    g_list_free_full(isp_data->srv_list_head, (GDestroyNotify) free_srv_list);
 
     return;
 }  
@@ -781,8 +809,11 @@ void clear_srv_list(IspData *isp_data)
 
 /* Free a service list item */
 
-GDestroyNotify * free_srv_list(IspServ *isp_srv)
+void free_srv_list(gpointer data)
 {  
+    IspServ *isp_srv;
+
+    isp_srv = (IspServ *) data;
     free(isp_srv->id);
     free(isp_srv->href);
     free(isp_srv->type);
