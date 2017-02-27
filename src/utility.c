@@ -126,7 +126,7 @@ static const char *app_messages[][2] =
     { "ERR0030", "Error: XML tag %s not found. "},
     { "ERR0031", "Error: XML tag attribute %s not found. "},
     { "ERR0032", "Error: XML tag value not found. "},
-    { "ERR0033", "Error: No services listed. "},
+    { "ERR0033", "Error: No items found in returned XML for %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 

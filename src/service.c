@@ -70,12 +70,14 @@ int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
+int get_resource_list(BIO *, IspServ *, IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
+char * get_list_count(char *, char *, int *, MainUi *);
 int check_srv(IspServ **);
 void clear_srv_list(IspData *);
 void free_srv_list(gpointer);
@@ -376,25 +378,32 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-/* ISP service resource listing */
+/* Iterate each service type found and get the associated resource listing */
 
 int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 {  
     int r;
     char *get_qry;
+    IspServ *isp_srv;
 
-    r = TRUE;
-    sprintf(isp_data->url, "/api/%s/", API_VER);
-    
-    /* Construct GET */
-    get_qry = setup_get(isp_data->url, isp_data);
+    GList *l;
 
-    /* Send the query */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    r = get_serv_list(isp_data->web, isp_data, m_ui);
+    for (l = isp_data->srv_list_head; l != NULL; l = l->next)
+    {
+	r = TRUE;
+    	isp_srv = (IspServ *) l->data;
+	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->id);
+	
+	/* Construct GET */
+	get_qry = setup_get(isp_data->url, isp_data);
 
-    /* Clean up */
-    free(get_qry);
+	/* Send the query */
+	bio_send_query(isp_data->web, get_qry, m_ui);
+	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
+
+	/* Clean up */
+	free(get_qry);
+    }
 
     return r;
 }  
@@ -585,7 +594,7 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     char *xml = NULL;
     char *p;
     char s_val[200];
-    int i, srv_cnt, r;
+    int i, r;
     IspServ *isp_srv;
 
     /* Read xml */
@@ -688,6 +697,61 @@ int check_srv(IspServ **isp_srv)
     
     return FALSE;
 }  
+
+
+/* Read and Parse xml and set up a list of resources for a service type */
+
+int get_resource_list(BIO *web, IspServ *isp_srv, IspData *isp_data, MainUi *m_ui)
+{  
+    char *xml = NULL;
+    char *p;
+    char s_val[200];
+    int i, r;
+    IspServRsrc *rsrc;
+
+    /* Read xml */
+    xml = bio_read_xml(web, m_ui);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Resources count */
+    if ((p = get_list_count(xml, "<resources ", &(isp_srv).rsrc_cnt, m_ui)) == NULL)
+    {
+    	free(xml);
+    	return FALSE;
+    }
+
+    if ((p = get_tag(xml, "<resources ", m_ui)) == NULL)
+    {
+    	free(xml);
+    	return FALSE;
+    }
+    
+    if ((p = get_tag_attr(p + 11, "count=\"", s_val, m_ui)) == NULL)
+    {
+    	free(xml);
+    	return FALSE;
+    }
+
+    isp_data->srv_cnt = atoi(s_val);
+
+    if (isp_data->srv_cnt == 0)
+    {
+	log_msg("ERR0033", NULL, "ERR0033", m_ui->window);
+    	return FALSE;
+    }
+
+    r = TRUE;
+
+    /* Create a service list */
+    for(i = 0; i < isp_data->srv_cnt; i++)
+    {
+    }
+
+    return FALSE;
+}  
+
 
 
 /* Read the encrypted output from the server */
@@ -794,6 +858,31 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     memcpy(*s, p + 1, p2 - p - 1);
 
     return TRUE;
+}  
+
+
+/* Read and Parse xml and determine the list count */
+
+char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
+{  
+    char *p;
+    char s_val[200];
+
+    if ((p = get_tag(xml, tag, m_ui)) == NULL)
+    	return NULL;
+    
+    if ((p = get_tag_attr(p + strlen(tag), "count=\"", s_val, m_ui)) == NULL)
+    	return NULL;
+
+    *cnt = atoi(s_val);
+
+    if (*cnt == 0)
+    {
+	log_msg("ERR0033", tag, "ERR0033", m_ui->window);
+    	return NULL;
+    }
+
+    return p;
 }  
 
 

@@ -82,6 +82,11 @@ typedef struct _service_list
     char *type;
     char *href;
     char *id;
+
+    /* Resource related */
+    int rsrc_cnt;
+    GList *rsrc_list;
+    GList *rsrc_list_head;
 } IspServ;
 
 
@@ -105,7 +110,7 @@ typedef struct _isp_data
     BIO *web;
     SSL *ssl;
 
-    /* Result related */
+    /* Service Type related */
     int srv_cnt;
     GList *srv_list;
     GList *srv_list_head;
