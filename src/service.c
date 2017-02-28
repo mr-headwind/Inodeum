@@ -604,23 +604,9 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     	return FALSE;
 
     /* Services count */
-    if ((p = get_tag(xml, "<services ", m_ui)) == NULL)
+    if ((p = get_list_count(xml, "<services ", &(isp_data)->srv_cnt, m_ui)) == NULL)
     {
     	free(xml);
-    	return FALSE;
-    }
-
-    if ((p = get_tag_attr(p + 10, "count=\"", s_val, m_ui)) == NULL)
-    {
-    	free(xml);
-    	return FALSE;
-    }
-
-    isp_data->srv_cnt = atoi(s_val);
-
-    if (isp_data->srv_cnt == 0)
-    {
-	log_msg("ERR0033", NULL, "ERR0033", m_ui->window);
     	return FALSE;
     }
 
@@ -716,36 +702,16 @@ int get_resource_list(BIO *web, IspServ *isp_srv, IspData *isp_data, MainUi *m_u
     	return FALSE;
 
     /* Resources count */
-    if ((p = get_list_count(xml, "<resources ", &(isp_srv).rsrc_cnt, m_ui)) == NULL)
+    if ((p = get_list_count(xml, "<resources ", &(isp_srv)->rsrc_cnt, m_ui)) == NULL)
     {
     	free(xml);
-    	return FALSE;
-    }
-
-    if ((p = get_tag(xml, "<resources ", m_ui)) == NULL)
-    {
-    	free(xml);
-    	return FALSE;
-    }
-    
-    if ((p = get_tag_attr(p + 11, "count=\"", s_val, m_ui)) == NULL)
-    {
-    	free(xml);
-    	return FALSE;
-    }
-
-    isp_data->srv_cnt = atoi(s_val);
-
-    if (isp_data->srv_cnt == 0)
-    {
-	log_msg("ERR0033", NULL, "ERR0033", m_ui->window);
     	return FALSE;
     }
 
     r = TRUE;
 
-    /* Create a service list */
-    for(i = 0; i < isp_data->srv_cnt; i++)
+    /* Create a resource list */
+    for(i = 0; i < isp_srv->rscr_cnt; i++)
     {
     }
 
