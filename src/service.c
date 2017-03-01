@@ -70,7 +70,7 @@ int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
-int get_resource_list(BIO *, IspServ *, IspData *, MainUi *);
+int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
@@ -78,7 +78,7 @@ char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
-int check_srv(IspServ **);
+int check_srv(IspListObj **);
 void clear_srv_list(IspData *);
 void free_srv_list(gpointer);
 
@@ -384,14 +384,14 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 {  
     int r;
     char *get_qry;
-    IspServ *isp_srv;
+    IspListObj *isp_srv;
 
     GList *l;
 
     for (l = isp_data->srv_list_head; l != NULL; l = l->next)
     {
 	r = TRUE;
-    	isp_srv = (IspServ *) l->data;
+    	isp_srv = (IspListObj *) l->data;
 	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->id);
 	
 	/* Construct GET */
@@ -595,7 +595,7 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     char *p;
     char s_val[200];
     int i, r;
-    IspServ *isp_srv;
+    IspListObj *isp_srv;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
@@ -617,8 +617,8 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     {
 	if ((p = get_tag(p, "<service ", m_ui)) != NULL)
 	{
-	    isp_srv = (IspServ *) malloc(sizeof(IspServ));
-	    memset(isp_srv, 0, sizeof(IspServ));
+	    isp_srv = (IspListObj *) malloc(sizeof(IspListObj));
+	    memset(isp_srv, 0, sizeof(IspListObj));
 
 	    /* Service Type */
 	    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
@@ -665,7 +665,7 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 
 /* Check the service structure is valid */
 
-int check_srv(IspServ **isp_srv)
+int check_srv(IspListObj **isp_srv)
 {  
     if ((*isp_srv)->type && (*isp_srv)->href && (*isp_srv)->id)
 	return TRUE;
@@ -682,18 +682,18 @@ int check_srv(IspServ **isp_srv)
     free(isp_srv);
     
     return FALSE;
-}  
+}  BIO *web
 
 
 /* Read and Parse xml and set up a list of resources for a service type */
 
-int get_resource_list(BIO *web, IspServ *isp_srv, IspData *isp_data, MainUi *m_ui)
+int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *m_ui)
 {  
     char *xml = NULL;
     char *p;
     char s_val[200];
     int i, r;
-    IspServRsrc *rsrc;
+    IspListObj *rsrc;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
@@ -713,6 +713,47 @@ int get_resource_list(BIO *web, IspServ *isp_srv, IspData *isp_data, MainUi *m_u
     /* Create a resource list */
     for(i = 0; i < isp_srv->rscr_cnt; i++)
     {
+	if ((p = get_tag(p, "<resource ", m_ui)) != NULL)
+	{
+	    rsrc = (IspListObj *) malloc(sizeof(IspListObj));
+	    memset(rsrc, 0, sizeof(IspListObj));
+
+	    process_list_item(p, &rsrc, m_ui);
+	    /* Service Type */
+	    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
+	    {
+		isp_srv->type = (char *) malloc(strlen(s_val) + 1);
+		strcpy(isp_srv->type, s_val);
+	    }
+
+	    /* Service URL */
+	    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
+	    {
+		isp_srv->href = (char *) malloc(strlen(s_val) + 1);
+		strcpy(isp_srv->href, s_val);
+	    }
+
+	    /* Service Id */
+	    get_tag_val(p, &(isp_srv->id), m_ui);
+
+	    /* List */
+	    if (check_srv(&isp_srv) == FALSE)
+	    {
+		r = FALSE;
+		break;
+	    }
+
+	    isp_data->srv_list = g_list_append (isp_data->srv_list_head, isp_srv);
+
+	    if (isp_data->srv_list_head == NULL)
+		isp_data->srv_list_head = isp_data->srv_list;
+	}
+	else
+	{
+	    log_msg("ERR0030", "<service ", "ERR0030", m_ui->window);
+	    r = FALSE;
+	    break;
+	}
     }
 
     return FALSE;
@@ -852,6 +893,40 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
 }  
 
 
+/* Extract the Type, URL and Value from an xml object */
+
+int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
+{  
+    char s_val[200];
+    int r;
+
+    r = TRUE;
+
+    /* Type */
+    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
+    {
+	(*listobj)->type = (char *) malloc(strlen(s_val) + 1);
+	strcpy((*listobj)->type, s_val);
+    }
+
+    /* URL */
+    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
+    {
+	(&(*listobj)->href) = (char *) malloc(strlen(s_val) + 1);
+	strcpy((&(*listobj)->href), s_val);
+    }
+
+    /* Service Id */
+    get_tag_val(p, (&(*listobj)->id), m_ui);
+
+    /* List */
+    if (check_srv(&(*listobj)) == FALSE)
+	r = FALSE;
+
+    return r;
+}  
+
+
 /* Clear any service lists */
 
 void clear_srv_list(IspData *isp_data)
@@ -866,9 +941,9 @@ void clear_srv_list(IspData *isp_data)
 
 void free_srv_list(gpointer data)
 {  
-    IspServ *isp_srv;
+    IspListObj *isp_srv;
 
-    isp_srv = (IspServ *) data;
+    isp_srv = (IspListObj *) data;
     free(isp_srv->id);
     free(isp_srv->href);
     free(isp_srv->type);

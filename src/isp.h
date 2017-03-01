@@ -77,7 +77,7 @@
 
 /* Structure to contain isp and related details */
 
-typedef struct _service_list
+typedef struct _xmllistobj
 {
     char *type;
     char *href;
@@ -87,7 +87,7 @@ typedef struct _service_list
     int rsrc_cnt;
     GList *rsrc_list;
     GList *rsrc_list_head;
-} IspServ;
+} IspListObj;
 
 
 /* Structure to contain isp related details, connection fields & results */
