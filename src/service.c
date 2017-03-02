@@ -78,7 +78,8 @@ char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
-int check_srv(IspListObj **);
+int process_list_item(char *, IspListObj **, MainUi *);
+int check_listobj(IspListObj **);
 void clear_srv_list(IspData *);
 void free_srv_list(gpointer);
 
@@ -620,29 +621,8 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 	    isp_srv = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(isp_srv, 0, sizeof(IspListObj));
 
-	    /* Service Type */
-	    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
-	    {
-		isp_srv->type = (char *) malloc(strlen(s_val) + 1);
-		strcpy(isp_srv->type, s_val);
-	    }
-
-	    /* Service URL */
-	    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
-	    {
-		isp_srv->href = (char *) malloc(strlen(s_val) + 1);
-		strcpy(isp_srv->href, s_val);
-	    }
-
-	    /* Service Id */
-	    get_tag_val(p, &(isp_srv->id), m_ui);
-
-	    /* List */
-	    if (check_srv(&isp_srv) == FALSE)
-	    {
-		r = FALSE;
-		break;
-	    }
+	    if ((r = process_list_item(p, &isp_srv, m_ui)) == FALSE)
+	    	break;
 
 	    isp_data->srv_list = g_list_append (isp_data->srv_list_head, isp_srv);
 
@@ -661,28 +641,6 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
     
     return r;
 }  
-
-
-/* Check the service structure is valid */
-
-int check_srv(IspListObj **isp_srv)
-{  
-    if ((*isp_srv)->type && (*isp_srv)->href && (*isp_srv)->id)
-	return TRUE;
-
-    if (&(*isp_srv)->type)
-    	free((*isp_srv)->type);
-    
-    if (&(*isp_srv)->href)
-    	free((*isp_srv)->href);
-    
-    if (&(*isp_srv)->id)
-    	free((*isp_srv)->id);
-
-    free(isp_srv);
-    
-    return FALSE;
-}  BIO *web
 
 
 /* Read and Parse xml and set up a list of resources for a service type */
@@ -711,37 +669,15 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
     r = TRUE;
 
     /* Create a resource list */
-    for(i = 0; i < isp_srv->rscr_cnt; i++)
+    for(i = 0; i < isp_srv->rsrc_cnt; i++)
     {
 	if ((p = get_tag(p, "<resource ", m_ui)) != NULL)
 	{
 	    rsrc = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(rsrc, 0, sizeof(IspListObj));
 
-	    process_list_item(p, &rsrc, m_ui);
-	    /* Service Type */
-	    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
-	    {
-		isp_srv->type = (char *) malloc(strlen(s_val) + 1);
-		strcpy(isp_srv->type, s_val);
-	    }
-
-	    /* Service URL */
-	    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
-	    {
-		isp_srv->href = (char *) malloc(strlen(s_val) + 1);
-		strcpy(isp_srv->href, s_val);
-	    }
-
-	    /* Service Id */
-	    get_tag_val(p, &(isp_srv->id), m_ui);
-
-	    /* List */
-	    if (check_srv(&isp_srv) == FALSE)
-	    {
-		r = FALSE;
-		break;
-	    }
+	    if ((r = process_list_item(p, &rsrc, m_ui)) == FALSE)
+	    	break;
 
 	    isp_data->srv_list = g_list_append (isp_data->srv_list_head, isp_srv);
 
@@ -756,8 +692,91 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
 	}
     }
 
-    return FALSE;
+    free(xml);
+    
+    return r;
 }  
+
+
+/* Read and Parse xml and determine the list count */
+
+char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
+{  
+    char *p;
+    char s_val[200];
+
+    if ((p = get_tag(xml, tag, m_ui)) == NULL)
+    	return NULL;
+    
+    if ((p = get_tag_attr(p + strlen(tag), "count=\"", s_val, m_ui)) == NULL)
+    	return NULL;
+
+    *cnt = atoi(s_val);
+
+    if (*cnt == 0)
+    {
+	log_msg("ERR0033", tag, "ERR0033", m_ui->window);
+    	return NULL;
+    }
+
+    return p;
+}  
+
+
+/* Extract the Type, URL and Value from an xml object */
+
+int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
+{  
+    char s_val[200];
+    int r;
+
+    r = TRUE;
+
+    /* Type */
+    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
+    {
+	(*listobj)->type = (char *) malloc(strlen(s_val) + 1);
+	strcpy((*listobj)->type, s_val);
+    }
+
+    /* URL */
+    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
+    {
+	(*listobj)->href = (char *) malloc(strlen(s_val) + 1);
+	strcpy((*listobj)->href, s_val);
+    }
+
+    /* Value */
+    get_tag_val(p, (&(*listobj)->id), m_ui);
+
+    /* Validate */
+    if (check_listobj(&(*listobj)) == FALSE)
+	r = FALSE;
+
+    return r;
+}  
+
+
+/* Check the list object structure is valid */
+
+int check_listobj(IspListObj **listobj)
+{  
+    if ((*listobj)->type && (*listobj)->href && (*listobj)->id)
+	return TRUE;
+
+    if (&(*listobj)->type)
+    	free((*listobj)->type);
+    
+    if (&(*listobj)->href)
+    	free((*listobj)->href);
+    
+    if (&(*listobj)->id)
+    	free((*listobj)->id);
+
+    free(listobj);
+    
+    return FALSE;
+}
 
 
 
@@ -865,65 +884,6 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     memcpy(*s, p + 1, p2 - p - 1);
 
     return TRUE;
-}  
-
-
-/* Read and Parse xml and determine the list count */
-
-char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
-{  
-    char *p;
-    char s_val[200];
-
-    if ((p = get_tag(xml, tag, m_ui)) == NULL)
-    	return NULL;
-    
-    if ((p = get_tag_attr(p + strlen(tag), "count=\"", s_val, m_ui)) == NULL)
-    	return NULL;
-
-    *cnt = atoi(s_val);
-
-    if (*cnt == 0)
-    {
-	log_msg("ERR0033", tag, "ERR0033", m_ui->window);
-    	return NULL;
-    }
-
-    return p;
-}  
-
-
-/* Extract the Type, URL and Value from an xml object */
-
-int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
-{  
-    char s_val[200];
-    int r;
-
-    r = TRUE;
-
-    /* Type */
-    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
-    {
-	(*listobj)->type = (char *) malloc(strlen(s_val) + 1);
-	strcpy((*listobj)->type, s_val);
-    }
-
-    /* URL */
-    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
-    {
-	(&(*listobj)->href) = (char *) malloc(strlen(s_val) + 1);
-	strcpy((&(*listobj)->href), s_val);
-    }
-
-    /* Service Id */
-    get_tag_val(p, (&(*listobj)->id), m_ui);
-
-    /* List */
-    if (check_srv(&(*listobj)) == FALSE)
-	r = FALSE;
-
-    return r;
 }  
 
 
