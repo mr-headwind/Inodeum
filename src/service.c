@@ -660,7 +660,7 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
     	return FALSE;
 
     /* Resources count */
-    if ((p = get_list_count(xml, "<resources ", &(isp_srv)->rsrc_cnt, m_ui)) == NULL)
+    if ((p = get_list_count(xml, "<resources ", &(isp_srv)->cnt, m_ui)) == NULL)
     {
     	free(xml);
     	return FALSE;
@@ -669,7 +669,7 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
     r = TRUE;
 
     /* Create a resource list */
-    for(i = 0; i < isp_srv->rsrc_cnt; i++)
+    for(i = 0; i < isp_srv->cnt; i++)
     {
 	if ((p = get_tag(p, "<resource ", m_ui)) != NULL)
 	{
@@ -679,10 +679,10 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
 	    if ((r = process_list_item(p, &rsrc, m_ui)) == FALSE)
 	    	break;
 
-	    isp_data->srv_list = g_list_append (isp_data->srv_list_head, isp_srv);
+	    isp_srv->sub_list = g_list_append (isp_srv->sub_list_head, rsrc);
 
-	    if (isp_data->srv_list_head == NULL)
-		isp_data->srv_list_head = isp_data->srv_list;
+	    if (isp_srv->sub_list_head == NULL)
+		isp_srv->sub_list_head = isp_srv->sub_list;
 	}
 	else
 	{

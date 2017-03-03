@@ -75,7 +75,14 @@
 	        "\r\n"
 
 
-/* Structure to contain isp and related details */
+// Structure to contain the Service and Service Resources listings.
+// Each Service Type will have a number Resources available.
+// A typical Service would be 'Personal_ADSL' and the Resources available
+// are History, Usage & Service.
+// The overall list (and head) for all service types is in _isp_data (below)
+// and the resources list will a child list for each service type found.
+// At the bottom of the tree (only 2 levels but this format allows flexibility)
+// the lists will be NULL and the count zero.
 
 typedef struct _xmllistobj
 {
@@ -83,10 +90,10 @@ typedef struct _xmllistobj
     char *href;
     char *id;
 
-    /* Resource related */
-    int rsrc_cnt;
-    GList *rsrc_list;
-    GList *rsrc_list_head;
+    /* Child list related */
+    int cnt;
+    GList *sub_list;
+    GList *sub_list_head;
 } IspListObj;
 
 
