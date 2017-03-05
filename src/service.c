@@ -70,6 +70,7 @@ int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
+int get_default_basic(IspData *, MainUi *);
 int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
@@ -118,6 +119,12 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 
     /* 2. Service Resource Listing */
     if (srv_resource_list(isp_data, m_ui) == FALSE)
+    	return FALSE;
+
+    BIO_reset(isp_data->web);
+
+    /* 3. Usage and Service details for 'Default' service */
+    if (get_default_basic(isp_data, m_ui) == FALSE)
     	return FALSE;
 
     BIO_reset(isp_data->web);
@@ -410,6 +417,52 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 }  
 
 
+/* Get the current usage and service details for the default service */
+
+int get_default_basic(IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char *get_qry;
+    IspListObj *isp_srv;
+
+    GList *l;
+
+    /* Determine the appropriate default */
+    default_srv(isp_data);
+
+    for (l = isp_data->srv_list_head; l != NULL; l = l->next)
+    {
+	r = TRUE;
+    	isp_srv = (IspListObj *) l->data;
+	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->id);
+	
+	/* Construct GET */
+	get_qry = setup_get(isp_data->url, isp_data);
+
+	/* Send the query */
+	bio_send_query(isp_data->web, get_qry, m_ui);
+	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
+
+	/* Clean up */
+	free(get_qry);
+    }
+
+    return r;
+}  
+
+
+// Set default order - User sets a default
+//		     - User has only a single service type
+//		     - If 'Personal_ADSL' is present, use it
+//		     - Pick the first in the list
+
+void default_srv(IspData *isp_data)
+{  
+
+    return;
+}  
+
+
 /* Construct and send a GET request */
 
 int send_request(char *url, IspData *isp_data, MainUi *m_ui)
@@ -600,6 +653,7 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
+printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml);
 
     if (xml == NULL)
     	return FALSE;
@@ -655,6 +709,7 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
+printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
 
     if (xml == NULL)
     	return FALSE;
@@ -764,16 +819,16 @@ int check_listobj(IspListObj **listobj)
     if ((*listobj)->type && (*listobj)->href && (*listobj)->id)
 	return TRUE;
 
-    if (&(*listobj)->type)
+    if ((*listobj)->type)
     	free((*listobj)->type);
     
-    if (&(*listobj)->href)
+    if ((*listobj)->href)
     	free((*listobj)->href);
     
-    if (&(*listobj)->id)
+    if ((*listobj)->id)
     	free((*listobj)->id);
 
-    free(listobj);
+    free(*listobj);
     
     return FALSE;
 }
