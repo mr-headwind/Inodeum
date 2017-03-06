@@ -71,9 +71,12 @@ int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
 int get_default_basic(IspData *, MainUi *);
+IspListObj * default_srv_type(IspData *);
 int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
+int get_usage(IspListObj *, IspData *, MainUi *);
+int get_service(IspListObj *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
@@ -85,6 +88,7 @@ void clear_srv_list(IspData *);
 void free_srv_list(gpointer);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern int get_user_pref(char *, char **);
 
 
 /* Globals */
@@ -421,33 +425,26 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 
 int get_default_basic(IspData *isp_data, MainUi *m_ui)
 {  
-    int r;
-    char *get_qry;
-    IspListObj *isp_srv;
-
+    IspListObj *srv_type, *rsrc;
     GList *l;
 
     /* Determine the appropriate default */
-    default_srv(isp_data);
+    srv_type = default_srv_type(isp_data);
 
-    for (l = isp_data->srv_list_head; l != NULL; l = l->next)
+    /* Get the current Usage */
+
+    for (l = srv_type->sub_list_head; l != NULL; l = l->next)
     {
-	r = TRUE;
-    	isp_srv = (IspListObj *) l->data;
-	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->id);
-	
-	/* Construct GET */
-	get_qry = setup_get(isp_data->url, isp_data);
+    	rsrc = (IspListObj *) l->data;
+    	
+    	if (strcmp(rscr->type, USAGE) == 0)
+	    get_usage(rsrc, isp_data, m_ui);
 
-	/* Send the query */
-	bio_send_query(isp_data->web, get_qry, m_ui);
-	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
-
-	/* Clean up */
-	free(get_qry);
+	else if (strcmp(rscr->type, SERVICE) == 0)
+	    get_service(isp_data, rsrc, m_ui);
     }
 
-    return r;
+    return TRUE;
 }  
 
 
@@ -456,10 +453,25 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
 //		     - If 'Personal_ADSL' is present, use it
 //		     - Pick the first in the list
 
-void default_srv(IspData *isp_data)
+IspListObj * default_srv_type(IspData *isp_data)
 {  
+    char *p;
+    IspListObj *srv_type;
+    GList l;
 
-    return;
+    get_user_pref(DEFAULT_SRV_TYPE, &p);
+
+    if (p != NULL)
+    {
+    	srv_type = search_list(p);
+    }
+    else if ((srv_type = search_list(DEFAULT_SRV_TYPE)) == NULL)
+    {
+    	l = isp_data->srv_list_head;
+    	srv_type = (IspListObj *) l->data;
+    }
+
+    return srv_type;
 }  
 
 
@@ -831,6 +843,40 @@ int check_listobj(IspListObj **listobj)
     free(*listobj);
     
     return FALSE;
+}
+
+
+/* Get the current period usage */
+
+int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char *get_qry;
+    
+    r = TRUE;
+
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_srv->id, rsrc->type);
+	
+    /* Construct GET */
+    get_qry = setup_get(isp_data->url, isp_data);
+
+    /* Send the query */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    r = load_usageeeee(isp_data->web, isp_srv, isp_data, m_ui);
+
+    /* Clean up */
+    free(get_qry);
+
+    return r;
+}
+
+
+/* Get the service details */
+
+int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
+{  
+    
+    return TRUE;
 }
 
 

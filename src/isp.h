@@ -47,6 +47,11 @@
 
 /* Fixed Info */
 
+#define DEFAULT_SRV_TYPE "Personal_ADSL"
+#define USAGE "usage"
+#define SERVICE "service"
+#define HISTORY "history"
+
 //#define API_PROTO "https://"
 #define API_VER "v1.5"
 #define PORT 80						// 80 = http
