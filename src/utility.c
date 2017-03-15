@@ -127,10 +127,11 @@ static const char *app_messages[][2] =
     { "ERR0031", "Error: XML tag attribute %s not found. "},
     { "ERR0032", "Error: XML tag value not found. "},
     { "ERR0033", "Error: No items found in returned XML for %s. "},
+    { "ERR0034", "Error: User Default Service - %s - not found. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 31;
+static const int Msg_Count = 32;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

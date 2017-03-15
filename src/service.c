@@ -71,7 +71,8 @@ int recv_data(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
 int get_default_basic(IspData *, MainUi *);
-IspListObj * default_srv_type(IspData *);
+IspListObj * default_srv_type(IspData *, MainUi *);
+IspListObj * search_list(char *, GList *);
 int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
@@ -428,20 +429,24 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
     IspListObj *srv_type, *rsrc;
     GList *l;
 
+printf("%s get_default_basic:1\n", debug_hdr);
     /* Determine the appropriate default */
-    srv_type = default_srv_type(isp_data);
+    if ((srv_type = default_srv_type(isp_data, m_ui)) == NULL)
+    	return FALSE;
 
     /* Get the current Usage */
 
+printf("%s get_default_basic:2\n", debug_hdr);
     for (l = srv_type->sub_list_head; l != NULL; l = l->next)
     {
     	rsrc = (IspListObj *) l->data;
     	
-    	if (strcmp(rscr->type, USAGE) == 0)
+printf("%s get_default_basic:3:%s\n", debug_hdr, rsrc->type);
+    	if (strcmp(rsrc->type, USAGE) == 0)
 	    get_usage(rsrc, isp_data, m_ui);
 
-	else if (strcmp(rscr->type, SERVICE) == 0)
-	    get_service(isp_data, rsrc, m_ui);
+	else if (strcmp(rsrc->type, SERVICE) == 0)
+	    get_service(rsrc, isp_data, m_ui);
     }
 
     return TRUE;
@@ -453,24 +458,30 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
 //		     - If 'Personal_ADSL' is present, use it
 //		     - Pick the first in the list
 
-IspListObj * default_srv_type(IspData *isp_data)
+IspListObj * default_srv_type(IspData *isp_data, MainUi *m_ui)
 {  
     char *p;
     IspListObj *srv_type;
-    GList l;
+    GList *l;
 
+printf("%s default_srv_type:1\n", debug_hdr);
     get_user_pref(DEFAULT_SRV_TYPE, &p);
 
     if (p != NULL)
     {
-    	srv_type = search_list(p);
+    	if ((srv_type = search_list(p, isp_data->srv_list_head)) == NULL)
+    	{
+	    log_msg("ERR0034", p, "ERR0034", m_ui->window);
+	    return NULL;
+	}
     }
-    else if ((srv_type = search_list(DEFAULT_SRV_TYPE)) == NULL)
+    else if ((srv_type = search_list(DEFAULT_SRV_TYPE, isp_data->srv_list_head)) == NULL)
     {
     	l = isp_data->srv_list_head;
     	srv_type = (IspListObj *) l->data;
     }
 
+printf("%s default_srv_type:2\n", debug_hdr);
     return srv_type;
 }  
 
@@ -530,7 +541,6 @@ char * setup_get(char *url, IspData *isp_data)
 int send_query(char *get_qry, IspData *isp_data, MainUi *m_ui)
 {  
     int r, sent;
-
     sent = 0;
 
     while(sent < strlen(get_qry))
@@ -742,6 +752,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
 	{
 	    rsrc = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(rsrc, 0, sizeof(IspListObj));
+	    p += 9;
 
 	    if ((r = process_list_item(p, &rsrc, m_ui)) == FALSE)
 	    	break;
@@ -852,20 +863,27 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 {  
     int r;
     char *get_qry;
+    char *xml = NULL;
     
     r = TRUE;
 
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_srv->id, rsrc->type);
+printf("%s get_usage:1 %s\n", debug_hdr, rsrc->type);
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, rsrc->id, rsrc->type);
 	
+printf("%s get_usage:2 %s\n", debug_hdr, isp_data->url);
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
 
-    /* Send the query */
+    /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);
-    r = load_usageeeee(isp_data->web, isp_srv, isp_data, m_ui);
-
-    /* Clean up */
     free(get_qry);
+
+    //r = load_usageeeee(isp_data->web, isp_srv, isp_data, m_ui);
+    xml = bio_read_xml(isp_data->web, m_ui);
+printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
+
+    if (xml == NULL)
+    	return FALSE;
 
     return r;
 }
@@ -985,6 +1003,25 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     memcpy(*s, p + 1, p2 - p - 1);
 
     return TRUE;
+}  
+
+
+/* Search the service list for a given type */
+
+IspListObj * search_list(char *type, GList *srv_list)
+{  
+    GList *l;
+    IspListObj *srv;
+
+    for (l = srv_list; l != NULL; l = l->next)
+    {
+    	srv = (IspListObj *) l->data;
+
+    	if (strcmp(type, srv->type) == 0)
+	    return srv;
+    }
+
+    return NULL;
 }  
 
 
