@@ -95,6 +95,7 @@ extern int get_user_pref(char *, char **);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-service.c ";
+static ServUsage srv_usage;
 
 
 /* API Webtools service requests */
@@ -405,7 +406,7 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
     {
 	r = TRUE;
     	isp_srv = (IspListObj *) l->data;
-	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->id);
+	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->val);
 	
 	/* Construct GET */
 	get_qry = setup_get(isp_data->url, isp_data);
@@ -429,19 +430,17 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
     IspListObj *srv_type, *rsrc;
     GList *l;
 
-printf("%s get_default_basic:1\n", debug_hdr);
     /* Determine the appropriate default */
     if ((srv_type = default_srv_type(isp_data, m_ui)) == NULL)
     	return FALSE;
 
     /* Get the current Usage */
+    isp_data->curr_srv_id = srv_type->val;
 
-printf("%s get_default_basic:2\n", debug_hdr);
     for (l = srv_type->sub_list_head; l != NULL; l = l->next)
     {
     	rsrc = (IspListObj *) l->data;
     	
-printf("%s get_default_basic:3:%s\n", debug_hdr, rsrc->type);
     	if (strcmp(rsrc->type, USAGE) == 0)
 	    get_usage(rsrc, isp_data, m_ui);
 
@@ -464,7 +463,6 @@ IspListObj * default_srv_type(IspData *isp_data, MainUi *m_ui)
     IspListObj *srv_type;
     GList *l;
 
-printf("%s default_srv_type:1\n", debug_hdr);
     get_user_pref(DEFAULT_SRV_TYPE, &p);
 
     if (p != NULL)
@@ -481,8 +479,43 @@ printf("%s default_srv_type:1\n", debug_hdr);
     	srv_type = (IspListObj *) l->data;
     }
 
-printf("%s default_srv_type:2\n", debug_hdr);
     return srv_type;
+}  
+
+
+/* Save the current usage data */
+
+int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
+{  
+    char *p;
+    char s_val[200];
+
+    p = xml;
+    memset(srv_usage, 0, sizeof(ServUsage));
+
+    while ((p = get_tag(p, "<traffic ", m_ui)) != NULL)
+    {
+	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
+	{
+	    if (strcmp(s_val, "metered") == 0)
+	    {
+		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
+		continue;
+	    }
+	    else if (strcmp(s_val, "unmetered") == 0)
+	    {
+		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
+		continue;
+	    }
+	    else if (strcmp(s_val, "total") == 0)
+	    {
+		total_usage(p, &(srv_usage), m_ui);
+		continue;
+	    }
+	}
+    }
+
+    return TRUE;
 }  
 
 
@@ -825,7 +858,7 @@ int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
     }
 
     /* Value */
-    get_tag_val(p, (&(*listobj)->id), m_ui);
+    get_tag_val(p, (&(*listobj)->val), m_ui);
 
     /* Validate */
     if (check_listobj(&(*listobj)) == FALSE)
@@ -839,7 +872,7 @@ int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
 
 int check_listobj(IspListObj **listobj)
 {  
-    if ((*listobj)->type && (*listobj)->href && (*listobj)->id)
+    if ((*listobj)->type && (*listobj)->href && (*listobj)->val)
 	return TRUE;
 
     if ((*listobj)->type)
@@ -848,8 +881,8 @@ int check_listobj(IspListObj **listobj)
     if ((*listobj)->href)
     	free((*listobj)->href);
     
-    if ((*listobj)->id)
-    	free((*listobj)->id);
+    if ((*listobj)->val)
+    	free((*listobj)->val);
 
     free(*listobj);
     
@@ -867,10 +900,8 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
     
     r = TRUE;
 
-printf("%s get_usage:1 %s\n", debug_hdr, rsrc->type);
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, rsrc->id, rsrc->type);
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
 	
-printf("%s get_usage:2 %s\n", debug_hdr, isp_data->url);
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
 
@@ -878,12 +909,14 @@ printf("%s get_usage:2 %s\n", debug_hdr, isp_data->url);
     bio_send_query(isp_data->web, get_qry, m_ui);
     free(get_qry);
 
-    //r = load_usageeeee(isp_data->web, isp_srv, isp_data, m_ui);
     xml = bio_read_xml(isp_data->web, m_ui);
 printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
 
     if (xml == NULL)
     	return FALSE;
+
+    /* Save the current usage data */
+    r = load_usage(xml, isp_data, m_ui);
 
     return r;
 }
@@ -1042,7 +1075,7 @@ void free_srv_list(gpointer data)
     IspListObj *isp_srv;
 
     isp_srv = (IspListObj *) data;
-    free(isp_srv->id);
+    free(isp_srv->val);
     free(isp_srv->href);
     free(isp_srv->type);
 

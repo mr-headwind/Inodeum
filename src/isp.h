@@ -93,13 +93,26 @@ typedef struct _xmllistobj
 {
     char *type;
     char *href;
-    char *id;
+    char *val;
 
     /* Child list related */
     int cnt;
     GList *sub_list;
     GList *sub_list_head;
 } IspListObj;
+
+
+/* Structure to contain Service Usage Data */
+
+typedef struct _usage
+{
+    char *rollover_dt;				// Next rollover date
+    char *plan_interval;			// Period quota valid for
+    char *quota;				// Plan quota
+    char *metered_bytes;			// Total metered (up/down) - optional
+    char *unmetered_bytes;			// Total unmetered (up/down) - optional
+    char *total_bytes;				// Total used so far in period
+} ServUsage;
 
 
 /* Structure to contain isp related details, connection fields & results */
@@ -123,6 +136,7 @@ typedef struct _isp_data
     SSL *ssl;
 
     /* Service Type related */
+    char *curr_srv_id;
     int srv_cnt;
     GList *srv_list;
     GList *srv_list_head;
