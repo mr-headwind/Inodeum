@@ -112,6 +112,7 @@ typedef struct _usage
     char *metered_bytes;			// Total metered (up/down) - optional
     char *unmetered_bytes;			// Total unmetered (up/down) - optional
     char *total_bytes;				// Total used so far in period
+    char *unit;					// Unit measure (bytes)
 } ServUsage;
 
 

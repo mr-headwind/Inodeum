@@ -84,6 +84,7 @@ char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
+int total_usage(char *, ServUsage *, MainUi *);
 int check_listobj(IspListObj **);
 void clear_srv_list(IspData *);
 void free_srv_list(gpointer);
@@ -480,42 +481,6 @@ IspListObj * default_srv_type(IspData *isp_data, MainUi *m_ui)
     }
 
     return srv_type;
-}  
-
-
-/* Save the current usage data */
-
-int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
-{  
-    char *p;
-    char s_val[200];
-
-    p = xml;
-    memset(srv_usage, 0, sizeof(ServUsage));
-
-    while ((p = get_tag(p, "<traffic ", m_ui)) != NULL)
-    {
-	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
-	{
-	    if (strcmp(s_val, "metered") == 0)
-	    {
-		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
-		continue;
-	    }
-	    else if (strcmp(s_val, "unmetered") == 0)
-	    {
-		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
-		continue;
-	    }
-	    else if (strcmp(s_val, "total") == 0)
-	    {
-		total_usage(p, &(srv_usage), m_ui);
-		continue;
-	    }
-	}
-    }
-
-    return TRUE;
 }  
 
 
@@ -920,6 +885,109 @@ printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
 
     return r;
 }
+
+
+/* Save the current usage data */
+
+int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
+{  
+    char *p;
+    char s_val[200];
+
+    p = xml;
+    memset(&srv_usage, 0, sizeof(ServUsage));
+
+printf("%s load_usage: 1 xml %s\n", debug_hdr, p); fflush(stdout);
+    while ((p = get_tag(p, "<traffic ", m_ui)) != NULL)
+    {
+	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
+	{
+	    if (strcmp(s_val, "metered") == 0)
+	    {
+		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
+		continue;
+	    }
+	    else if (strcmp(s_val, "unmetered") == 0)
+	    {
+		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
+		continue;
+	    }
+	    else if (strcmp(s_val, "total") == 0)
+	    {
+		total_usage(p, &srv_usage, m_ui);
+		continue;
+	    }
+	}
+printf("%s load_usage: 2 s_val %s xml %s\n", debug_hdr, s_val, p); fflush(stdout);
+    }
+
+    return TRUE;
+}  
+
+
+/* Save the total usage details */
+
+int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
+{  
+    int i, r;
+    char *p;
+    char s_val[200];
+    const char *tag_arr[] = {"rollover=\"", "plan-interval=\"", "quota=\"", "unit=\""};
+    const int tag_cnt = 4;
+
+    /* Setup */
+    r = TRUE;
+
+    /* Get all the tag attributes */
+    for (i = 0, p = xml; i < tag_cnt; i++)
+    {
+	if ((p = get_tag_attr(p, (char *) &tag_arr[i], s_val, m_ui)) == NULL)
+	{
+	    r = FALSE;
+	    break;
+	}
+
+printf("%s total_usage: s_val %s\n", debug_hdr, s_val); fflush(stdout);
+	switch(i)
+	{
+	    case 0:
+	    	strcpy(usg->rollover_dt, s_val);
+	    	continue;
+	    case 1:
+	    	strcpy(usg->plan_interval, s_val);
+	    	continue;
+	    case 2:
+	    	strcpy(usg->quota, s_val);
+	    	continue;
+	    case 3:
+	    	strcpy(usg->unit, s_val);
+	    	continue;
+	    default:
+		log_msg("ERR0035", s_val, "ERR0035", m_ui->window);
+		r = FALSE;
+	    	break;
+	}
+    }
+
+    /* Flag a warning if not all are found */
+    if (i != tag_cnt)
+    {
+	log_msg("ERR0036", NULL, "ERR0036", m_ui->window);
+	r = FALSE;
+    }
+
+    /* Get the actual value */
+    get_tag_val(p, &(usg->total_bytes), m_ui);
+printf("%s total_usage: %s %s %s %s %s %s %s\n", debug_hdr, usg->rollover_dt,
+						      usg->plan_interval,
+						      usg->quota,
+						      usg->unit,
+						      usg->metered_bytes,
+						      usg->unmetered_bytes,
+						      usg->total_bytes); fflush(stdout);
+
+    return r;
+}  
 
 
 /* Get the service details */
