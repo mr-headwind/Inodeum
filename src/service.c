@@ -79,14 +79,15 @@ int get_serv_list(BIO *, IspData *, MainUi *);
 int get_usage(IspListObj *, IspData *, MainUi *);
 int get_service(IspListObj *, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
-char * get_tag(char *, char *, MainUi *);
+char * get_tag(char *, char *, int, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
+int load_usage(char *, IspData *, MainUi *);
 int total_usage(char *, ServUsage *, MainUi *);
 int check_listobj(IspListObj **);
-void clear_srv_list(IspData *);
+void clean_up(IspData *);
 void free_srv_list(gpointer);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -690,7 +691,7 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml);
     /* Create a service list */
     for(i = 0; i < isp_data->srv_cnt; i++)
     {
-	if ((p = get_tag(p, "<service ", m_ui)) != NULL)
+	if ((p = get_tag(p, "<service ", TRUE, m_ui)) != NULL)
 	{
 	    isp_srv = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(isp_srv, 0, sizeof(IspListObj));
@@ -746,7 +747,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
     /* Create a resource list */
     for(i = 0; i < isp_srv->cnt; i++)
     {
-	if ((p = get_tag(p, "<resource ", m_ui)) != NULL)
+	if ((p = get_tag(p, "<resource ", TRUE, m_ui)) != NULL)
 	{
 	    rsrc = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(rsrc, 0, sizeof(IspListObj));
@@ -781,7 +782,7 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
     char *p;
     char s_val[200];
 
-    if ((p = get_tag(xml, tag, m_ui)) == NULL)
+    if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
     	return NULL;
     
     if ((p = get_tag_attr(p + strlen(tag), "count=\"", s_val, m_ui)) == NULL)
@@ -891,15 +892,19 @@ printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
 
 int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
+    int err;
     char *p;
     char s_val[200];
 
+    err = TRUE;
     p = xml;
     memset(&srv_usage, 0, sizeof(ServUsage));
 
-printf("%s load_usage: 1 xml %s\n", debug_hdr, p); fflush(stdout);
-    while ((p = get_tag(p, "<traffic ", m_ui)) != NULL)
+    while ((p = get_tag(p, "<traffic ", err, m_ui)) != NULL)
     {
+	p += 8;
+	err = FALSE;
+
 	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
 	{
 	    if (strcmp(s_val, "metered") == 0)
@@ -918,7 +923,6 @@ printf("%s load_usage: 1 xml %s\n", debug_hdr, p); fflush(stdout);
 		continue;
 	    }
 	}
-printf("%s load_usage: 2 s_val %s xml %s\n", debug_hdr, s_val, p); fflush(stdout);
     }
 
     return TRUE;
@@ -929,7 +933,7 @@ printf("%s load_usage: 2 s_val %s xml %s\n", debug_hdr, s_val, p); fflush(stdout
 
 int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
 {  
-    int i, r;
+    int i, r, len;
     char *p;
     char s_val[200];
     const char *tag_arr[] = {"rollover=\"", "plan-interval=\"", "quota=\"", "unit=\""};
@@ -941,27 +945,32 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     /* Get all the tag attributes */
     for (i = 0, p = xml; i < tag_cnt; i++)
     {
-	if ((p = get_tag_attr(p, (char *) &tag_arr[i], s_val, m_ui)) == NULL)
+	if ((p = get_tag_attr(p, (char *) tag_arr[i], s_val, m_ui)) == NULL)
 	{
 	    r = FALSE;
 	    break;
 	}
 
-printf("%s total_usage: s_val %s\n", debug_hdr, s_val); fflush(stdout);
+	len = strlen(s_val) + 1;
+
 	switch(i)
 	{
 	    case 0:
+		usg->rollover_dt = (char *) malloc(len);
 	    	strcpy(usg->rollover_dt, s_val);
-	    	continue;
+	    	break;
 	    case 1:
+		usg->plan_interval = (char *) malloc(len);
 	    	strcpy(usg->plan_interval, s_val);
-	    	continue;
+	    	break;
 	    case 2:
+		usg->quota = (char *) malloc(len);
 	    	strcpy(usg->quota, s_val);
-	    	continue;
+	    	break;
 	    case 3:
+		usg->unit = (char *) malloc(len);
 	    	strcpy(usg->unit, s_val);
-	    	continue;
+	    	break;
 	    default:
 		log_msg("ERR0035", s_val, "ERR0035", m_ui->window);
 		r = FALSE;
@@ -978,13 +987,12 @@ printf("%s total_usage: s_val %s\n", debug_hdr, s_val); fflush(stdout);
 
     /* Get the actual value */
     get_tag_val(p, &(usg->total_bytes), m_ui);
-printf("%s total_usage: %s %s %s %s %s %s %s\n", debug_hdr, usg->rollover_dt,
-						      usg->plan_interval,
-						      usg->quota,
-						      usg->unit,
-						      usg->metered_bytes,
-						      usg->unmetered_bytes,
-						      usg->total_bytes); fflush(stdout);
+
+/* Test debug
+*/
+printf("%s total_usage: %s %s %s %s %s %s %s\n", debug_hdr, usg->rollover_dt, usg->plan_interval,
+						 usg->quota, usg->unit, usg->metered_bytes,
+						 usg->unmetered_bytes, usg->total_bytes); fflush(stdout);
 
     return r;
 }  
@@ -1042,12 +1050,15 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
 
 /* Return a pointer to a tag */
 
-char * get_tag(char *xml, char *tag, MainUi *m_ui)
+char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 {  
     char *p;
 
     if ((p = strstr(xml, tag)) == NULL)
-	log_msg("ERR0030", tag, "ERR0030", m_ui->window);
+    {
+    	if (err == TRUE)
+	    log_msg("ERR0030", tag, "ERR0030", m_ui->window);
+    }
 
     return p;
 }  
@@ -1126,11 +1137,32 @@ IspListObj * search_list(char *type, GList *srv_list)
 }  
 
 
-/* Clear any service lists */
+/* Clear any service lists, memory, etc. */
 
-void clear_srv_list(IspData *isp_data)
+void clean_up(IspData *isp_data)
 {  
     g_list_free_full(isp_data->srv_list_head, (GDestroyNotify) free_srv_list);
+
+    if (srv_usage.rollover_dt)
+    	free(srv_usage.rollover_dt);
+
+    if (srv_usage.plan_interval)
+    	free(srv_usage.plan_interval);
+
+    if (srv_usage.quota)
+    	free(srv_usage.quota);
+
+    if (srv_usage.unit)
+    	free(srv_usage.unit);
+
+    if (srv_usage.total_bytes)
+    	free(srv_usage.total_bytes);
+
+    if (srv_usage.metered_bytes)
+    	free(srv_usage.metered_bytes);
+
+    if (srv_usage.unmetered_bytes)
+    	free(srv_usage.unmetered_bytes);
 
     return;
 }  
