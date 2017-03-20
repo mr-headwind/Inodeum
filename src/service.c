@@ -535,6 +535,30 @@ char * setup_get(char *url, IspData *isp_data)
 }  
 
 
+/* Set up the query and parameters */
+
+char * setup_get_param(char *url, char *param, IspData *isp_data)
+{  
+    int param_len;
+    char *query;
+
+    param_len = strlen(param);
+
+    query = (char *) malloc(strlen(url) +
+			    strlen(HOST) +
+			    strlen(isp_data->user_agent) +
+			    param_len +
+			    strlen(isp_data->enc64) +
+			    strlen(REALM) +
+			    strlen(PARAM_GET_TPL) - 8);	// Note 8 accounts for 4 x %s, %d and \0 in template
+
+    sprintf(query, PARAM_GET_TPL, url, HOST, isp_data->user_agent, param_len, isp_data->enc64, REALM);
+    strcat(query, param);
+
+    return query;
+}  
+
+
 /* Send the query to the server */
 
 int send_query(char *get_qry, IspData *isp_data, MainUi *m_ui)
@@ -869,7 +893,7 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
     sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
 	
     /* Construct GET */
-    get_qry = setup_get(isp_data->url, isp_data);
+    get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
 
     /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);

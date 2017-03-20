@@ -79,6 +79,18 @@
 	        "Accept-Language: en\r\n"\
 	        "\r\n"
 
+#define PARAM_GET_TPL "POST "\
+		      "%s "\
+		      "HTTP/1.0\r\n"\
+		      "Host: %s\r\n"\
+		      "User-Agent: %s\r\n"\
+		      "Content-Type: application/x-www-form-urlencoded\r\n"\
+		      "Content-Length: %d\r\n"\
+		      "Authorization: BASIC %s\r\n"\
+		      "WWW-Authenticate: BASIC realm=\"%s\"\r\n"\
+		      "Accept-Language: en\r\n"\
+		      "\r\n"
+
 
 // Structure to contain the Service and Service Resources listings.
 // Each Service Type will have a number Resources available.
