@@ -892,8 +892,10 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 
     sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
 	
+// ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
     /* Construct GET */
     get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
+printf("%s get_usage:query\n%s\n", debug_hdr, get_qry);
 
     /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);
