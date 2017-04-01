@@ -78,6 +78,7 @@ int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
 int get_usage(IspListObj *, IspData *, MainUi *);
 int get_service(IspListObj *, IspData *, MainUi *);
+int get_history(IspListObj *, int, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, int, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
@@ -86,6 +87,7 @@ char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
 int load_usage(char *, IspData *, MainUi *);
 int total_usage(char *, ServUsage *, MainUi *);
+char * set_param(int);
 int check_listobj(IspListObj **);
 void clean_up(IspData *);
 void free_srv_list(gpointer);
@@ -444,10 +446,20 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
     	rsrc = (IspListObj *) l->data;
     	
     	if (strcmp(rsrc->type, USAGE) == 0)
+    	{
 	    get_usage(rsrc, isp_data, m_ui);
-
+	    BIO_reset(isp_data->web);
+	}
 	else if (strcmp(rsrc->type, SERVICE) == 0)
+    	{
 	    get_service(rsrc, isp_data, m_ui);
+	    BIO_reset(isp_data->web);
+	}
+	else if (strcmp(rsrc->type, HISTORY) == 0)
+    	{
+	    get_history(rsrc, 1, isp_data, m_ui);
+	    BIO_reset(isp_data->web);
+	}
     }
 
     return TRUE;
@@ -895,6 +907,7 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 // ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
     /* Construct GET */
     get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
+    //get_qry = setup_get(isp_data->url, isp_data);
 printf("%s get_usage:query\n%s\n", debug_hdr, get_qry);
 
     /* Send the query and read xml result */
@@ -1028,6 +1041,72 @@ printf("%s total_usage: %s %s %s %s %s %s %s\n", debug_hdr, usg->rollover_dt, us
 
 int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 {  
+    int r;
+    char *get_qry;
+    char *xml = NULL;
+    
+    r = TRUE;
+
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
+	
+    /* Construct GET */
+    get_qry = setup_get(isp_data->url, isp_data);
+printf("%s get_service:query\n%s\n", debug_hdr, get_qry);
+
+    /* Send the query and read xml result */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    free(get_qry);
+
+    xml = bio_read_xml(isp_data->web, m_ui);
+printf("%s get_service:xml\n%s\n", debug_hdr, xml);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Save the current service data */
+    //r = load_usage(xml, isp_data, m_ui);
+
+    return r;
+    
+    return TRUE;
+}
+
+
+/* Get the history details */
+
+int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char *s_param;
+    char *get_qry;
+    char *xml = NULL;
+    
+    r = TRUE;
+
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
+	
+    /* Build an appropriate parameter string */
+    s_param = set_param(param_type);
+
+    /* Construct GET */
+    //get_qry = setup_get(isp_data->url, isp_data);
+    get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
+printf("%s get_history:query\n%s\n", debug_hdr, get_qry);
+
+    /* Send the query and read xml result */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    free(get_qry);
+
+    xml = bio_read_xml(isp_data->web, m_ui);
+printf("%s get_history:xml\n%s\n", debug_hdr, xml);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Save the current service data */
+    //r = load_usage(xml, isp_data, m_ui);
+
+    return r;
     
     return TRUE;
 }
@@ -1141,6 +1220,18 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
     memcpy(*s, p + 1, p2 - p - 1);
 
     return TRUE;
+}  
+
+
+/* Set up an appropriate parameter string */
+
+char * set_param(int param_type)
+{  
+    char *s;
+
+    s = NULL;
+
+    return s;
 }  
 
 
