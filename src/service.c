@@ -35,6 +35,7 @@
 #include <stdlib.h>  
 #include <string.h>  
 #include <libgen.h>  
+#include <time.h>  
 #include <gtk/gtk.h>  
 #include <glib/gbase64.h>
 #include <main.h>
@@ -87,7 +88,7 @@ char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
 int load_usage(char *, IspData *, MainUi *);
 int total_usage(char *, ServUsage *, MainUi *);
-char * set_param(int);
+void set_param(int, char *);
 int check_listobj(IspListObj **);
 void clean_up(IspData *);
 void free_srv_list(gpointer);
@@ -1077,7 +1078,7 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
 int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
 {  
     int r;
-    char *s_param;
+    char s_param[60];
     char *get_qry;
     char *xml = NULL;
     
@@ -1086,12 +1087,11 @@ int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_u
     sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
 	
     /* Build an appropriate parameter string */
-    s_param = set_param(param_type);
+    set_param(param_type, s_param);
 
     /* Construct GET */
-    //get_qry = setup_get(isp_data->url, isp_data);
-    get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
-printf("%s get_history:query\n%s\n", debug_hdr, get_qry);
+    get_qry = setup_get_param(isp_data->url, s_param, isp_data);
+printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
 
     /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);
@@ -1225,13 +1225,29 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
 
 /* Set up an appropriate parameter string */
 
-char * set_param(int param_type)
+void set_param(int param_type, char *s_param)
 {  
-    char *s;
+    time_t current_tm;
+    struct tm *tm;
+    size_t sz;
+    char s[11];
 
-    s = NULL;
+    *s_param = '\0';
 
-    return s;
+    switch(param_type)
+    {
+    	case 1:						// Total all for month to date
+	    current_tm = time(NULL);
+	    tm = localtime(&current_tm);
+	    sz = strftime(s, 11, "%Y-%m-01", tm);
+	    sprintf(s_param, "start=%s&verbose=1", s);
+	    break;
+
+    	default:
+	    break;
+    }
+
+    return;
 }  
 
 

@@ -80,6 +80,7 @@ extern const GdkRGBA NIGHT;
 #ifndef UI_TITLES
 #define UI_TITLES
 #define ABOUT_UI "About"
+#define USER_UI "User"
 #endif
 
 
