@@ -44,8 +44,10 @@ typedef struct _user_ui
     GtkWidget *uname_ent;
     GtkWidget *pw_lbl;
     GtkWidget *pw_ent;
+    GtkWidget *secure_opt;
     GtkWidget *ok_btn;
     GtkWidget *close_btn;
+    GtkWidget *ctrl_grid;
     GtkWidget *user_cntr;
     GtkWidget *btn_hbox;
     GtkWidget *main_vbox;
@@ -76,6 +78,8 @@ void OnUserClose(GtkWidget*, gpointer);
 gboolean OnUserDelete(GtkWidget*, GdkEvent *, gpointer);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
+extern void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
 
 
 /* Globals */
@@ -130,7 +134,7 @@ void user_ui(IspData *isp_data, UserUi *u_ui)
     gtk_widget_set_halign(GTK_WIDGET (u_ui->vbox), GTK_ALIGN_START);
 
     /* Main update or view grid */
-    user_control(u_ui);  LOGNAME var
+    user_control(u_ui);
 
     /* Box container for action buttons */
     u_ui->btn_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
@@ -161,125 +165,43 @@ void user_ui(IspData *isp_data, UserUi *u_ui)
 }
 
 
-/* Main view */
+/* Control container for user details */gboolean is_active
 
-void create_main_view(IspData *isp_data, MainUi *m_ui)
+void user_control(UserUi *u_ui)
 {  
-    /* New container for main view */
-    m_ui->ctrl_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    GtkWidget *label;  
+    PangoFontDescription *pf;
 
-    /* Grid for Username & Password */
-    user_details(isp_data, m_ui);
+    /* Font and layout setup */
+    pf = pango_font_description_from_string ("Sans 9");
 
-    /* Return data area */
-    xml_recv_area(isp_data, m_ui);
-
-    /* Buttons */
-    ctrl_btns(m_ui);
-
-    /* Combine everything onto the main view */
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->cntl_grid, FALSE, FALSE, 2);
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->scrollwin, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->ok_btn, TRUE, TRUE, 0);
-
-    return;
-}
-
-
-/* Entry for username and password */
-
-void user_details(IspData *isp_data, MainUi *m_ui)
-{  
-    GtkWidget *label;
-    PangoFontDescription *font_desc;
-
-    /* Initial */
-    font_desc = pango_font_description_from_string ("Sans 9");
-
+    /* Main container */
+    u_ui->user_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+ 
     /* Create a grid */
-    m_ui->cntl_grid = gtk_grid_new();
-    gtk_widget_set_name(m_ui->cntl_grid, "ctrl_grid");
-    gtk_grid_set_row_spacing(GTK_GRID (m_ui->cntl_grid), 3);
-    gtk_grid_set_column_spacing(GTK_GRID (m_ui->cntl_grid), 3);
-    gtk_container_set_border_width (GTK_CONTAINER (m_ui->cntl_grid), 3);
+    u_ui->cntl_grid = gtk_grid_new();
+    gtk_widget_set_name(u_ui->cntl_grid, "ctrl_grid");
+    gtk_grid_set_row_spacing(GTK_GRID (u_ui->cntl_grid), 3);
+    gtk_grid_set_column_spacing(GTK_GRID (u_ui->cntl_grid), 3);
+    gtk_container_set_border_width (GTK_CONTAINER (u_ui->cntl_grid), 3);
 
     /* Add user and password fields with labels */
-    create_label("Username", 1, 1, &(m_ui->cntl_grid), &font_desc);
-    create_entry(&(m_ui->uname_ent), "uname", 2, 1, &(m_ui->cntl_grid), &font_desc);
+    create_label("Username", 1, 1, &(u_ui->cntl_grid), &);
+    create_entry(&(u_ui->uname_ent), "uname", 2, 1, &(u_ui->cntl_grid), &pf);
 
-    create_label("Password", 1, 2, &(m_ui->cntl_grid), &font_desc);
-    create_entry(&(m_ui->pw_ent), "pw", 2, 2, &(m_ui->cntl_grid), &font_desc);
-    gtk_entry_set_visibility (GTK_ENTRY (m_ui->pw_ent), FALSE);
+    create_label("Password", 1, 2, &(u_ui->cntl_grid), &font_desc);
+    create_entry(&(u_ui->pw_ent), "pw", 2, 2, &(u_ui->cntl_grid), &pf);
+    gtk_entry_set_visibility (GTK_ENTRY (u_ui->pw_ent), FALSE);
 
-    /* Clean up */
-    pango_font_description_free (font_desc);
+    gtk_box_pack_start (GTK_BOX (u_ui->user_cntr), u_ui->cntl_grid, FALSE, FALSE, 0);
 
-    return;
-}
+    /* Credential storage option */
+    u_ui->secure_opt = gtk_check_button_new_with_label ("Securely store your login details?")
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt), FALSE); 
+    gtk_box_pack_start (GTK_BOX (u_ui->user_cntr), u_ui->secure_opt, FALSE, FALSE, 0);
 
-
-/* Create standard entry */
-
-void create_entry(GtkWidget **ent, char *nm, 
-		    int col, int row, GtkWidget **cntr, 
-		    PangoFontDescription **pf)
-{  
-    GtkWidget *lbl;
-
-    pango_font_description_set_weight(*pf, PANGO_WEIGHT_NORMAL);
-    *ent = gtk_entry_new();  
-    gtk_widget_set_name(*ent, nm);
-    gtk_entry_set_max_length (GTK_ENTRY (*ent), 32);
-    gtk_entry_set_width_chars (GTK_ENTRY (*ent), 15);
-    gtk_widget_override_font (*ent, *pf);
-
-    gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (*cntr), *ent, col, row, 1, 1);
-
-    return;
-}
-
-
-/* Create standard label */
-
-void create_label(char *lbl_txt, 
-		    int col, int row, GtkWidget **cntr, 
-		    PangoFontDescription **pf)
-{  
-    GtkWidget *lbl;
-
-    pango_font_description_set_weight(*pf, PANGO_WEIGHT_BOLD);
-    lbl = gtk_label_new(lbl_txt);  
-    gtk_widget_override_font (lbl, *pf);
-
-    gtk_widget_set_valign(GTK_WIDGET (lbl), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (*cntr), lbl, col, row, 1, 1);
-
-    return;
-}
-
-
-/* OK button */
-
-void ctrl_btns(MainUi *m_ui)
-{  
-    PangoFontDescription *font_desc;
-
-    /* Initial */
-    font_desc = pango_font_description_from_string ("Sans 9");
-    pango_font_description_set_weight(font_desc, PANGO_WEIGHT_NORMAL);
-
-    m_ui->ok_btn = gtk_button_new_with_label("   OK   ");  
-    gtk_widget_set_name(m_ui->ok_btn, "ok");
-    gtk_widget_override_font (m_ui->ok_btn, font_desc);
-    gtk_widget_set_halign(GTK_WIDGET (m_ui->ok_btn), GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top (GTK_WIDGET (m_ui->ok_btn), 10);
-
-    /* Callbacks */
-    g_signal_connect (m_ui->ok_btn, "clicked", G_CALLBACK (OnOK), m_ui);
-
-    /* Clean up */
-    pango_font_description_free (font_desc);
+    /* Free font */
+    pango_font_description_free (pf);
 
     return;
 }
@@ -291,6 +213,92 @@ int check_user_creds(IspData *isp_data);
 {  
     printf("%s Gnome keyring storage not yet available\n", debug_hdr);
     return FALSE;
+
+    return TRUE;
+}
+
+
+/* Callback - Get Login details and save credentials if required and close */
+
+void OnUserOK(GtkWidget *btn, gpointer user_data)
+{
+    UserUi *ui;
+
+    /* Get data */
+    ui = (UserUi *) user_data;
+
+    /* Read and store details */
+
+    /* Check if save requested */
+    if ((save_indi = pref_save_reqd(ui)) == FALSE)
+    {
+    	info_dialog(ui->window, "There are no changes to save!", "");
+    	return;
+    }
+
+    /* Error check */
+    if (validate_pref(ui) == FALSE)
+    	return;
+
+    if (ui->fn_err == TRUE)
+    {
+	log_msg("APP0001", NULL, "APP0001", ui->window);
+    	return;
+    }
+
+    /* Store preferences */
+    set_user_prefs(ui);
+
+    /* Save to file */
+    write_user_prefs(ui->window);
+
+    return;
+}
+
+
+// Callback for window close
+// Destroy the window and de-register the window 
+// Check for changes
+
+void OnUserClose(GtkWidget *window, gpointer user_data)
+{ 
+    GtkWidget *dialog;
+    UserUi *ui;
+    gint response;
+
+    /* Get data */
+    ui = (UserUi *) g_object_get_data (G_OBJECT (window), "ui");
+
+    /* Confirm */
+    dialog = gtk_message_dialog_new (GTK_WINDOW (window),
+				     GTK_DIALOG_MODAL,
+				     GTK_MESSAGE_QUESTION,
+				     GTK_BUTTONS_OK_CANCEL,
+				     "Confirm Close?");
+
+    response = gtk_dialog_run (GTK_DIALOG (dialog));
+    gtk_widget_destroy (dialog);
+
+    if (response == GTK_RESPONSE_CANCEL)
+	return;
+
+    /* Close the window, free the screen data and block any secondary close signal */
+    g_signal_handler_block (window, ui->close_handler);
+
+    deregister_window(window);
+    gtk_window_close(GTK_WINDOW(window));
+
+    free(ui);
+
+    return;
+}
+
+
+/* Window delete event */
+
+gboolean OnUserDelete(GtkWidget *window, GdkEvent *ev, gpointer user_data)
+{
+    OnUserClose(window, user_data);
 
     return TRUE;
 }
