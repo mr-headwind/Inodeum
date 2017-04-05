@@ -51,7 +51,6 @@
 void main_ui(IspData *, MainUi *);
 void create_menu(IspData *, MainUi *);
 void create_main_view(IspData *, MainUi *);
-void user_details(IspData *, MainUi *);
 void xml_recv_area(IspData *, MainUi *);
 void ctrl_btns(MainUi *);
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
@@ -124,6 +123,15 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 
     /* Show window */
     gtk_widget_show_all(m_ui->window);
+
+    /* Need to get user credentials either from gnome keyring or user entry */
+    if (check_user_creds() == FALSE)
+    {
+    	user_main(isp_data, m_ui->window);
+
+    	if (isp_data->uname == NULL)
+	    return FALSE;
+    }
 
     return;
 }
@@ -207,9 +215,6 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
     /* New container for main view */
     m_ui->ctrl_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
 
-    /* Grid for Username & Password */
-    user_details(isp_data, m_ui);
-
     /* Return data area */
     xml_recv_area(isp_data, m_ui);
 
@@ -220,38 +225,6 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
     gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->cntl_grid, FALSE, FALSE, 2);
     gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->scrollwin, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->ok_btn, TRUE, TRUE, 0);
-
-    return;
-}
-
-
-/* Entry for username and password */
-
-void user_details(IspData *isp_data, MainUi *m_ui)
-{  
-    GtkWidget *label;
-    PangoFontDescription *font_desc;
-
-    /* Initial */
-    font_desc = pango_font_description_from_string ("Sans 9");
-
-    /* Create a grid */
-    m_ui->cntl_grid = gtk_grid_new();
-    gtk_widget_set_name(m_ui->cntl_grid, "ctrl_grid");
-    gtk_grid_set_row_spacing(GTK_GRID (m_ui->cntl_grid), 3);
-    gtk_grid_set_column_spacing(GTK_GRID (m_ui->cntl_grid), 3);
-    gtk_container_set_border_width (GTK_CONTAINER (m_ui->cntl_grid), 3);
-
-    /* Add user and password fields with labels */
-    create_label("Username", 1, 1, &(m_ui->cntl_grid), &font_desc);
-    create_entry(&(m_ui->uname_ent), "uname", 2, 1, &(m_ui->cntl_grid), &font_desc);
-
-    create_label("Password", 1, 2, &(m_ui->cntl_grid), &font_desc);
-    create_entry(&(m_ui->pw_ent), "pw", 2, 2, &(m_ui->cntl_grid), &font_desc);
-    gtk_entry_set_visibility (GTK_ENTRY (m_ui->pw_ent), FALSE);
-
-    /* Clean up */
-    pango_font_description_free (font_desc);
 
     return;
 }

@@ -89,9 +89,6 @@ void OnOK(GtkWidget *ok_btn, gpointer user_data)
     m_ui = (MainUi *) user_data;
     isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
-    strcpy(isp_data->username, gtk_entry_get_text (GTK_ENTRY (m_ui->uname_ent)));
-    strcpy(isp_data->password, gtk_entry_get_text (GTK_ENTRY (m_ui->pw_ent)));
-
     /* Submit a service request */
     if (ssl_service_details(isp_data, m_ui) == FALSE)
     	return;

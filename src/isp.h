@@ -134,8 +134,8 @@ typedef struct _usage
 typedef struct _isp_data
 {
     /* Base detail */
-    char username[100];
-    char password[100];
+    char *uname;
+    char *pw;
     gchar *enc64;
     char user_agent[50];
     char url[500];

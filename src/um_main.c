@@ -119,6 +119,12 @@ void final(IspData *isp_data)
     close_log();
 
     /* Clean up */
+    if (isp_data->uname != NULL)
+	free(isp_data->uname);
+
+    if (isp_data->pw != NULL)
+	free(isp_data->pw);
+
     if (isp_data->enc64 != NULL)
 	g_free(isp_data->enc64);
 
