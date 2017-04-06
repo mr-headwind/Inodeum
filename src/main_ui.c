@@ -57,8 +57,9 @@ void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescrip
 void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
 GtkWidget * debug_cntr(GtkWidget *);
 
-
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void user_main(IspData *, GtkWidget *);
+extern int check_user_creds(IspData *);
 
 extern void OnOK(GtkRange*, gpointer);
 extern void OnAbout(GtkWidget*, gpointer);
@@ -125,12 +126,14 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show_all(m_ui->window);
 
     /* Need to get user credentials either from gnome keyring or user entry */
-    if (check_user_creds() == FALSE)
+    if (check_user_creds(isp_data) == FALSE)
     {
+    	printf("%s before user\n", debug_hdr); fflush(stdout);
     	user_main(isp_data, m_ui->window);
+    	printf("%s after user\n", debug_hdr); fflush(stdout);
 
     	if (isp_data->uname == NULL)
-	    return FALSE;
+	    return;
     }
 
     return;

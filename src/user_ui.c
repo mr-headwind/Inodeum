@@ -67,8 +67,8 @@ typedef struct _user_ui
 
 /* Prototypes */
 
-int user_main(IspData *, GtkWidget *);
-void user_ui(IspData *, UserUi *);
+void user_main(IspData *, GtkWidget *);
+void user_ui(GtkWidget *, IspData *, UserUi *);
 UserUi * new_user_ui();
 void user_control(UserUi *);
 int check_user_creds(IspData *);
@@ -92,7 +92,7 @@ static const char *debug_hdr = "DEBUG-user_ui.c ";
 
 /* Display and maintenance of user preferences */
 
-int user_main(IspData *isp_data, GtkWidget *window)
+void user_main(IspData *isp_data, GtkWidget *parent_win)
 {
     UserUi *ui;
 
@@ -100,12 +100,12 @@ int user_main(IspData *isp_data, GtkWidget *window)
     ui = new_user_ui();
 
     /* Create the interface */
-    user_ui(isp_data, ui);
+    user_ui(parent_win, isp_data, ui);
 
     /* Register the window */
     register_window(ui->window);
 
-    return TRUE;
+    return;
 }
 
 
@@ -122,10 +122,12 @@ UserUi * new_user_ui()
 
 /* Create the user interface and set the CallBacks */
 
-void user_ui(IspData *isp_data, UserUi *u_ui)
+void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
 {  
     /* Set up the UI window */
     u_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
+    gtk_window_set_modal (GTK_WINDOW(u_ui->window), FALSE);
+    gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(parent_win));
     gtk_window_set_title(GTK_WINDOW(u_ui->window), USER_UI);
     gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_NONE);
     gtk_window_set_default_size(GTK_WINDOW(u_ui->window), 200, 100);
