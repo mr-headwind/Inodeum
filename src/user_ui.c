@@ -126,8 +126,6 @@ void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
 {  
     /* Set up the UI window */
     u_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
-    gtk_window_set_modal (GTK_WINDOW(u_ui->window), FALSE);
-    gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(parent_win));
     gtk_window_set_title(GTK_WINDOW(u_ui->window), USER_UI);
     gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_NONE);
     gtk_window_set_default_size(GTK_WINDOW(u_ui->window), 200, 100);
@@ -166,6 +164,8 @@ void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
 
     /* Show window */
     gtk_widget_show_all(u_ui->window);
+    gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(parent_win));
+    gtk_window_set_modal (GTK_WINDOW(u_ui->window), TRUE);
 
     return;
 }

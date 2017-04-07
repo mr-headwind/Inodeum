@@ -128,9 +128,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     /* Need to get user credentials either from gnome keyring or user entry */
     if (check_user_creds(isp_data) == FALSE)
     {
-    	printf("%s before user\n", debug_hdr); fflush(stdout);
     	user_main(isp_data, m_ui->window);
-    	printf("%s after user\n", debug_hdr); fflush(stdout);
 
     	if (isp_data->uname == NULL)
 	    return;
@@ -225,7 +223,6 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
     ctrl_btns(m_ui);
 
     /* Combine everything onto the main view */
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->cntl_grid, FALSE, FALSE, 2);
     gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->scrollwin, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->ok_btn, TRUE, TRUE, 0);
 
