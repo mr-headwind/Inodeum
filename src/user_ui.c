@@ -127,7 +127,7 @@ void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
     /* Set up the UI window */
     u_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
     gtk_window_set_title(GTK_WINDOW(u_ui->window), USER_UI);
-    gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_NONE);
+    //gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_NONE);
     gtk_window_set_default_size(GTK_WINDOW(u_ui->window), 200, 100);
     gtk_container_set_border_width(GTK_CONTAINER(u_ui->window), 10);
     g_object_set_data (G_OBJECT (u_ui->window), "ui", u_ui);
@@ -163,8 +163,9 @@ void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
     u_ui->close_handler = g_signal_connect(u_ui->window, "delete-event", G_CALLBACK(OnUserDelete), NULL);
 
     /* Show window */
-    gtk_widget_show_all(u_ui->window);
     gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(parent_win));
+    gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_CENTER_ON_PARENT);
+    gtk_widget_show_all(u_ui->window);
     gtk_window_set_modal (GTK_WINDOW(u_ui->window), TRUE);
 
     return;
