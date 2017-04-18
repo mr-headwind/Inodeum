@@ -41,9 +41,9 @@
 #include <libgen.h>  
 #include <gtk/gtk.h>  
 #include <gdk/gdkkeysyms.h>  
-#include <defs.h>
 #include <main.h>
 #include <isp.h>
+#include <defs.h>
 
 
 /* Prototypes */
@@ -58,8 +58,9 @@ void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
 GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
-extern void user_ctrl(IspData *, GtkWidget *);
+extern void user_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *);
+extern int ssl_service_details(IspData *, MainUi *);
 
 extern void OnOK(GtkRange*, gpointer);
 extern void OnAbout(GtkWidget*, gpointer);
@@ -125,15 +126,17 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     /* Show window */
     gtk_widget_show_all(m_ui->window);
 
-    /* Need to get user credentials either from gnome keyring or user entry */
+    /* Check user credentials from the gnome keyring */
     if (check_user_creds(isp_data) == FALSE)
     {
-printf("%s main 1\n", debug_hdr); fflush(stdout);
-    	user_ctrl(isp_data, m_ui->window);
-printf("%s main 2\n", debug_hdr); fflush(stdout);
-
-    	if (isp_data->uname == NULL)
-	    return;
+	/* Get user credentials and service request via user entry interface */
+    	user_main(isp_data, m_ui->window);
+    }
+    else
+    {
+	/* Initiate a service request */
+	if (ssl_service_details(isp_data, m_ui) == FALSE)
+	    OnQuit(m_ui->window, NULL);
     }
 
     return;

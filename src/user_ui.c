@@ -40,6 +40,7 @@
 #include <gdk/gdkkeysyms.h>  
 #include <isp.h>
 #include <defs.h>
+#include <main.h>
 
 
 /* Defines */
@@ -50,6 +51,7 @@
 typedef struct _user_ui
 {
     GtkWidget *window;
+    GtkWidget *parent_win;
     GtkWidget *uname_lbl;
     GtkWidget *uname_ent;
     GtkWidget *pw_lbl;
@@ -65,18 +67,10 @@ typedef struct _user_ui
 } UserUi;
 
 
-typedef struct TdArgs
-{
-    IspData *isp_data; 
-    GtkWidget *parent_win; 
-} td_args_t;
-
-
 /* Prototypes */
 
-int user_ctrl(IspData *, GtkWidget *);
-void * user_main(void *);
-void user_ui(GtkWidget *, IspData *, UserUi *);
+void user_main(IspData *, GtkWidget *);
+void user_ui(IspData *, UserUi *);
 UserUi * new_user_ui();
 void user_control(UserUi *);
 int check_user_creds(IspData *);
@@ -85,66 +79,39 @@ int store_user_creds(IspData *);
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
 gboolean OnUserDelete(GtkWidget*, GdkEvent *, gpointer);
+void close_user_ui(GtkWidget *, UserUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
 extern void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
 extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
+extern void OnQuit(GtkWidget*, gpointer);
+extern int ssl_service_details(IspData *, MainUi *);
 
 
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-user_ui.c ";
-static pthread_t user_tid;
-static int ret;
 
 
-/* User login details interface */
+/* Display and maintenance of user preferences */
 
-int user_ctrl(IspData *isp_data, GtkWidget *parent_win)
-{
-    td_args_t *td_args;
-    int p_err;
-
-printf("%s user 1\n", debug_hdr); fflush(stdout);
-    td_args = malloc(sizeof(td_args_t));
-    td_args->isp_data = isp_data;
-    td_args->parent_win = parent_win;
-
-    if ((p_err = pthread_create(&user_tid, NULL, &user_main, (void *) td_args)) != 0)
-    {
-printf("%s user 2\n", debug_hdr); fflush(stdout);
-	//sprintf(app_msg_extra, "Error: %s", strerror(p_err));
-	//log_msg("SYS9016", NULL, "SYS9016", m_ui->window);
-	free(td_args);
-	return p_err;
-    }
-
-printf("%s user 3\n", debug_hdr); fflush(stdout);
-    pthread_join(user_tid, (void **)&ret);
-printf("%s user 4\n", debug_hdr); fflush(stdout);
-}
-
-
-/* User login details interface */
-
-void * user_main(void *arg)
+void user_main(IspData *isp_data, GtkWidget *parent_win)
 {
     UserUi *ui;
-    td_args_t *args;
 
     /* Initial */
     ui = new_user_ui();
-    args = (td_args_t *) arg;
+    ui->parent_win = parent_win;
 
     /* Create the interface */
-    user_ui(args->parent_win, args->isp_data, ui);
+    user_ui(isp_data, ui);
 
     /* Register the window */
     register_window(ui->window);
 
-    return NULL;
+    return;
 }
 
 
@@ -161,7 +128,7 @@ UserUi * new_user_ui()
 
 /* Create the user interface and set the CallBacks */
 
-void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
+void user_ui(IspData *isp_data, UserUi *u_ui)
 {  
     /* Set up the UI window */
     u_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
@@ -202,7 +169,7 @@ void user_ui(GtkWidget *parent_win, IspData *isp_data, UserUi *u_ui)
     u_ui->close_handler = g_signal_connect(u_ui->window, "delete-event", G_CALLBACK(OnUserDelete), NULL);
 
     /* Show window */
-    gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(parent_win));
+    gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(u_ui->parent_win));
     gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_CENTER_ON_PARENT);
     gtk_widget_show_all(u_ui->window);
     gtk_window_set_modal (GTK_WINDOW(u_ui->window), TRUE);
@@ -282,6 +249,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     const gchar *uname, *pw;
     int len;
     UserUi *u_ui;
+    MainUi *m_ui;
     IspData *isp_data;
 
     /* Get data */
@@ -295,8 +263,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (len == 0)
     {
 	log_msg("ERR0037", NULL, "ERR0037", u_ui->window);
-    	//return;
-	pthread_exit(&ret);
+    	return;
     }
 
     isp_data->uname = (char *) malloc(len + 1);
@@ -309,8 +276,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     {
 	log_msg("ERR0038", NULL, "ERR0038", u_ui->window);
 	free(isp_data->uname);
-    	//return;
-	pthread_exit(&ret);
+    	return;
     }
 
     isp_data->pw = (char *) malloc(len + 1);
@@ -320,8 +286,16 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt)) == TRUE)
     	store_user_creds(isp_data);
 
-    //return;
-    pthread_exit(&ret);
+    /* Close the window, free the screen data and block any secondary close signal */
+    close_user_ui(u_ui->window, u_ui);
+
+    /* Initiate a service request, quit if failure */
+    m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");
+
+    if (ssl_service_details(isp_data, m_ui) == FALSE)
+	OnQuit(u_ui->parent_win, NULL);
+
+    return;
 }
 
 
@@ -349,19 +323,15 @@ void OnUserCancel(GtkWidget *window, gpointer user_data)
     gtk_widget_destroy (dialog);
 
     if (response == GTK_RESPONSE_CANCEL)
-	pthread_exit(&ret);
-	//return;
+	return;
 
     /* Close the window, free the screen data and block any secondary close signal */
-    g_signal_handler_block (window, ui->close_handler);
+    close_user_ui(window, ui);
 
-    deregister_window(window);
-    gtk_window_close(GTK_WINDOW(window));
+    /* Quit Inodeum */
+    OnQuit(ui->parent_win, NULL);
 
-    free(ui);
-
-    //return;
-    pthread_exit(&ret);
+    return;
 }
 
 
@@ -372,4 +342,19 @@ gboolean OnUserDelete(GtkWidget *window, GdkEvent *ev, gpointer user_data)
     OnUserCancel(window, user_data);
 
     return TRUE;
+}
+
+
+/* Common close */
+
+void close_user_ui(GtkWidget *window, UserUi *ui)
+{ 
+    g_signal_handler_block (window, ui->close_handler);
+
+    deregister_window(window);
+    gtk_window_close(GTK_WINDOW(window));
+
+    free(ui);
+
+    return;
 }

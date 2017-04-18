@@ -61,8 +61,6 @@ typedef struct _main_ui
     GtkWidget *frame;
 
     /* Data widgets */
-    GtkWidget *uname_ent;
-    GtkWidget *pw_ent;
     GtkWidget *txt_view;
 
     /* Other */

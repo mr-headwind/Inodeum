@@ -353,17 +353,13 @@ int create_socket(IspData *isp_data, MainUi *m_ui)
 
 void encode_un_pw(IspData *isp_data, MainUi *m_ui)
 { 
-    const gchar *uname, *pw;
     gchar *unpw_b64;
     int len;
     char *tmp;
 
-    uname = gtk_entry_get_text (GTK_ENTRY (m_ui->uname_ent));
-    pw = gtk_entry_get_text (GTK_ENTRY (m_ui->pw_ent));
-
-    len = strlen(uname) + strlen(pw);
+    len = strlen(isp_data->uname) + strlen(isp_data->pw);
     tmp = (char *) malloc(len + 2);
-    sprintf(tmp, "%s:%s", uname, pw);
+    sprintf(tmp, "%s:%s", isp_data->uname, isp_data->pw);
 
     isp_data->enc64 = g_base64_encode ((const guchar *) tmp, len + 1);
 
@@ -1065,12 +1061,51 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
     	return FALSE;
 
     /* Save the current service data */
-    //r = load_usage(xml, isp_data, m_ui);
+    r = load_service(xml, isp_data, m_ui);
 
     return r;
-    
-    return TRUE;
 }
+
+
+/* Save the current usage data */
+
+int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
+{  
+    int err;
+    char *p;
+    char s_val[200];
+
+    err = TRUE;
+    p = xml;
+    memset(&srv_usage, 0, sizeof(Service));
+
+    while ((p = get_tag(p, "<traffic ", err, m_ui)) != NULL)
+    {
+	p += 8;
+	err = FALSE;
+
+	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
+	{
+	    if (strcmp(s_val, "metered") == 0)
+	    {
+		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
+		continue;
+	    }
+	    else if (strcmp(s_val, "unmetered") == 0)
+	    {
+		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
+		continue;
+	    }
+	    else if (strcmp(s_val, "total") == 0)
+	    {
+		total_usage(p, &srv_usage, m_ui);
+		continue;
+	    }
+	}
+    }
+
+    return TRUE;
+}  
 
 
 /* Get the history details */

@@ -129,6 +129,21 @@ typedef struct _usage
 } ServUsage;
 
 
+/* Structure to contain Service Data */
+
+typedef struct _service_plan
+{
+    char *username;				// Username
+    char *quota;				// Plan quota
+    char *quota_units;				// Quota units
+    char *plan;					// Total metered (up/down) - optional
+    char *carrier;				// Total metered (up/down) - optional
+    char *speed;			// Total unmetered (up/down) - optional
+    char *user_rating;				// Total used so far in period
+    char *excess_chg;					// Unit measure (bytes)
+} SrvPlan;
+
+
 /* Structure to contain isp related details, connection fields & results */
 
 typedef struct _isp_data
