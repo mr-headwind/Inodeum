@@ -65,9 +65,17 @@ typedef struct _user_ui
 } UserUi;
 
 
+typedef struct TdArgs
+{
+    IspData *isp_data; 
+    GtkWidget *parent_win; 
+} td_args_t;
+
+
 /* Prototypes */
 
-void user_main(IspData *, GtkWidget *);
+int user_ctrl(IspData *, GtkWidget *);
+void * user_main(void *);
 void user_ui(GtkWidget *, IspData *, UserUi *);
 UserUi * new_user_ui();
 void user_control(UserUi *);
@@ -88,24 +96,55 @@ extern void deregister_window(GtkWidget *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-user_ui.c ";
+static pthread_t user_tid;
+static int ret;
 
 
-/* Display and maintenance of user preferences */
+/* User login details interface */
 
-void user_main(IspData *isp_data, GtkWidget *parent_win)
+int user_ctrl(IspData *isp_data, GtkWidget *parent_win)
+{
+    td_args_t *td_args;
+    int p_err;
+
+printf("%s user 1\n", debug_hdr); fflush(stdout);
+    td_args = malloc(sizeof(td_args_t));
+    td_args->isp_data = isp_data;
+    td_args->parent_win = parent_win;
+
+    if ((p_err = pthread_create(&user_tid, NULL, &user_main, (void *) td_args)) != 0)
+    {
+printf("%s user 2\n", debug_hdr); fflush(stdout);
+	//sprintf(app_msg_extra, "Error: %s", strerror(p_err));
+	//log_msg("SYS9016", NULL, "SYS9016", m_ui->window);
+	free(td_args);
+	return p_err;
+    }
+
+printf("%s user 3\n", debug_hdr); fflush(stdout);
+    pthread_join(user_tid, (void **)&ret);
+printf("%s user 4\n", debug_hdr); fflush(stdout);
+}
+
+
+/* User login details interface */
+
+void * user_main(void *arg)
 {
     UserUi *ui;
+    td_args_t *args;
 
     /* Initial */
     ui = new_user_ui();
+    args = (td_args_t *) arg;
 
     /* Create the interface */
-    user_ui(parent_win, isp_data, ui);
+    user_ui(args->parent_win, args->isp_data, ui);
 
     /* Register the window */
     register_window(ui->window);
 
-    return;
+    return NULL;
 }
 
 
@@ -256,7 +295,8 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (len == 0)
     {
 	log_msg("ERR0037", NULL, "ERR0037", u_ui->window);
-    	return;
+    	//return;
+	pthread_exit(&ret);
     }
 
     isp_data->uname = (char *) malloc(len + 1);
@@ -269,7 +309,8 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     {
 	log_msg("ERR0038", NULL, "ERR0038", u_ui->window);
 	free(isp_data->uname);
-    	return;
+    	//return;
+	pthread_exit(&ret);
     }
 
     isp_data->pw = (char *) malloc(len + 1);
@@ -279,7 +320,8 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt)) == TRUE)
     	store_user_creds(isp_data);
 
-    return;
+    //return;
+    pthread_exit(&ret);
 }
 
 
@@ -307,7 +349,8 @@ void OnUserCancel(GtkWidget *window, gpointer user_data)
     gtk_widget_destroy (dialog);
 
     if (response == GTK_RESPONSE_CANCEL)
-	return;
+	pthread_exit(&ret);
+	//return;
 
     /* Close the window, free the screen data and block any secondary close signal */
     g_signal_handler_block (window, ui->close_handler);
@@ -317,7 +360,8 @@ void OnUserCancel(GtkWidget *window, gpointer user_data)
 
     free(ui);
 
-    return;
+    //return;
+    pthread_exit(&ret);
 }
 
 

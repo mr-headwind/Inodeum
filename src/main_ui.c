@@ -41,9 +41,9 @@
 #include <libgen.h>  
 #include <gtk/gtk.h>  
 #include <gdk/gdkkeysyms.h>  
+#include <defs.h>
 #include <main.h>
 #include <isp.h>
-#include <defs.h>
 
 
 /* Prototypes */
@@ -58,7 +58,7 @@ void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
 GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
-extern void user_main(IspData *, GtkWidget *);
+extern void user_ctrl(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *);
 
 extern void OnOK(GtkRange*, gpointer);
@@ -128,7 +128,9 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     /* Need to get user credentials either from gnome keyring or user entry */
     if (check_user_creds(isp_data) == FALSE)
     {
-    	user_main(isp_data, m_ui->window);
+printf("%s main 1\n", debug_hdr); fflush(stdout);
+    	user_ctrl(isp_data, m_ui->window);
+printf("%s main 2\n", debug_hdr); fflush(stdout);
 
     	if (isp_data->uname == NULL)
 	    return;

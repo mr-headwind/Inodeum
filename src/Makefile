@@ -22,7 +22,7 @@ CFLAGS2=-Wno-deprecated-declarations
 DEPS = defs.h main.h isp.h version.h
 OBJ = um_main.o callbacks.o main_ui.o utility.o service.o about_ui.o prefs.o user_ui.o
 LIBS = `pkg-config --libs gtk+-3.0`
-LIBS2 = -lssl -lcrypto
+LIBS2 = -lssl -lcrypto -lpthread
 #LIBS2 = -lpthread
 
 %.o: %.c $(DEPS)
