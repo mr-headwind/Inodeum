@@ -133,14 +133,25 @@ typedef struct _usage
 
 typedef struct _service_plan
 {
+    char *srv_plan_tags[13];
+    char *quota_units;				// Quota units (eg. bytes)
+    char *plan_cost_units;			// Cost units (eg. aud)
+
+    /* Plan tags array is equivalent to:
     char *username;				// Username
     char *quota;				// Plan quota
-    char *quota_units;				// Quota units
-    char *plan;					// Total metered (up/down) - optional
-    char *carrier;				// Total metered (up/down) - optional
-    char *speed;			// Total unmetered (up/down) - optional
-    char *user_rating;				// Total used so far in period
-    char *excess_chg;					// Unit measure (bytes)
+    char *plan;					// Plan name
+    char *carrier;				// Carrier (Internode)
+    char *speed;				// Speed (eg. 24 Mbits/sec)
+    char *usage_rating;				// Rating (eg. down)
+    char *rollover;				// Rollover date
+    char *excess_cost;				// If applicable
+    char *excess_charged;			// Excess charging? (eg. no)
+    char *excess_shaped;			// Excess shaping? (eg. yes)
+    char *excess_restrict;			// Excess rrstrict? (eg. no)
+    char *plan_interval;			// Interval (eg. Monthly)
+    char *plan_cost;				// Cost (eg. 59.99)
+    */
 } SrvPlan;
 
 

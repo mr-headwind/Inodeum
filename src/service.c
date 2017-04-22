@@ -101,6 +101,7 @@ extern int get_user_pref(char *, char **);
 
 static const char *debug_hdr = "DEBUG-service.c ";
 static ServUsage srv_usage;
+static SrvPlan srv_plan;
 
 
 /* API Webtools service requests */
@@ -1071,18 +1072,38 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
 
 int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
-    int err;
+    int i, err;
     char *p;
     char s_val[200];
+    const char *tag_arr[] = {"<username", "<quota", "<plan", "<carrier", "<speed", "<usage-rating",
+    			     "<rollover", "<excess-cost", "<excess-charged", "<excess-shaped", 
+    			     "<excess-restrict-access", "<plan-interval", "<plan-cost"};
+    const int tag_cnt = 13;
 
-    err = TRUE;
     p = xml;
-    memset(&srv_usage, 0, sizeof(Service));
+    memset(&srv_plan, 0, sizeof(SrvPlan));
 
-    while ((p = get_tag(p, "<traffic ", err, m_ui)) != NULL)
+    for(i = 0, i < tag_cnt, i++)
     {
-	p += 8;
 	err = FALSE;
+
+	if ((p = get_tag(p, &tag_arr[i], err, m_ui)) != NULL)
+	{
+	    p += strlen(&tag_arr[i]);
+
+	    if (i == 1)		// Quota
+	    {
+		err = TRUE;
+
+		if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
+		    log_msg("ERR0031", "Quota units", "ERR0031", m_ui->window);
+		else
+		    strcpy(&(srv_plan.quota_units, s_val);
+	    }
+
+	    get_tag_val(p, &(srv_plan.srv_plan_tags[i]), m_ui);
+
+
 
 	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
 	{
