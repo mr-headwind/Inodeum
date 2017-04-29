@@ -133,9 +133,10 @@ typedef struct _usage
 
 typedef struct _service_plan
 {
-    char *srv_plan_tags[13];
-    char *quota_units;				// Quota units (eg. bytes)
-    char *plan_cost_units;			// Cost units (eg. aud)
+    char *srv_plan_item[13];
+    char quota_units[10];			// Quota units (eg. bytes)
+    char plan_cost_units[10];			// Plan Cost units (eg. aud)
+    char excess_cost_units[10];			// Excess Cost units (eg. aud)
 
     /* Plan tags array is equivalent to:
     char *username;				// Username

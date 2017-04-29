@@ -88,6 +88,7 @@ char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
 int load_usage(char *, IspData *, MainUi *);
 int total_usage(char *, ServUsage *, MainUi *);
+int load_service(char *, IspData *, MainUi *);
 void set_param(int, char *);
 int check_listobj(IspListObj **);
 void clean_up(IspData *);
@@ -1072,7 +1073,7 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
 
 int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
-    int i, err;
+    int i, r;
     char *p;
     char s_val[200];
     const char *tag_arr[] = {"<username", "<quota", "<plan", "<carrier", "<speed", "<usage-rating",
@@ -1080,52 +1081,65 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     			     "<excess-restrict-access", "<plan-interval", "<plan-cost"};
     const int tag_cnt = 13;
 
+    r = TRUE;
     p = xml;
     memset(&srv_plan, 0, sizeof(SrvPlan));
 
-    for(i = 0, i < tag_cnt, i++)
+    for(i = 0; i < tag_cnt; i++)
     {
-	err = FALSE;
-
-	if ((p = get_tag(p, &tag_arr[i], err, m_ui)) != NULL)
+printf("%s load_service: 1 i %d\n", debug_hdr ,i); fflush(stdout);
+	if ((p = get_tag(p, (char *) tag_arr[i], FALSE, m_ui)) != NULL)
 	{
-	    p += strlen(&tag_arr[i]);
+	    p += strlen((char *) tag_arr[i]);
 
-	    if (i == 1)		// Quota
+	    switch(i)
 	    {
-		err = TRUE;
+	    	case 1:			// Quota
+printf("%s load_service: 2 p \n %s\n", debug_hdr, p); fflush(stdout);
+		    if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
+		    {
+			log_msg("ERR0031", "Quota units", "ERR0031", m_ui->window);
+			r = FALSE;
+		    }
+		    else
+		    {
+			strcpy(srv_plan.quota_units, s_val);
+		    }
 
-		if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
-		    log_msg("ERR0031", "Quota units", "ERR0031", m_ui->window);
-		else
-		    strcpy(&(srv_plan.quota_units, s_val);
+		    break;
+
+	    	case 12:		// Plan Cost
+		    if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
+		    {
+			log_msg("ERR0031", "Plan Cost units", "ERR0031", m_ui->window);
+			r = FALSE;
+		    }
+		    else
+		    {
+			strcpy(srv_plan.plan_cost_units, s_val);
+		    }
+
+		    break;
+
+	    	default:
+		    break;
 	    }
 
-	    get_tag_val(p, &(srv_plan.srv_plan_tags[i]), m_ui);
-
-
-
-	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
-	{
-	    if (strcmp(s_val, "metered") == 0)
-	    {
-		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
-		continue;
-	    }
-	    else if (strcmp(s_val, "unmetered") == 0)
-	    {
-		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
-		continue;
-	    }
-	    else if (strcmp(s_val, "total") == 0)
-	    {
-		total_usage(p, &srv_usage, m_ui);
-		continue;
-	    }
+	    get_tag_val(p, &(srv_plan.srv_plan_item[i]), m_ui);
 	}
     }
 
-    return TRUE;
+/* Test debug
+*/
+printf("%s Service Plan \n", debug_hdr); fflush(stdout);
+for(i = 0; i < tag_cnt; i++)
+{
+printf("%s %s\n", tag_arr[i], srv_plan.srv_plan_item[i]); fflush(stdout);
+}
+printf("Quota units %s Plan Cost units %s\n", srv_plan.quota_units, srv_plan.plan_cost_units); 
+fflush(stdout);
+
+    return r;
 }  
 
 
