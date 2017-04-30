@@ -29,6 +29,11 @@
 */
 
 
+/* Defines */
+
+#define UNIT_MAX 9
+
+
 /* Includes */
 
 #include <stdio.h>  
@@ -82,6 +87,7 @@ int get_service(IspListObj *, IspData *, MainUi *);
 int get_history(IspListObj *, int, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, int, MainUi *);
+char * get_next_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
@@ -1074,8 +1080,9 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
 int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
     int i, r;
-    char *p;
+    char *p, *units;
     char s_val[200];
+    char msg[20];
     const char *tag_arr[] = {"<username", "<quota", "<plan", "<carrier", "<speed", "<usage-rating",
     			     "<rollover", "<excess-cost", "<excess-charged", "<excess-shaped", 
     			     "<excess-restrict-access", "<plan-interval", "<plan-cost"};
@@ -1085,48 +1092,69 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     p = xml;
     memset(&srv_plan, 0, sizeof(SrvPlan));
 
-    for(i = 0; i < tag_cnt; i++)
+    // It appears that some tags may not be present depending on the plan
+    // so just search thru the xml and get whatever is present
+    while(p != NULL)
     {
-printf("%s load_service: 1 i %d\n", debug_hdr ,i); fflush(stdout);
-	if ((p = get_tag(p, (char *) tag_arr[i], FALSE, m_ui)) != NULL)
+printf("%s load_service: 1 p \n %s\n", debug_hdr, p); fflush(stdout);
+    	/* Find any tag */
+    	if ((p = get_next_tag(p, s_val, m_ui)) == NULL)
+	    continue;
+
+printf("%s load_service: 2 s_val %s\n", debug_hdr, s_val); fflush(stdout);
+	p += strlen(s_val);
+
+	/* Try to match with one we want */
+	for(i = 0; i < tag_cnt; i++)
 	{
-	    p += strlen((char *) tag_arr[i]);
-
-	    switch(i)
-	    {
-	    	case 1:			// Quota
-printf("%s load_service: 2 p \n %s\n", debug_hdr, p); fflush(stdout);
-		    if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
-		    {
-			log_msg("ERR0031", "Quota units", "ERR0031", m_ui->window);
-			r = FALSE;
-		    }
-		    else
-		    {
-			strcpy(srv_plan.quota_units, s_val);
-		    }
-
-		    break;
-
-	    	case 12:		// Plan Cost
-		    if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
-		    {
-			log_msg("ERR0031", "Plan Cost units", "ERR0031", m_ui->window);
-			r = FALSE;
-		    }
-		    else
-		    {
-			strcpy(srv_plan.plan_cost_units, s_val);
-		    }
-
-		    break;
-
-	    	default:
-		    break;
-	    }
-
-	    get_tag_val(p, &(srv_plan.srv_plan_item[i]), m_ui);
+	    if (strcmp(s_val, tag_arr[i]) == 0)	    
+	    	break;
 	}
+
+	/* No match */
+	if (i >= tag_cnt)
+	    continue;
+
+printf("%s load_service: 2a i %d\n", debug_hdr, i); fflush(stdout);
+	/* Some tags have 'units' attribute */
+	switch(i)
+	{
+	    case 1:		// Quota
+printf("%s load_service: 3 p \n %s\n", debug_hdr, p); fflush(stdout);
+		units = srv_plan.quota_units;
+		strcpy(msg, "Quota units");
+		break;
+
+	    case 7:		// Excess Cost
+		units = srv_plan.excess_cost_units;
+		strcpy(msg, "Excess Cost units");
+		break;
+
+	    case 12:		// Plan Cost
+		units = srv_plan.plan_cost_units;
+		strcpy(msg, "Plan Cost units");
+		break;
+
+	    default:
+		units = NULL;
+		break;
+	}
+
+	if (units != NULL)
+	{
+	    if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
+	    {
+		log_msg("ERR0031", msg, "ERR0031", m_ui->window);
+		r = FALSE;
+	    }
+	    else
+	    {
+		strncpy(units, s_val, UNIT_MAX);
+	    }
+	}
+
+	/* Get the tag value */
+	get_tag_val(p, &(srv_plan.srv_plan_item[i]), m_ui);
     }
 
 /* Test debug
@@ -1220,6 +1248,37 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
     } while (len > 0 || BIO_should_retry(web));
     
     return txt;
+}  
+
+
+/* Find and return the next tag */
+
+char * get_next_tag(char *xml, char *tag, MainUi *m_ui)
+{  
+    char *p, *p2;
+
+    p = xml;
+    *tag = '\0';
+
+    while(p != NULL)
+    {
+    	if ((p = strchr(xml, '<')) == NULL)
+	    continue;
+
+	if (*(p + 1) == '/')
+	{
+	    p++;
+	    continue;
+	}
+
+	for(p2 = p + 1; *p2 != ' ' && *p2 != '>'; p2++)
+	    *tag++ = *p2;
+
+	*tag = '\0';
+	break;
+    }
+
+    return p;
 }  
 
 
