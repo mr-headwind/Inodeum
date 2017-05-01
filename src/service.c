@@ -446,7 +446,7 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
     /* Get the current Usage */
     isp_data->curr_srv_id = srv_type->val;
 
-    for (l = srv_type->sub_list_head; l != NULL; l = l->next)
+    for (l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
     {
     	rsrc = (IspListObj *) l->data;
     	
@@ -911,8 +911,8 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 	
 // ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
     /* Construct GET */
-    get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
-    //get_qry = setup_get(isp_data->url, isp_data);
+    //get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
+    get_qry = setup_get(isp_data->url, isp_data);
 printf("%s get_usage:query\n%s\n", debug_hdr, get_qry);
 
     /* Send the query and read xml result */
@@ -1083,9 +1083,9 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     char *p, *units;
     char s_val[200];
     char msg[20];
-    const char *tag_arr[] = {"<username", "<quota", "<plan", "<carrier", "<speed", "<usage-rating",
-    			     "<rollover", "<excess-cost", "<excess-charged", "<excess-shaped", 
-    			     "<excess-restrict-access", "<plan-interval", "<plan-cost"};
+    const char *tag_arr[] = {"username", "quota", "plan", "carrier", "speed", "usage-rating",
+    			     "rollover", "excess-cost", "excess-charged", "excess-shaped", 
+    			     "excess-restrict-access", "plan-interval", "plan-cost"};
     const int tag_cnt = 13;
 
     r = TRUE;
@@ -1096,12 +1096,10 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     // so just search thru the xml and get whatever is present
     while(p != NULL)
     {
-printf("%s load_service: 1 p \n %s\n", debug_hdr, p); fflush(stdout);
     	/* Find any tag */
     	if ((p = get_next_tag(p, s_val, m_ui)) == NULL)
 	    continue;
 
-printf("%s load_service: 2 s_val %s\n", debug_hdr, s_val); fflush(stdout);
 	p += strlen(s_val);
 
 	/* Try to match with one we want */
@@ -1115,12 +1113,10 @@ printf("%s load_service: 2 s_val %s\n", debug_hdr, s_val); fflush(stdout);
 	if (i >= tag_cnt)
 	    continue;
 
-printf("%s load_service: 2a i %d\n", debug_hdr, i); fflush(stdout);
 	/* Some tags have 'units' attribute */
 	switch(i)
 	{
 	    case 1:		// Quota
-printf("%s load_service: 3 p \n %s\n", debug_hdr, p); fflush(stdout);
 		units = srv_plan.quota_units;
 		strcpy(msg, "Quota units");
 		break;
@@ -1162,9 +1158,10 @@ printf("%s load_service: 3 p \n %s\n", debug_hdr, p); fflush(stdout);
 printf("%s Service Plan \n", debug_hdr); fflush(stdout);
 for(i = 0; i < tag_cnt; i++)
 {
-printf("%s %s\n", tag_arr[i], srv_plan.srv_plan_item[i]); fflush(stdout);
+printf("%s: %s\n", tag_arr[i], srv_plan.srv_plan_item[i]); fflush(stdout);
 }
-printf("Quota units %s Plan Cost units %s\n", srv_plan.quota_units, srv_plan.plan_cost_units); 
+printf("Quota units: %s Plan Cost units: %s Excess Cost units: %s\n", 
+		srv_plan.quota_units, srv_plan.plan_cost_units, srv_plan.excess_cost_units); 
 fflush(stdout);
 
     return r;
@@ -1262,7 +1259,7 @@ char * get_next_tag(char *xml, char *tag, MainUi *m_ui)
 
     while(p != NULL)
     {
-    	if ((p = strchr(xml, '<')) == NULL)
+    	if ((p = strchr(p, '<')) == NULL)
 	    continue;
 
 	if (*(p + 1) == '/')
