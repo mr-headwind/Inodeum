@@ -1353,16 +1353,29 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
 
 void set_param(int param_type, char *s_param)
 {  
-    time_t current_tm;
+    time_t p_tm;
     struct tm *tm;
+    struct tm plan_tm;
     size_t sz;
     char s[11];
+    char *rollover_dt;
 
     *s_param = '\0';
 
     switch(param_type)
     {
     	case 1:						// Total all for month to date
+	    p_tm = time(NULL);
+	    tm = localtime(&p_tm);
+	    sz = strftime(s, 11, "%Y-%m-01", tm);
+	    sprintf(s_param, "start=%s&verbose=1", s);
+	    break;
+
+    	case 2:						// Total all for period to date
+	    rollover_dt = srv_plan.srv_plan_item[6];
+	    memset((void *) plan_tm, 0, sizeof(plan_tm));
+	    strplan_tm.tm_year 
+
 	    current_tm = time(NULL);
 	    tm = localtime(&current_tm);
 	    sz = strftime(s, 11, "%Y-%m-01", tm);
