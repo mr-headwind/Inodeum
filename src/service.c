@@ -1353,33 +1353,48 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
 
 void set_param(int param_type, char *s_param)
 {  
-    time_t p_tm;
+    time_t current_tm;
     struct tm *tm;
-    struct tm plan_tm;
+    struct tm p_tm;
     size_t sz;
-    char s[11];
-    char *rollover_dt;
+    char s[20], s_dt[20];
+    char *dt;
 
     *s_param = '\0';
+    current_tm = time(NULL);
+    tm = localtime(&current_tm);
+    sz = strftime(s_dt, 11, "%Y-%m-%d", tm);
 
     switch(param_type)
     {
     	case 1:						// Total all for month to date
-	    p_tm = time(NULL);
-	    tm = localtime(&p_tm);
 	    sz = strftime(s, 11, "%Y-%m-01", tm);
-	    sprintf(s_param, "start=%s&verbose=1", s);
+	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
 	    break;
 
     	case 2:						// Total all for period to date
-	    rollover_dt = srv_plan.srv_plan_item[6];
-	    memset((void *) plan_tm, 0, sizeof(plan_tm));
-	    strplan_tm.tm_year 
+	    dt = srv_plan.srv_plan_item[6];		// Next Rollover date
+	    memset((void *) p_tm, 0, sizeof(p_tm));
 
-	    current_tm = time(NULL);
-	    tm = localtime(&current_tm);
-	    sz = strftime(s, 11, "%Y-%m-01", tm);
-	    sprintf(s_param, "start=%s&verbose=1", s);
+	    memcpy(dt, s, 4);
+	    s[4] = '\0';
+	    p_tm.tm_year = atoi(s);
+
+	    s[0] = *(dt + 5);
+	    s[1] = *(dt + 6);
+	    s[3] = '\0';
+	    p_tm.tm_mon = atoi(s) - 1;
+
+
+	    s[0] = *(dt + 8);
+	    s[1] = *(dt + 9);
+	    s[3] = '\0';
+	    p_tm.tm_mday = atoi(s);
+
+	    date_tm_sub(&p_tm, "Month", 1);
+	    sz = strftime(s, 11, "%Y-%m-%d", &p_tm);
+	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
+
 	    break;
 
     	default:

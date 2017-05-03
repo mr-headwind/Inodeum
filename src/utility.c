@@ -838,3 +838,68 @@ void cur_date_str(char *date_str, int s_sz, char *fmt)
 
     return;
 }
+
+
+/* Pathetic attempt at date 'unit' (eg. Month) subtraction */
+
+void date_tm_sub(struct tm *tp, char *unit, int amt)
+{
+    int i, j, len, c;
+    const char *dt_part[] = {"day", "month", "year", "hour", "minute", "second"};
+    int max_type = 6;
+
+    /* Determine the date part */
+    for(i = 0; i < max_type; i++)
+    {
+	len = strlen(dt_part[i]);
+
+	for(j = 0; j < len; j++)
+	{
+	    if (tolower(*(unit + j)) != dt_part[i, j])
+		break;
+	}
+
+	if (j >= len)
+	    break;
+    }
+
+    if (i >= max_type)
+    	i = -1;
+
+    /* Subtract the unit amount from the date part ***ONLY MONTH at present *** */
+    switch(i)
+    {
+    	case 0:
+	    break;
+
+    	case 1:				// Month
+	    if (tp->tm_mon == 0)
+	    {
+		tp->tm_mon = 11;
+		tp->tm_year -= 1;
+	    }
+	    else
+	    {
+		tp->tm_mon -= 1;
+	    }
+
+	    break;
+
+    	case 3:
+	    break;
+
+    	case 4:
+	    break;
+
+    	case 5:
+	    break;
+
+    	case 6:
+	    break;
+
+    	default:
+	    break;
+    }
+
+    return;
+}

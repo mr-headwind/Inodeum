@@ -145,7 +145,7 @@ typedef struct _service_plan
     char *carrier;				// Carrier (Internode)
     char *speed;				// Speed (eg. 24 Mbits/sec)
     char *usage_rating;				// Rating (eg. down)
-    char *rollover;				// Rollover date
+    char *rollover;				// Rollover date (yyyy-dd-mm)
     char *excess_cost;				// If applicable
     char *excess_charged;			// Excess charging? (eg. no)
     char *excess_shaped;			// Excess shaping? (eg. yes)
