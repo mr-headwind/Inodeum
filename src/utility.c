@@ -84,13 +84,13 @@ int check_dir(char *);
 int make_dir(char *);
 int val_str2numb(char *, int *, char *, GtkWidget *);
 int check_errno(char *);
-int64_t msec_time();
 void print_bits(size_t const, void const * const);
 GtkWidget * find_parent(GtkWidget *);
 GtkWidget * find_widget_by_name(GtkWidget *, char *);
 GtkWidget * find_widget_by_parent(GtkWidget *, char *);
 GList * ctrl_widget_list(GtkWidget *, GtkWidget *);
-void cur_date_str(char *, int, char *);
+
+extern void cur_date_str(char *, int, char *);
 
 
 /* Globals */
@@ -650,20 +650,6 @@ int check_errno(char *s)
 }
 
 
-/* Return the current time in milliseconds */
-
-int64_t msec_time()
-{
-    int64_t msecs;
-    struct timespec t;
-
-    clock_gettime(CLOCK_REALTIME_COARSE, &t);
-    msecs = t.tv_sec * INT64_C(1000) + t.tv_nsec / 1000000;
-
-    return msecs;
-}
-
-
 /* Show binary representation of value (useful debug) */
 
 void print_bits(size_t const size, void const * const ptr)
@@ -820,86 +806,4 @@ GList * ctrl_widget_list(GtkWidget *contr, GtkWidget *window)
     }
 
     return ctl_list;
-}
-
-
-/* Get a string for the current time */
-
-void cur_date_str(char *date_str, int s_sz, char *fmt)
-{
-    struct tm *tm;
-    time_t current_time;
-    size_t sz;
-
-    *date_str = '\0';
-    current_time = time(NULL);
-    tm = localtime(&current_time);
-    sz = strftime(date_str, s_sz, fmt, tm);
-
-    return;
-}
-
-
-/* Pathetic attempt at date 'unit' (eg. Month) subtraction */
-
-void date_tm_sub(struct tm *tp, char *unit, int amt)
-{
-    int i, j, len, c;
-    const char *dt_part[] = {"day", "month", "year", "hour", "minute", "second"};
-    int max_type = 6;
-
-    /* Determine the date part */
-    for(i = 0; i < max_type; i++)
-    {
-	len = strlen(dt_part[i]);
-
-	for(j = 0; j < len; j++)
-	{
-	    if (tolower(*(unit + j)) != dt_part[i, j])
-		break;
-	}
-
-	if (j >= len)
-	    break;
-    }
-
-    if (i >= max_type)
-    	i = -1;
-
-    /* Subtract the unit amount from the date part ***ONLY MONTH at present *** */
-    switch(i)
-    {
-    	case 0:
-	    break;
-
-    	case 1:				// Month
-	    if (tp->tm_mon == 0)
-	    {
-		tp->tm_mon = 11;
-		tp->tm_year -= 1;
-	    }
-	    else
-	    {
-		tp->tm_mon -= 1;
-	    }
-
-	    break;
-
-    	case 3:
-	    break;
-
-    	case 4:
-	    break;
-
-    	case 5:
-	    break;
-
-    	case 6:
-	    break;
-
-    	default:
-	    break;
-    }
-
-    return;
 }

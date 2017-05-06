@@ -102,6 +102,7 @@ void free_srv_list(gpointer);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
+extern void date_tm_add(struct tm *, char *, int);
 
 
 /* Globals */
@@ -462,7 +463,7 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
 	}
 	else if (strcmp(rsrc->type, HISTORY) == 0)
     	{
-	    get_history(rsrc, 1, isp_data, m_ui);
+	    get_history(rsrc, 2, isp_data, m_ui);
 	    BIO_reset(isp_data->web);
 	}
     }
@@ -1374,24 +1375,26 @@ void set_param(int param_type, char *s_param)
 
     	case 2:						// Total all for period to date
 	    dt = srv_plan.srv_plan_item[6];		// Next Rollover date
-	    memset((void *) p_tm, 0, sizeof(p_tm));
+	    memset((void *) &p_tm, 0, sizeof(p_tm));
 
-	    memcpy(dt, s, 4);
+	    memcpy(s, dt, 4);
 	    s[4] = '\0';
-	    p_tm.tm_year = atoi(s);
+	    p_tm.tm_year = atoi(s) - 1900;
 
 	    s[0] = *(dt + 5);
 	    s[1] = *(dt + 6);
-	    s[3] = '\0';
+	    s[2] = '\0';
 	    p_tm.tm_mon = atoi(s) - 1;
 
 
 	    s[0] = *(dt + 8);
 	    s[1] = *(dt + 9);
-	    s[3] = '\0';
+	    s[2] = '\0';
 	    p_tm.tm_mday = atoi(s);
 
-	    date_tm_sub(&p_tm, "Month", 1);
+	    mktime(&p_tm);
+
+	    date_tm_add(&p_tm, "Month", -1);
 	    sz = strftime(s, 11, "%Y-%m-%d", &p_tm);
 	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
 
