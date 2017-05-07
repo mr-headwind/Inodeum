@@ -95,10 +95,12 @@ int process_list_item(char *, IspListObj **, MainUi *);
 int load_usage(char *, IspData *, MainUi *);
 int total_usage(char *, ServUsage *, MainUi *);
 int load_service(char *, IspData *, MainUi *);
+int load_usage_hist(char *, IspData *, MainUi *);
 void set_param(int, char *);
 int check_listobj(IspListObj **);
 void clean_up(IspData *);
 void free_srv_list(gpointer);
+void free_hist_list(gpointer);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
@@ -110,6 +112,7 @@ extern void date_tm_add(struct tm *, char *, int);
 static const char *debug_hdr = "DEBUG-service.c ";
 static ServUsage srv_usage;
 static SrvPlan srv_plan;
+static GList *usg_hist_list = NULL;
 
 
 /* API Webtools service requests */
@@ -412,7 +415,7 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 
     GList *l;
 
-    for (l = isp_data->srv_list_head; l != NULL; l = l->next)
+    for(l = isp_data->srv_list_head; l != NULL; l = l->next)
     {
 	r = TRUE;
     	isp_srv = (IspListObj *) l->data;
@@ -447,7 +450,7 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
     /* Get the current Usage */
     isp_data->curr_srv_id = srv_type->val;
 
-    for (l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
+    for(l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
     {
     	rsrc = (IspListObj *) l->data;
     	
@@ -909,7 +912,6 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
     r = TRUE;
 
     sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-	
 // ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
     /* Construct GET */
     //get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
@@ -945,7 +947,7 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
     p = xml;
     memset(&srv_usage, 0, sizeof(ServUsage));
 
-    while ((p = get_tag(p, "<traffic ", err, m_ui)) != NULL)
+    while((p = get_tag(p, "<traffic ", err, m_ui)) != NULL)
     {
 	p += 8;
 	err = FALSE;
@@ -988,7 +990,7 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     r = TRUE;
 
     /* Get all the tag attributes */
-    for (i = 0, p = xml; i < tag_cnt; i++)
+    for(i = 0, p = xml; i < tag_cnt; i++)
     {
 	if ((p = get_tag_attr(p, (char *) tag_arr[i], s_val, m_ui)) == NULL)
 	{
@@ -1169,7 +1171,7 @@ fflush(stdout);
 }  
 
 
-/* Get the history details */
+/* Get the usage day history details as per a parameter type */
 
 int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
 {  
@@ -1199,13 +1201,104 @@ printf("%s get_history:xml\n%s\n", debug_hdr, xml);
     if (xml == NULL)
     	return FALSE;
 
-    /* Save the current service data */
-    //r = load_usage(xml, isp_data, m_ui);
+    /* Save a list of the usage data days */
+    r = load_usage_hist(xml, isp_data, m_ui);
 
     return r;
-    
-    return TRUE;
 }
+
+
+/* Keep a list of the history usage days */
+
+int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
+{  
+    int r, i;
+    char *p, *s;
+    char s_val[200];
+    UsageDay *usg_day;
+
+    /* Clear history if necessary */
+    if (usg_hist_list != NULL)
+    	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
+
+    /* Process all the '<usage tags' */
+    r = TRUE;
+    p = xml;
+    i = 0;
+
+    while((p = get_tag(p, "<usage ", TRUE, m_ui)) != NULL)
+    {
+	/* New usage day */
+	p += 6;
+	usg_day = malloc(sizeof(UsageDay));
+	memset(usg_day, 0, sizeof(UsageDay));
+
+	/* Date */
+	if ((p = get_tag_attr(p, "day=\"", s_val, m_ui)) == NULL)
+	{
+	    r = FALSE;
+	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
+	    break;
+	}
+
+	usg_day->usg_dt = malloc(strlen(s_val) + 1);
+	strcpy(usg_day->usg_dt, s_val);
+
+    	/* Process the traffic tags (metered, unmetered, up, down) */
+    	while((p = get_next_tag(p, s_val, m_ui)) != NULL)
+	{
+	    if (strcmp(s_val, "traffic") != 0)
+	    	break;
+
+	    /* Direction is 'up' or 'down' */
+	    if ((p = get_tag_attr(p, "direction=\"", s_val, m_ui)) != NULL)
+	    {
+		if (strcmp(s_val, "up") == 0)
+		    usg_day->traffic[i].direction = 0;
+		else
+		    usg_day->traffic[i].direction = 1;
+	    };
+
+	    /* Traffic name is 'metered' or 'unmetered' or 'total' */
+	    if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
+	    {
+		if (strcmp(s_val, "metered") == 0)
+		    usg_day->traffic[i].tr_name = 0;
+
+		else if (strcmp(s_val, "total") == 0)
+		    usg_day->traffic[i].tr_name = 2;
+		else
+		    usg_day->traffic[i].tr_name = 1;
+	    }
+
+	    /* Unit of measurement */
+	    if ((p = get_tag_attr(p, "unit=\"", s_val, m_ui)) != NULL)
+	    {
+		usg_day->traffic[i].unit = malloc(strlen(s_val) + 1);
+		strcpy(usg_day->traffic[i].unit, s_val);
+	    }
+
+	    /* Amount of data */
+	    get_tag_val(p, &s, m_ui);
+	    usg_day->traffic[i].traffic_amt = atol(s);
+	    free(s);
+
+	    i++;
+	}
+
+	/* Add to history list */
+	usg_hist_list = g_list_prepend (usg_hist_list, usg_day);
+    }
+
+    /* Reset the list */
+    usg_hist_list = g_list_reverse (usg_hist_list);
+
+    /* Clear if error */
+    if (r == FALSE)
+    	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
+
+    return r;
+}  
 
 
 
@@ -1243,7 +1336,7 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
 	    gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);		// tmp
 	    gtk_text_iter_forward_to_end (&iter);				// tmp
 	}
-    } while (len > 0 || BIO_should_retry(web));
+    } while(len > 0 || BIO_should_retry(web));
     
     return txt;
 }  
@@ -1415,7 +1508,7 @@ IspListObj * search_list(char *type, GList *srv_list)
     GList *l;
     IspListObj *srv;
 
-    for (l = srv_list; l != NULL; l = l->next)
+    for(l = srv_list; l != NULL; l = l->next)
     {
     	srv = (IspListObj *) l->data;
 
@@ -1473,3 +1566,28 @@ void free_srv_list(gpointer data)
 
     return;
 }  
+
+
+/* Free a history list item */
+
+void free_hist_list(gpointer data)
+{  
+    int i;
+    UsageDay *usg_day;
+    TrafficData traffic_data;
+
+    usg_day = (UsageDay *) data;
+    
+    if (usg_day->usg_dt)
+	free(usg_day->usg_dt);
+
+    for(i = 0; i < 5; i++)
+    {
+    	if (usg_day->traffic[i].unit != NULL)
+	    free(usg_day->traffic[i].unit);
+    }
+
+    free(usg_day);
+
+    return;
+}

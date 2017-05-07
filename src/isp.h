@@ -117,7 +117,7 @@ typedef struct _xmllistobj
 
 /* Structure to contain Service Usage Data */
 
-typedef struct _usage
+typedef struct _srvusage
 {
     char *rollover_dt;				// Next rollover date
     char *plan_interval;			// Period quota valid for
@@ -154,6 +154,23 @@ typedef struct _service_plan
     char *plan_cost;				// Cost (eg. 59.99)
     */
 } SrvPlan;
+
+
+/* Structure to contain Usage (History) Day Data */
+
+typedef struct _traffic_data
+{
+    int direction;			// 0 - up, 1 - down
+    int tr_name;			// 0 - metered, 1 - unmetered, 2 - total
+    char *unit;
+    long traffic_amt;
+} TrafficData;
+
+typedef struct _usage_day
+{
+    char *usg_dt;
+    TrafficData traffic[5];
+} UsageDay;
 
 
 /* Structure to contain isp related details, connection fields & results */
