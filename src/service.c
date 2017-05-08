@@ -830,8 +830,10 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
     if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
     	return NULL;
     
-    if ((p = get_tag_attr(p + strlen(tag), "count=\"", s_val, m_ui)) == NULL)
+printf("%s get_list_count 1\n", debug_hdr); fflush(stdout);
+    if ((p = get_tag_attr(p + strlen(tag) - 1, "count=\"", s_val, m_ui)) == NULL)
     	return NULL;
+printf("%s get_list_count 2\n", debug_hdr); fflush(stdout);
 
     *cnt = atoi(s_val);
 
@@ -1217,6 +1219,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     char s_val[200];
     UsageDay *usg_day;
 
+printf("%s load_usage_hist 1\n", debug_hdr); fflush(stdout);
     /* Clear history if necessary */
     if (usg_hist_list != NULL)
     	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
@@ -1226,6 +1229,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     p = xml;
     i = 0;
 
+printf("%s load_usage_hist 1\n", debug_hdr); fflush(stdout);
     while((p = get_tag(p, "<usage ", TRUE, m_ui)) != NULL)
     {
 	/* New usage day */
@@ -1233,6 +1237,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	usg_day = malloc(sizeof(UsageDay));
 	memset(usg_day, 0, sizeof(UsageDay));
 
+printf("%s load_usage_hist 2\n", debug_hdr); fflush(stdout);
 	/* Date */
 	if ((p = get_tag_attr(p, "day=\"", s_val, m_ui)) == NULL)
 	{
@@ -1241,12 +1246,15 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    break;
 	}
 
+printf("%s load_usage_hist 3\n", debug_hdr); fflush(stdout);
 	usg_day->usg_dt = malloc(strlen(s_val) + 1);
 	strcpy(usg_day->usg_dt, s_val);
 
+printf("%s load_usage_hist 4\n", debug_hdr); fflush(stdout);
     	/* Process the traffic tags (metered, unmetered, up, down) */
     	while((p = get_next_tag(p, s_val, m_ui)) != NULL)
 	{
+printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
 	    if (strcmp(s_val, "traffic") != 0)
 	    	break;
 
@@ -1289,6 +1297,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	/* Add to history list */
 	usg_hist_list = g_list_prepend (usg_hist_list, usg_day);
     }
+printf("%s load_usage_hist 9\n", debug_hdr); fflush(stdout);
 
     /* Reset the list */
     usg_hist_list = g_list_reverse (usg_hist_list);
@@ -1296,6 +1305,21 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     /* Clear if error */
     if (r == FALSE)
     	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
+
+/* Test debug
+*/
+printf("%s Usage History\n", debug_hdr); fflush(stdout);
+for(GList *l = usg_hist_list; l != NULL; l = l->next)
+{
+usg_day = (UsageDay *) l->data;
+printf("Date: %s\n", usg_day->usg_dt); fflush(stdout);
+for(i = 0; i < 5; i++)
+{
+printf("Dir: %d Name: %d Unit: %s, Amt %ld\n", 
+	    usg_day->traffic[i].direction, usg_day->traffic[i].tr_name,
+	    usg_day->traffic[i].unit, usg_day->traffic[i].traffic_amt); fflush(stdout);
+}
+}
 
     return r;
 }  
@@ -1393,25 +1417,77 @@ char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 
 char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
 {  
-    char *p;
+    int fnd;
+    char *p, *p2;
 
+    /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
     s_val == NULL;
+    p = xml;
+    fnd = FALSE;
 
-    if ((p = strstr(xml, attr)) != NULL)
+    if (*p == '<')
+    	p = strchr(p, ' ');
+
+    if (*p != ' ')
+    	return NULL;
+
+    /* Should now point at first attribute */
+    p++;
+
+printf("%s get_tag_attr 2 p\n%s\n", debug_hdr, p); fflush(stdout);
+    /* Examine each for a match or if the search attribute is NULL, return the next one */
+    while(! fnd)
     {
-    	p += strlen(attr);
+	/* Search for start of attribute value or end tag (or NULL) */
+	for(p2 = p; p2 != NULL; p2++)
+	{
+	    if (*p2 == '=' && *(p2 + 1) == '\"')
+	    	break;
 
-    	while(*p != '\"')
-	    *s_val++ = *p++;
+	    if (*p2 == '<' && *(p2 + 1) == '/')
+	    {
+		if (attr != NULL)
+		    log_msg("ERR0031", attr, "ERR0031", m_ui->window);
 
-	*s_val = '\0';
+	    	break;
+	    }
+	}
+
+	if (p2 == NULL)
+	{
+	    log_msg("ERR0031", attr, "ERR0031", m_ui->window);
+	    break;
+	}
+	    
+printf("%s get_tag_attr 3 p2\n%s\n", debug_hdr, p2); fflush(stdout);
+	/* If the search attribute is null, set it to the the current one */ 
+	if (attr == NULL)
+	{
+	    attr = (char *) malloc(p2 - p + 1);
+	    memcpy(attr, p, p2 - p);
+	    *(attr + (p2 - p + 1)) = '\0';
+	    fnd = TRUE;
+	}
+	else
+	{
+	    if (strlen(attr) == (p2 - p))
+	    	if (strncmp(attr, p, p2 - p) == 0)
+		    fnd = TRUE;
+	}
+
+	/* Get the attibute value */
+	if (fnd)
+	{
+	    for(p2 += 2; *p2 != '\"'; p2++)
+		*s_val++ = *p2;
+
+	    *s_val = '\0';
+	}
+
+	p = p2;
     }
-    else
-    {
-	log_msg("ERR0031", attr, "ERR0031", m_ui->window);
-    }
 
-    return p;
+    return p2;
 }  
 
 

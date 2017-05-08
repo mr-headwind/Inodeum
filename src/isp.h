@@ -156,7 +156,7 @@ typedef struct _service_plan
 } SrvPlan;
 
 
-/* Structure to contain Usage (History) Day Data */
+/* Structures to contain Usage (History) Day Data */
 
 typedef struct _traffic_data
 {
