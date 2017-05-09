@@ -830,10 +830,8 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
     if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
     	return NULL;
     
-printf("%s get_list_count 1\n", debug_hdr); fflush(stdout);
-    if ((p = get_tag_attr(p + strlen(tag) - 1, "count=\"", s_val, m_ui)) == NULL)
+    if ((p = get_tag_attr(p + strlen(tag) - 1, "count", s_val, m_ui)) == NULL)
     	return NULL;
-printf("%s get_list_count 2\n", debug_hdr); fflush(stdout);
 
     *cnt = atoi(s_val);
 
@@ -857,14 +855,14 @@ int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
     r = TRUE;
 
     /* Type */
-    if ((p = get_tag_attr(p, "type=\"", s_val, m_ui)) != NULL)
+    if ((p = get_tag_attr(p, "type", s_val, m_ui)) != NULL)
     {
 	(*listobj)->type = (char *) malloc(strlen(s_val) + 1);
 	strcpy((*listobj)->type, s_val);
     }
 
     /* URL */
-    if ((p = get_tag_attr(p, "href=\"", s_val, m_ui)) != NULL)
+    if ((p = get_tag_attr(p, "href", s_val, m_ui)) != NULL)
     {
 	(*listobj)->href = (char *) malloc(strlen(s_val) + 1);
 	strcpy((*listobj)->href, s_val);
@@ -954,7 +952,7 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 	p += 8;
 	err = FALSE;
 
-	if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
+	if ((p = get_tag_attr(p, "name", s_val, m_ui)) != NULL)
 	{
 	    if (strcmp(s_val, "metered") == 0)
 	    {
@@ -985,7 +983,7 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     int i, r, len;
     char *p;
     char s_val[200];
-    const char *tag_arr[] = {"rollover=\"", "plan-interval=\"", "quota=\"", "unit=\""};
+    const char *tag_arr[] = {"rollover", "plan-interval", "quota", "unit"};
     const int tag_cnt = 4;
 
     /* Setup */
@@ -1039,9 +1037,9 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
 
 /* Test debug
 */
-printf("%s total_usage: %s %s %s %s %s %s %s\n", debug_hdr, usg->rollover_dt, usg->plan_interval,
-						 usg->quota, usg->unit, usg->metered_bytes,
-						 usg->unmetered_bytes, usg->total_bytes); fflush(stdout);
+printf("%s\nTotal Usage: %s %s %s %s %s %s %s\n\n", debug_hdr, usg->rollover_dt, usg->plan_interval,
+						    usg->quota, usg->unit, usg->metered_bytes,
+						    usg->unmetered_bytes, usg->total_bytes); fflush(stdout);
 
     return r;
 }  
@@ -1105,7 +1103,7 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     	if ((p = get_next_tag(p, s_val, m_ui)) == NULL)
 	    continue;
 
-	p += strlen(s_val);
+	p += strlen(s_val) + 1;
 
 	/* Try to match with one we want */
 	for(i = 0; i < tag_cnt; i++)
@@ -1143,7 +1141,7 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	if (units != NULL)
 	{
-	    if ((p = get_tag_attr(p, "units=\"", s_val, m_ui)) == NULL)
+	    if ((p = get_tag_attr(p, "units", s_val, m_ui)) == NULL)
 	    {
 		log_msg("ERR0031", msg, "ERR0031", m_ui->window);
 		r = FALSE;
@@ -1160,12 +1158,12 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 
 /* Test debug
 */
-printf("%s Service Plan \n", debug_hdr); fflush(stdout);
+printf("%s\nService Plan \n", debug_hdr); fflush(stdout);
 for(i = 0; i < tag_cnt; i++)
 {
 printf("%s: %s\n", tag_arr[i], srv_plan.srv_plan_item[i]); fflush(stdout);
 }
-printf("Quota units: %s Plan Cost units: %s Excess Cost units: %s\n", 
+printf("Quota units: %s Plan Cost units: %s Excess Cost units: %s\n\n", 
 		srv_plan.quota_units, srv_plan.plan_cost_units, srv_plan.excess_cost_units); 
 fflush(stdout);
 
@@ -1215,11 +1213,11 @@ printf("%s get_history:xml\n%s\n", debug_hdr, xml);
 int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
     int r, i;
+    int max_attr;
     char *p, *s;
     char s_val[200];
     UsageDay *usg_day;
 
-printf("%s load_usage_hist 1\n", debug_hdr); fflush(stdout);
     /* Clear history if necessary */
     if (usg_hist_list != NULL)
     	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
@@ -1229,7 +1227,6 @@ printf("%s load_usage_hist 1\n", debug_hdr); fflush(stdout);
     p = xml;
     i = 0;
 
-printf("%s load_usage_hist 1\n", debug_hdr); fflush(stdout);
     while((p = get_tag(p, "<usage ", TRUE, m_ui)) != NULL)
     {
 	/* New usage day */
@@ -1237,53 +1234,65 @@ printf("%s load_usage_hist 1\n", debug_hdr); fflush(stdout);
 	usg_day = malloc(sizeof(UsageDay));
 	memset(usg_day, 0, sizeof(UsageDay));
 
-printf("%s load_usage_hist 2\n", debug_hdr); fflush(stdout);
 	/* Date */
-	if ((p = get_tag_attr(p, "day=\"", s_val, m_ui)) == NULL)
+	if ((p = get_tag_attr(p, "day", s_val, m_ui)) == NULL)
 	{
 	    r = FALSE;
 	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
 	    break;
 	}
 
-printf("%s load_usage_hist 3\n", debug_hdr); fflush(stdout);
 	usg_day->usg_dt = malloc(strlen(s_val) + 1);
 	strcpy(usg_day->usg_dt, s_val);
 
-printf("%s load_usage_hist 4\n", debug_hdr); fflush(stdout);
     	/* Process the traffic tags (metered, unmetered, up, down) */
     	while((p = get_next_tag(p, s_val, m_ui)) != NULL)
 	{
-printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
 	    if (strcmp(s_val, "traffic") != 0)
 	    	break;
 
-	    /* Direction is 'up' or 'down' */
-	    if ((p = get_tag_attr(p, "direction=\"", s_val, m_ui)) != NULL)
-	    {
-		if (strcmp(s_val, "up") == 0)
-		    usg_day->traffic[i].direction = 0;
-		else
-		    usg_day->traffic[i].direction = 1;
-	    };
+	    max_attr = 3;
+	    s = NULL;
 
-	    /* Traffic name is 'metered' or 'unmetered' or 'total' */
-	    if ((p = get_tag_attr(p, "name=\"", s_val, m_ui)) != NULL)
+printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
+	    while(((p = get_tag_attr(p, s, s_val, m_ui)) != NULL) && (max_attr != 0))
 	    {
-		if (strcmp(s_val, "metered") == 0)
-		    usg_day->traffic[i].tr_name = 0;
+		if (strcmp(s, "direction") == 0)
+		{
+		    /* Direction is 'up' or 'down' */
+		    max_attr--;
 
-		else if (strcmp(s_val, "total") == 0)
-		    usg_day->traffic[i].tr_name = 2;
-		else
-		    usg_day->traffic[i].tr_name = 1;
-	    }
+		    if (strcmp(s_val, "up") == 0)
+			usg_day->traffic[i].direction = 0;
+		    else
+			usg_day->traffic[i].direction = 1;
+		}
+		else if (strcmp(s, "name") == 0)
+		{
+		    /* Traffic name is 'metered' or 'unmetered' or 'total' */
+		    max_attr--;
 
-	    /* Unit of measurement */
-	    if ((p = get_tag_attr(p, "unit=\"", s_val, m_ui)) != NULL)
-	    {
-		usg_day->traffic[i].unit = malloc(strlen(s_val) + 1);
-		strcpy(usg_day->traffic[i].unit, s_val);
+		    if (strcmp(s_val, "metered") == 0)
+			usg_day->traffic[i].tr_name = 0;
+
+		    else if (strcmp(s_val, "total") == 0)
+		    {
+			usg_day->traffic[i].tr_name = 2;
+			max_attr--;
+		    }
+		    else
+			usg_day->traffic[i].tr_name = 1;
+		}
+		else if (strcmp(s, "unit") == 0)
+		{
+		    /* Unit of measurement */
+		    max_attr--;
+		    usg_day->traffic[i].unit = malloc(strlen(s_val) + 1);
+		    strcpy(usg_day->traffic[i].unit, s_val);
+		}
+
+		free(s);
+		s = NULL;
 	    }
 
 	    /* Amount of data */
@@ -1297,7 +1306,6 @@ printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
 	/* Add to history list */
 	usg_hist_list = g_list_prepend (usg_hist_list, usg_day);
     }
-printf("%s load_usage_hist 9\n", debug_hdr); fflush(stdout);
 
     /* Reset the list */
     usg_hist_list = g_list_reverse (usg_hist_list);
@@ -1308,18 +1316,19 @@ printf("%s load_usage_hist 9\n", debug_hdr); fflush(stdout);
 
 /* Test debug
 */
-printf("%s Usage History\n", debug_hdr); fflush(stdout);
+printf("%s\nUsage History\n", debug_hdr); fflush(stdout);
 for(GList *l = usg_hist_list; l != NULL; l = l->next)
 {
 usg_day = (UsageDay *) l->data;
 printf("Date: %s\n", usg_day->usg_dt); fflush(stdout);
 for(i = 0; i < 5; i++)
-{
-printf("Dir: %d Name: %d Unit: %s, Amt %ld\n", 
+    {
+    printf("Dir: %d Name: %d Unit: %s, Amt %ld\n", 
 	    usg_day->traffic[i].direction, usg_day->traffic[i].tr_name,
 	    usg_day->traffic[i].unit, usg_day->traffic[i].traffic_amt); fflush(stdout);
+    }
 }
-}
+printf("\n");
 
     return r;
 }  
@@ -1444,7 +1453,7 @@ printf("%s get_tag_attr 2 p\n%s\n", debug_hdr, p); fflush(stdout);
 	    if (*p2 == '=' && *(p2 + 1) == '\"')
 	    	break;
 
-	    if (*p2 == '<' && *(p2 + 1) == '/')
+	    if ((*p2 == '>' && *(p2 + 1) == '<') || (*p2 == '<' && *(p2 + 1) == '/'))
 	    {
 		if (attr != NULL)
 		    log_msg("ERR0031", attr, "ERR0031", m_ui->window);
@@ -1465,7 +1474,8 @@ printf("%s get_tag_attr 3 p2\n%s\n", debug_hdr, p2); fflush(stdout);
 	{
 	    attr = (char *) malloc(p2 - p + 1);
 	    memcpy(attr, p, p2 - p);
-	    *(attr + (p2 - p + 1)) = '\0';
+	    *(attr + (p2 - p)) = '\0';
+printf("%s get_tag_attr 3a attr %s\n", debug_hdr, attr); fflush(stdout);
 	    fnd = TRUE;
 	}
 	else
@@ -1475,6 +1485,8 @@ printf("%s get_tag_attr 3 p2\n%s\n", debug_hdr, p2); fflush(stdout);
 		    fnd = TRUE;
 	}
 
+printf("%s get_tag_attr 4 len(attr): %d p2 -p: %d fnd %d *p %c *p2 %c\n", 
+	debug_hdr, (int) strlen(attr), (int) (p2 - p), fnd, *p, *p2); fflush(stdout);
 	/* Get the attibute value */
 	if (fnd)
 	{
@@ -1484,10 +1496,10 @@ printf("%s get_tag_attr 3 p2\n%s\n", debug_hdr, p2); fflush(stdout);
 	    *s_val = '\0';
 	}
 
-	p = p2;
+	p = ++p2;
     }
 
-    return p2;
+    return p;
 }  
 
 
