@@ -132,10 +132,11 @@ static const char *app_messages[][2] =
     { "ERR0036", "Warning: One or more Tag attributes not found. "},
     { "ERR0037", "You must enter your ISP login Username. "},
     { "ERR0038", "You must enter your ISP login password. "},
+    { "ERR0039", "Invalid XML format found: %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 36;
+static const int Msg_Count = 37;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

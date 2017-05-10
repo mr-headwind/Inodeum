@@ -89,6 +89,7 @@ char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, int, MainUi *);
 char * get_next_tag(char *, char *, MainUi *);
 char * get_tag_attr(char *, char *, char *, MainUi *);
+char * get_next_tag_attr(char *, char **, char *, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
@@ -1255,10 +1256,13 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    s = NULL;
 
 printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
-	    while(((p = get_tag_attr(p, s, s_val, m_ui)) != NULL) && (max_attr != 0))
+	    while(((p = get_next_tag_attr(p, &s, s_val, m_ui)) != NULL) && (max_attr != 0))
 	    {
+printf("%s load_usage_hist 5.1\n", debug_hdr); fflush(stdout);
+printf("%s load_usage_hist 5.2 s %s\n", debug_hdr, s); fflush(stdout);
 		if (strcmp(s, "direction") == 0)
 		{
+printf("%s load_usage_hist 5a\n", debug_hdr); fflush(stdout);
 		    /* Direction is 'up' or 'down' */
 		    max_attr--;
 
@@ -1269,6 +1273,7 @@ printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
 		}
 		else if (strcmp(s, "name") == 0)
 		{
+printf("%s load_usage_hist 5b\n", debug_hdr); fflush(stdout);
 		    /* Traffic name is 'metered' or 'unmetered' or 'total' */
 		    max_attr--;
 
@@ -1285,12 +1290,14 @@ printf("%s load_usage_hist 5\n", debug_hdr); fflush(stdout);
 		}
 		else if (strcmp(s, "unit") == 0)
 		{
+printf("%s load_usage_hist 5c\n", debug_hdr); fflush(stdout);
 		    /* Unit of measurement */
 		    max_attr--;
 		    usg_day->traffic[i].unit = malloc(strlen(s_val) + 1);
 		    strcpy(usg_day->traffic[i].unit, s_val);
 		}
 
+printf("%s load_usage_hist 6 free\n", debug_hdr); fflush(stdout);
 		free(s);
 		s = NULL;
 	    }
@@ -1422,7 +1429,7 @@ char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 }  
 
 
-/* Return a position pointer and an attibute value */
+/* Return a position pointer and an attibute value of a named attribute */
 
 char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
 {  
@@ -1487,6 +1494,83 @@ printf("%s get_tag_attr 3a attr %s\n", debug_hdr, attr); fflush(stdout);
 
 printf("%s get_tag_attr 4 len(attr): %d p2 -p: %d fnd %d *p %c *p2 %c\n", 
 	debug_hdr, (int) strlen(attr), (int) (p2 - p), fnd, *p, *p2); fflush(stdout);
+	/* Get the attibute value */
+	if (fnd)
+	{
+	    for(p2 += 2; *p2 != '\"'; p2++)
+		*s_val++ = *p2;
+
+	    *s_val = '\0';
+	}
+
+	p = ++p2;
+    }
+
+    return p;
+}  
+
+
+/* Return a position pointer and an attibute value of the next attribute */
+
+char * get_next_tag_attr(char *xml, char **attr, char *s_val, MainUi *m_ui)
+{  
+    int fnd;
+    char *p, *p2;
+
+    /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
+    s_val == NULL;
+    p = xml;
+    fnd = FALSE;
+
+    if (*p == '<')
+    	p = strchr(p, ' ');
+
+    if (*p != ' ')
+    	return NULL;
+
+    /* Should now point at first attribute */
+    p++;
+
+printf("%s get_next_tag_attr 2 p\n%s\n", debug_hdr, p); fflush(stdout);
+    /* Examine each for a match or if the search attribute is NULL, return the next one */
+    while(! fnd)
+    {
+	/* Search for start of attribute value or end tag (or NULL) */
+	for(p2 = p; p2 != NULL; p2++)
+	{
+	    if (*p2 == '=' && *(p2 + 1) == '\"')
+	    	break;
+
+	    if ((*p2 == '>' && *(p2 + 1) == '<') || (*p2 == '<' && *(p2 + 1) == '/'))
+	    {
+		if (attr != NULL)
+		    log_msg("ERR0039", "Tag Attribute", "ERR0039", m_ui->window);
+
+	    	break;
+	    }
+	}
+
+	if (p2 == NULL)
+	{
+	    log_msg("ERR0039", "Tag Attribute", "ERR0039", m_ui->window);
+	    break;
+	}
+	    
+printf("%s get_next_tag_attr 3 p2\n%s\n", debug_hdr, p2); fflush(stdout);
+	/* Attribute pinter should be null, set it to the found attribute */ 
+	if (*attr == NULL)
+	{
+printf("%s get_next_tag_attr 3.1\n", debug_hdr); fflush(stdout);
+	    *attr = (char *) malloc(p2 - p + 1);
+	    memcpy(*attr, p, p2 - p);
+	    *(*attr + (p2 - p)) = '\0';
+printf("%s get_next_tag_attr 3a attr %s\n", debug_hdr, *attr); fflush(stdout);
+	    fnd = TRUE;
+	}
+
+printf("%s get_next_tag_attr 3a.1\n", debug_hdr); fflush(stdout);
+printf("%s get_next_tag_attr 4 len(attr): %d p2 -p: %d fnd %d *p %c *p2 %c\n", 
+	debug_hdr, (int) strlen(*attr), (int) (p2 - p), fnd, *p, *p2); fflush(stdout);
 	/* Get the attibute value */
 	if (fnd)
 	{
