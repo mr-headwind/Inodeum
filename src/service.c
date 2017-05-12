@@ -737,7 +737,7 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml);
     /* Create a service list */
     for(i = 0; i < isp_data->srv_cnt; i++)
     {
-	if ((p = get_tag(p, "<service ", TRUE, m_ui)) != NULL)
+	if ((p = get_tag(p, "service", TRUE, m_ui)) != NULL)
 	{
 	    isp_srv = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(isp_srv, 0, sizeof(IspListObj));
@@ -793,7 +793,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
     /* Create a resource list */
     for(i = 0; i < isp_srv->cnt; i++)
     {
-	if ((p = get_tag(p, "<resource ", TRUE, m_ui)) != NULL)
+	if ((p = get_tag(p, "resource", TRUE, m_ui)) != NULL)
 	{
 	    rsrc = (IspListObj *) malloc(sizeof(IspListObj));
 	    memset(rsrc, 0, sizeof(IspListObj));
@@ -948,7 +948,7 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
     p = xml;
     memset(&srv_usage, 0, sizeof(ServUsage));
 
-    while((p = get_tag(p, "<traffic ", err, m_ui)) != NULL)
+    while((p = get_tag(p, "traffic", err, m_ui)) != NULL)
     {
 	p += 8;
 	err = FALSE;
@@ -1229,7 +1229,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
     while(p != NULL)
     {
-	if ((p = get_tag(p, "<usage ", FALSE, m_ui)) == NULL)
+	if ((p = get_tag(p, "usage", FALSE, m_ui)) == NULL)
 	    break;
 
 	/* New usage day */
@@ -1417,11 +1417,25 @@ char * get_next_tag(char *xml, char *tag, MainUi *m_ui)
 char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 {  
     char *p;
+    int fnd;
 
-    if ((p = strstr(xml, tag)) == NULL)
+    fnd = FALSE;
+    p = xml;
+
+    while(fnd == FALSE)
     {
-    	if (err == TRUE)
-	    log_msg("ERR0030", tag, "ERR0030", m_ui->window);
+	if ((p = strstr(p, tag)) == NULL)
+	{
+	    if (err == TRUE)
+		log_msg("ERR0030", tag, "ERR0030", m_ui->window);
+
+	    break;
+	}
+
+	if ((*(p + 1) == ' ' || *(p + 1) == '>') && (*(p - 1) == '<'))
+	    fnd = TRUE;
+	else
+	    p++;
     }
 
     return p;
