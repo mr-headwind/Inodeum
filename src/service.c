@@ -726,7 +726,7 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml);
     	return FALSE;
 
     /* Services count */
-    if ((p = get_list_count(xml, "<services ", &(isp_data)->srv_cnt, m_ui)) == NULL)
+    if ((p = get_list_count(xml, "services", &(isp_data)->srv_cnt, m_ui)) == NULL)
     {
     	free(xml);
     	return FALSE;
@@ -782,7 +782,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
     	return FALSE;
 
     /* Resources count */
-    if ((p = get_list_count(xml, "<resources ", &(isp_srv)->cnt, m_ui)) == NULL)
+    if ((p = get_list_count(xml, "resources", &(isp_srv)->cnt, m_ui)) == NULL)
     {
     	free(xml);
     	return FALSE;
@@ -809,7 +809,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
 	}
 	else
 	{
-	    log_msg("ERR0030", "<service ", "ERR0030", m_ui->window);
+	    log_msg("ERR0030", "service", "ERR0030", m_ui->window);
 	    r = FALSE;
 	    break;
 	}
@@ -831,10 +831,11 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
     if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
     	return NULL;
     
-    if ((p = get_tag_attr(p + strlen(tag) - 1, "count", s_val, m_ui)) == NULL)
+    if ((p = get_tag_attr(p + strlen(tag), "count", s_val, m_ui)) == NULL)
     	return NULL;
 
     *cnt = atoi(s_val);
+printf("%s get_list_count cnt %d s_val %s p\n%s\n", debug_hdr, *cnt, s_val, p); fflush(stdout);
 
     if (*cnt == 0)
     {
@@ -1416,11 +1417,13 @@ char * get_next_tag(char *xml, char *tag, MainUi *m_ui)
 
 char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 {  
+    int len;
     char *p;
     int fnd;
 
     fnd = FALSE;
     p = xml;
+    len = strlen(tag);
 
     while(fnd == FALSE)
     {
@@ -1432,11 +1435,17 @@ char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 	    break;
 	}
 
-	if ((*(p + 1) == ' ' || *(p + 1) == '>') && (*(p - 1) == '<'))
+	if ((*(p + len) == ' ' || *(p + len) == '>') && (*(p - 1) == '<'))
+	{
 	    fnd = TRUE;
+	    p--;
+	}
 	else
+	{
 	    p++;
+	}
     }
+printf("%s get_tag fnd %d p\n%s\n", debug_hdr, fnd, p); fflush(stdout);
 
     return p;
 }  
