@@ -87,9 +87,9 @@ int get_service(IspListObj *, IspData *, MainUi *);
 int get_history(IspListObj *, int, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, int, MainUi *);
-char * get_next_tag(char *, char *, MainUi *);
-char * get_tag_attr(char *, char *, char *, MainUi *);
-char * get_next_tag_attr(char *, char **, char *, MainUi *);
+char * get_next_tag(char *, char **, MainUi *);
+char * get_tag_attr(char *, char *, char **, MainUi *);
+char * get_next_tag_attr(char *, char **, char **, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
@@ -714,7 +714,6 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 {  
     char *xml = NULL;
     char *p;
-    char s_val[200];
     int i, r;
     IspListObj *isp_srv;
 
@@ -770,7 +769,6 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
 {  
     char *xml = NULL;
     char *p;
-    char s_val[200];
     int i, r;
     IspListObj *rsrc;
 
@@ -825,17 +823,17 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
 
 char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
 {  
-    char *p;
-    char s_val[200];
+    char *p, *val;
 
     if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
     	return NULL;
     
-    if ((p = get_tag_attr(p + strlen(tag), "count", s_val, m_ui)) == NULL)
+    if ((p = get_tag_attr(p + strlen(tag) + 1, "count", &val, m_ui)) == NULL)
     	return NULL;
 
-    *cnt = atoi(s_val);
-printf("%s get_list_count cnt %d s_val %s p\n%s\n", debug_hdr, *cnt, s_val, p); fflush(stdout);
+    *cnt = atoi(val);
+printf("%s get_list_count cnt %d val %s p\n%s\n", debug_hdr, *cnt, val, p); fflush(stdout);
+    free(val);
 
     if (*cnt == 0)
     {
@@ -851,23 +849,25 @@ printf("%s get_list_count cnt %d s_val %s p\n%s\n", debug_hdr, *cnt, s_val, p); 
 
 int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
 {  
-    char s_val[200];
+    char *val;
     int r;
 
     r = TRUE;
 
     /* Type */
-    if ((p = get_tag_attr(p, "type", s_val, m_ui)) != NULL)
+    if ((p = get_tag_attr(p, "type", &val, m_ui)) != NULL)
     {
-	(*listobj)->type = (char *) malloc(strlen(s_val) + 1);
-	strcpy((*listobj)->type, s_val);
+	(*listobj)->type = (char *) malloc(strlen(val) + 1);
+	strcpy((*listobj)->type, val);
+	free(val);
     }
 
     /* URL */
-    if ((p = get_tag_attr(p, "href", s_val, m_ui)) != NULL)
+    if ((p = get_tag_attr(p, "href", &val, m_ui)) != NULL)
     {
-	(*listobj)->href = (char *) malloc(strlen(s_val) + 1);
-	strcpy((*listobj)->href, s_val);
+	(*listobj)->href = (char *) malloc(strlen(val) + 1);
+	strcpy((*listobj)->href, val);
+	free(val);
     }
 
     /* Value */
@@ -942,8 +942,7 @@ printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
 int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
     int err;
-    char *p;
-    char s_val[200];
+    char *p, *val;
 
     err = TRUE;
     p = xml;
@@ -954,21 +953,24 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 	p += 8;
 	err = FALSE;
 
-	if ((p = get_tag_attr(p, "name", s_val, m_ui)) != NULL)
+	if ((p = get_tag_attr(p, "name", &val, m_ui)) != NULL)
 	{
-	    if (strcmp(s_val, "metered") == 0)
+	    if (strcmp(val, "metered") == 0)
 	    {
 		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
+		free(val);
 		continue;
 	    }
-	    else if (strcmp(s_val, "unmetered") == 0)
+	    else if (strcmp(val, "unmetered") == 0)
 	    {
 		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
+		free(val);
 		continue;
 	    }
-	    else if (strcmp(s_val, "total") == 0)
+	    else if (strcmp(val, "total") == 0)
 	    {
 		total_usage(p, &srv_usage, m_ui);
+		free(val);
 		continue;
 	    }
 	}
@@ -983,8 +985,7 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
 {  
     int i, r, len;
-    char *p;
-    char s_val[200];
+    char *p, *val;
     const char *tag_arr[] = {"rollover", "plan-interval", "quota", "unit"};
     const int tag_cnt = 4;
 
@@ -994,35 +995,40 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     /* Get all the tag attributes */
     for(i = 0, p = xml; i < tag_cnt; i++)
     {
-	if ((p = get_tag_attr(p, (char *) tag_arr[i], s_val, m_ui)) == NULL)
+	if ((p = get_tag_attr(p, (char *) tag_arr[i], &val, m_ui)) == NULL)
 	{
 	    r = FALSE;
 	    break;
 	}
 
-	len = strlen(s_val) + 1;
+	len = strlen(val) + 1;
 
 	switch(i)
 	{
 	    case 0:
 		usg->rollover_dt = (char *) malloc(len);
-	    	strcpy(usg->rollover_dt, s_val);
+	    	strcpy(usg->rollover_dt, val);
+	    	free(val);
 	    	break;
 	    case 1:
 		usg->plan_interval = (char *) malloc(len);
-	    	strcpy(usg->plan_interval, s_val);
+	    	strcpy(usg->plan_interval, val);
+	    	free(val);
 	    	break;
 	    case 2:
 		usg->quota = (char *) malloc(len);
-	    	strcpy(usg->quota, s_val);
+	    	strcpy(usg->quota, val);
+	    	free(val);
 	    	break;
 	    case 3:
 		usg->unit = (char *) malloc(len);
-	    	strcpy(usg->unit, s_val);
+	    	strcpy(usg->unit, val);
+	    	free(val);
 	    	break;
 	    default:
-		log_msg("ERR0035", s_val, "ERR0035", m_ui->window);
+		log_msg("ERR0035", val, "ERR0035", m_ui->window);
 		r = FALSE;
+	    	free(val);
 	    	break;
 	}
     }
@@ -1085,8 +1091,7 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
 int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
     int i, r;
-    char *p, *units;
-    char s_val[200];
+    char *p, *tag, *val, *units;
     char msg[20];
     const char *tag_arr[] = {"username", "quota", "plan", "carrier", "speed", "usage-rating",
     			     "rollover", "excess-cost", "excess-charged", "excess-shaped", 
@@ -1102,21 +1107,24 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     while(p != NULL)
     {
     	/* Find any tag */
-    	if ((p = get_next_tag(p, s_val, m_ui)) == NULL)
+    	if ((p = get_next_tag(p, &tag, m_ui)) == NULL)
 	    continue;
 
-	p += strlen(s_val) + 1;
+	p += strlen(tag) + 1;
 
 	/* Try to match with one we want */
 	for(i = 0; i < tag_cnt; i++)
 	{
-	    if (strcmp(s_val, tag_arr[i]) == 0)	    
+	    if (strcmp(tag, tag_arr[i]) == 0)	    
 	    	break;
 	}
 
 	/* No match */
 	if (i >= tag_cnt)
+	{
+	    free(tag);
 	    continue;
+	}
 
 	/* Some tags have 'units' attribute */
 	switch(i)
@@ -1143,19 +1151,21 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	if (units != NULL)
 	{
-	    if ((p = get_tag_attr(p, "units", s_val, m_ui)) == NULL)
+	    if ((p = get_tag_attr(p, "units", &val, m_ui)) == NULL)
 	    {
 		log_msg("ERR0031", msg, "ERR0031", m_ui->window);
 		r = FALSE;
 	    }
 	    else
 	    {
-		strncpy(units, s_val, UNIT_MAX);
+		strncpy(units, val, UNIT_MAX);
+		free(val);
 	    }
 	}
 
 	/* Get the tag value */
 	get_tag_val(p, &(srv_plan.srv_plan_item[i]), m_ui);
+	free(tag);
     }
 
 /* Test debug
@@ -1216,8 +1226,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
     int r, i;
     int max_attr;
-    char *p, *s;
-    char s_val[200];
+    char *p, *attr, *tag, *val;
     UsageDay *usg_day;
 
     /* Clear history if necessary */
@@ -1240,49 +1249,52 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	memset(usg_day, 0, sizeof(UsageDay));
 
 	/* Date */
-	if ((p = get_tag_attr(p, "day", s_val, m_ui)) == NULL)
+	if ((p = get_tag_attr(p, "day", &val, m_ui)) == NULL)
 	{
 	    r = FALSE;
 	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
 	    break;
 	}
 
-	usg_day->usg_dt = malloc(strlen(s_val) + 1);
-	strcpy(usg_day->usg_dt, s_val);
+	usg_day->usg_dt = malloc(strlen(val) + 1);
+	strcpy(usg_day->usg_dt, val);
+	free(val);
 
     	/* Process the traffic tags (metered, unmetered, up, down) */
-    	while((p = get_next_tag(p, s_val, m_ui)) != NULL)
+    	while((p = get_next_tag(p, &tag, m_ui)) != NULL)
 	{
-	    if (strcmp(s_val, "traffic") != 0)
+	    if (strcmp(tag, "traffic") != 0)
+	    {
+	    	free(tag);
 	    	break;
+	    }
 
 	    max_attr = 3;
-	    s = NULL;
 
 	    while(max_attr > 0)
 	    {
-		if ((p = get_next_tag_attr(p, &s, s_val, m_ui)) == NULL)
+		if ((p = get_next_tag_attr(p, &attr, &val, m_ui)) == NULL)
 		    break;
 
-		if (strcmp(s, "direction") == 0)
+		if (strcmp(attr, "direction") == 0)
 		{
 		    /* Direction is 'up' or 'down' */
 		    max_attr--;
 
-		    if (strcmp(s_val, "up") == 0)
+		    if (strcmp(val, "up") == 0)
 			usg_day->traffic[i].direction = 0;
 		    else
 			usg_day->traffic[i].direction = 1;
 		}
-		else if (strcmp(s, "name") == 0)
+		else if (strcmp(attr, "name") == 0)
 		{
 		    /* Traffic name is 'metered' or 'unmetered' or 'total' */
 		    max_attr--;
 
-		    if (strcmp(s_val, "metered") == 0)
+		    if (strcmp(val, "metered") == 0)
 			usg_day->traffic[i].tr_name = 0;
 
-		    else if (strcmp(s_val, "total") == 0)
+		    else if (strcmp(val, "total") == 0)
 		    {
 			usg_day->traffic[i].tr_name = 2;
 			max_attr--;
@@ -1290,22 +1302,22 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 		    else
 			usg_day->traffic[i].tr_name = 1;
 		}
-		else if (strcmp(s, "unit") == 0)
+		else if (strcmp(attr, "unit") == 0)
 		{
 		    /* Unit of measurement */
 		    max_attr--;
-		    usg_day->traffic[i].unit = malloc(strlen(s_val) + 1);
-		    strcpy(usg_day->traffic[i].unit, s_val);
+		    usg_day->traffic[i].unit = malloc(strlen(val) + 1);
+		    strcpy(usg_day->traffic[i].unit, val);
 		}
 
-		free(s);
-		s = NULL;
+		free(attr);
+		free(val);
 	    }
 
 	    /* Amount of data */
-	    get_tag_val(p, &s, m_ui);
-	    usg_day->traffic[i].traffic_amt = atol(s);
-	    free(s);
+	    get_tag_val(p, &val, m_ui);
+	    usg_day->traffic[i].traffic_amt = atol(val);
+	    free(val);
 
 	    i++;
 	}
@@ -1384,17 +1396,18 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
 
 /* Find and return the next tag */
 
-char * get_next_tag(char *xml, char *tag, MainUi *m_ui)
+char * get_next_tag(char *xml, char **tag, MainUi *m_ui)
 {  
+    int i;
     char *p, *p2;
 
     p = xml;
-    *tag = '\0';
+    *tag = NULL;
 
     while(p != NULL)
     {
     	if ((p = strchr(p, '<')) == NULL)
-	    continue;
+	    break;
 
 	if (*(p + 1) == '/')
 	{
@@ -1402,10 +1415,16 @@ char * get_next_tag(char *xml, char *tag, MainUi *m_ui)
 	    continue;
 	}
 
-	for(p2 = p + 1; *p2 != ' ' && *p2 != '>'; p2++)
-	    *tag++ = *p2;
+	for(p2 = p + 1, i = 0; *p2 != ' ' && *p2 != '>'; p2++)
+	    i++;
 
-	*tag = '\0';
+	if (i > 0)
+	{
+	    *tag = (char *) malloc(i + 1);
+	    memcpy(*tag, p + 1, i);
+	    *(*tag + i) = '\0';
+	}
+
 	break;
     }
 
@@ -1453,13 +1472,13 @@ printf("%s get_tag fnd %d p\n%s\n", debug_hdr, fnd, p); fflush(stdout);
 
 /* Return a position pointer and an attibute value of a named attribute */
 
-char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
+char * get_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
 {  
-    int fnd;
+    int fnd, i;
     char *p, *p2;
 
     /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
-    s_val == NULL;
+    //*val = NULL;
     p = xml;
     fnd = FALSE;
 
@@ -1514,10 +1533,17 @@ char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
 	/* Get the attibute value */
 	if (fnd)
 	{
-	    for(p2 += 2; *p2 != '\"'; p2++)
-		*s_val++ = *p2;
+printf("%s get_tag_attr fnd %d p\n%s\n", debug_hdr, fnd, p); fflush(stdout);
+	    for(p2 += 2, i = 0; *p2 != '\"'; p2++)
+	    	i++;
 
-	    *s_val = '\0';
+	    if (i > 0)
+	    {
+	    	*val = (char *) malloc(i + 1);
+	    	memcpy(*val, p2 - i, i);
+	    	*(*val + i) = '\0';
+	    }
+printf("%s get_tag_attr i %d p2\n%s\n", debug_hdr, i, p2); fflush(stdout);
 	}
 
 	p = ++p2;
@@ -1529,13 +1555,13 @@ char * get_tag_attr(char *xml, char *attr, char *s_val, MainUi *m_ui)
 
 /* Return a position pointer and an attibute value of the next attribute */
 
-char * get_next_tag_attr(char *xml, char **attr, char *s_val, MainUi *m_ui)
+char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
 {  
-    int fnd;
+    int fnd, i;
     char *p, *p2;
 
     /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
-    s_val == NULL;
+    *val = NULL;
     p = xml;
     fnd = FALSE;
 
@@ -1584,10 +1610,15 @@ char * get_next_tag_attr(char *xml, char **attr, char *s_val, MainUi *m_ui)
 	/* Get the attibute value */
 	if (fnd)
 	{
-	    for(p2 += 2; *p2 != '\"'; p2++)
-		*s_val++ = *p2;
+	    for(p2 += 2, i = 0; *p2 != '\"'; p2++)
+	    	i++;
 
-	    *s_val = '\0';
+	    if (i > 0)
+	    {
+	    	*val = (char *) malloc(i + 1);
+	    	memcpy(*val, p2 - i, i);
+	    	*(*val + i) = '\0';
+	    }
 	}
 
 	p = ++p2;
