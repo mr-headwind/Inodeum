@@ -832,7 +832,6 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
     	return NULL;
 
     *cnt = atoi(val);
-printf("%s get_list_count cnt %d val %s p\n%s\n", debug_hdr, *cnt, val, p); fflush(stdout);
     free(val);
 
     if (*cnt == 0)
@@ -1427,6 +1426,7 @@ char * get_next_tag(char *xml, char **tag, MainUi *m_ui)
 
 	break;
     }
+printf("%s get_next_tag tag %s p\n%s\n", debug_hdr, *tag, p); fflush(stdout);
 
     return p;
 }  
@@ -1464,7 +1464,7 @@ char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 	    p++;
 	}
     }
-printf("%s get_tag fnd %d p\n%s\n", debug_hdr, fnd, p); fflush(stdout);
+printf("%s get_tag tag %s fnd %d p\n%s\n", debug_hdr, tag, fnd, p); fflush(stdout);
 
     return p;
 }  
@@ -1533,7 +1533,6 @@ char * get_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
 	/* Get the attibute value */
 	if (fnd)
 	{
-printf("%s get_tag_attr fnd %d p\n%s\n", debug_hdr, fnd, p); fflush(stdout);
 	    for(p2 += 2, i = 0; *p2 != '\"'; p2++)
 	    	i++;
 
@@ -1543,11 +1542,11 @@ printf("%s get_tag_attr fnd %d p\n%s\n", debug_hdr, fnd, p); fflush(stdout);
 	    	memcpy(*val, p2 - i, i);
 	    	*(*val + i) = '\0';
 	    }
-printf("%s get_tag_attr i %d p2\n%s\n", debug_hdr, i, p2); fflush(stdout);
 	}
 
 	p = ++p2;
     }
+printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, attr, *val, p); fflush(stdout);
 
     return p;
 }  
@@ -1574,6 +1573,7 @@ char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
     /* Should now point at first attribute */
     p++;
 
+printf("%s get_next_tag_attr *p%c\n", debug_hdr, *attr, *val, *p); fflush(stdout);
     /* Examine each for a match or if the search attribute is NULL, return the next one */
     while(! fnd)
     {
@@ -1598,7 +1598,7 @@ char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
 	    break;
 	}
 	    
-	/* Attribute pinter should be null, set it to the found attribute */ 
+	/* Attribute pointer should be null, set it to the found attribute */ 
 	if (*attr == NULL)
 	{
 	    *attr = (char *) malloc(p2 - p + 1);
@@ -1623,6 +1623,7 @@ char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
 
 	p = ++p2;
     }
+printf("%s get_next_tag_attr attr %s val %s p\n%s\n", debug_hdr, *attr, *val, p); fflush(stdout);
 
     return p;
 }  
