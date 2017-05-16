@@ -88,8 +88,9 @@ int get_history(IspListObj *, int, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 char * get_tag(char *, char *, int, MainUi *);
 char * get_next_tag(char *, char **, MainUi *);
-char * get_tag_attr(char *, char *, char **, MainUi *);
+char * get_named_tag_attr(char *, char *, char **, MainUi *);
 char * get_next_tag_attr(char *, char **, char **, MainUi *);
+char * get_tag_attr(char *, char **, char **, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
@@ -828,7 +829,7 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
     if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
     	return NULL;
     
-    if ((p = get_tag_attr(p + strlen(tag) + 1, "count", &val, m_ui)) == NULL)
+    if ((p = get_named_tag_attr(p + strlen(tag) + 1, "count", &val, m_ui)) == NULL)
     	return NULL;
 
     *cnt = atoi(val);
@@ -854,7 +855,7 @@ int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
     r = TRUE;
 
     /* Type */
-    if ((p = get_tag_attr(p, "type", &val, m_ui)) != NULL)
+    if ((p = get_named_tag_attr(p, "type", &val, m_ui)) != NULL)
     {
 	(*listobj)->type = (char *) malloc(strlen(val) + 1);
 	strcpy((*listobj)->type, val);
@@ -862,7 +863,7 @@ int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
     }
 
     /* URL */
-    if ((p = get_tag_attr(p, "href", &val, m_ui)) != NULL)
+    if ((p = get_named_tag_attr(p, "href", &val, m_ui)) != NULL)
     {
 	(*listobj)->href = (char *) malloc(strlen(val) + 1);
 	strcpy((*listobj)->href, val);
@@ -952,7 +953,7 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 	p += 8;
 	err = FALSE;
 
-	if ((p = get_tag_attr(p, "name", &val, m_ui)) != NULL)
+	if ((p = get_named_tag_attr(p, "name", &val, m_ui)) != NULL)
 	{
 	    if (strcmp(val, "metered") == 0)
 	    {
@@ -994,7 +995,7 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     /* Get all the tag attributes */
     for(i = 0, p = xml; i < tag_cnt; i++)
     {
-	if ((p = get_tag_attr(p, (char *) tag_arr[i], &val, m_ui)) == NULL)
+	if ((p = get_named_tag_attr(p, (char *) tag_arr[i], &val, m_ui)) == NULL)
 	{
 	    r = FALSE;
 	    break;
@@ -1150,7 +1151,7 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	if (units != NULL)
 	{
-	    if ((p = get_tag_attr(p, "units", &val, m_ui)) == NULL)
+	    if ((p = get_named_tag_attr(p, "units", &val, m_ui)) == NULL)
 	    {
 		log_msg("ERR0031", msg, "ERR0031", m_ui->window);
 		r = FALSE;
@@ -1248,7 +1249,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	memset(usg_day, 0, sizeof(UsageDay));
 
 	/* Date */
-	if ((p = get_tag_attr(p, "day", &val, m_ui)) == NULL)
+	if ((p = get_named_tag_attr(p, "day", &val, m_ui)) == NULL)
 	{
 	    r = FALSE;
 	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
@@ -1470,15 +1471,44 @@ printf("%s get_tag tag %s fnd %d p\n%s\n", debug_hdr, tag, fnd, p); fflush(stdou
 }  
 
 
+
 /* Return a position pointer and an attibute value of a named attribute */
 
-char * get_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
+char * get_named_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
+{  
+    char *p;
+
+    p = get_tag_attr(xml, &attr, &(*val), m_ui);
+
+    if (*val == NULL)
+	log_msg("ERR0031", attr, "ERR0031", m_ui->window);
+
+    return p;
+}  
+
+
+/* Return a position pointer and an attibute value of the next attribute */
+
+char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
+{  
+    char *p;
+
+    *attr = NULL;
+    p = get_tag_attr(xml, &(*attr), &(*val), m_ui);
+
+    return p;
+}  
+
+
+/* Return a position pointer and the value and (optionally) the name of an attribute */
+
+char * get_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
 {  
     int fnd, i;
     char *p, *p2;
 
     /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
-    //*val = NULL;
+    *val = NULL;
     p = xml;
     fnd = FALSE;
 
@@ -1488,7 +1518,7 @@ char * get_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
     if (*p != ' ')
     	return NULL;
 
-    /* Should now point at first attribute */
+    /* Should now point at attribute */
     p++;
 
     /* Examine each for a match or if the search attribute is NULL, return the next one */
@@ -1501,32 +1531,28 @@ char * get_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
 	    	break;
 
 	    if ((*p2 == '>' && *(p2 + 1) == '<') || (*p2 == '<' && *(p2 + 1) == '/'))
-	    {
-		if (attr != NULL)
-		    log_msg("ERR0031", attr, "ERR0031", m_ui->window);
-
 	    	break;
-	    }
 	}
 
 	if (p2 == NULL)
 	{
-	    log_msg("ERR0031", attr, "ERR0031", m_ui->window);
+	    log_msg("ERR0031", "Tag Attribute", "ERR0039", m_ui->window);
 	    break;
 	}
 	    
-	/* If the search attribute is null, set it to the the current one */ 
-	if (attr == NULL)
+	/* If the search attribute is null, set it to the one found */ 
+	if (*attr == NULL)
 	{
-	    attr = (char *) malloc(p2 - p + 1);
-	    memcpy(attr, p, p2 - p);
-	    *(attr + (p2 - p)) = '\0';
+	    *attr = (char *) malloc(p2 - p + 1);
+	    memcpy(*attr, p, p2 - p);
+	    *(*attr + (p2 - p)) = '\0';
 	    fnd = TRUE;
 	}
 	else
 	{
-	    if (strlen(attr) == (p2 - p))
-	    	if (strncmp(attr, p, p2 - p) == 0)
+	    /* Named attribute */
+	    if (strlen(*attr) == (p2 - p))
+	    	if (strncmp(*attr, p, p2 - p) == 0)
 		    fnd = TRUE;
 	}
 
@@ -1546,83 +1572,7 @@ char * get_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
 
 	p = ++p2;
     }
-printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, attr, *val, p); fflush(stdout);
-
-    return p;
-}  
-
-
-/* Return a position pointer and an attibute value of the next attribute */
-
-char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
-{  
-    int fnd, i;
-    char *p, *p2;
-
-    /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
-    *val = NULL;
-    p = xml;
-    fnd = FALSE;
-
-    if (*p == '<')
-    	p = strchr(p, ' ');
-
-    if (*p != ' ')
-    	return NULL;
-
-    /* Should now point at first attribute */
-    p++;
-
-printf("%s get_next_tag_attr *p%c\n", debug_hdr, *attr, *val, *p); fflush(stdout);
-    /* Examine each for a match or if the search attribute is NULL, return the next one */
-    while(! fnd)
-    {
-	/* Search for start of attribute value or end tag (or NULL) */
-	for(p2 = p; p2 != NULL; p2++)
-	{
-	    if (*p2 == '=' && *(p2 + 1) == '\"')
-	    	break;
-
-	    if ((*p2 == '>' && *(p2 + 1) == '<') || (*p2 == '<' && *(p2 + 1) == '/'))
-	    {
-		if (attr != NULL)
-		    log_msg("ERR0039", "Tag Attribute", "ERR0039", m_ui->window);
-
-	    	break;
-	    }
-	}
-
-	if (p2 == NULL)
-	{
-	    log_msg("ERR0039", "Tag Attribute", "ERR0039", m_ui->window);
-	    break;
-	}
-	    
-	/* Attribute pointer should be null, set it to the found attribute */ 
-	if (*attr == NULL)
-	{
-	    *attr = (char *) malloc(p2 - p + 1);
-	    memcpy(*attr, p, p2 - p);
-	    *(*attr + (p2 - p)) = '\0';
-	    fnd = TRUE;
-	}
-
-	/* Get the attibute value */
-	if (fnd)
-	{
-	    for(p2 += 2, i = 0; *p2 != '\"'; p2++)
-	    	i++;
-
-	    if (i > 0)
-	    {
-	    	*val = (char *) malloc(i + 1);
-	    	memcpy(*val, p2 - i, i);
-	    	*(*val + i) = '\0';
-	    }
-	}
-
-	p = ++p2;
-    }
+//printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, attr, *val, p); fflush(stdout);
 printf("%s get_next_tag_attr attr %s val %s p\n%s\n", debug_hdr, *attr, *val, p); fflush(stdout);
 
     return p;
