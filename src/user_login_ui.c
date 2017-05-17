@@ -48,7 +48,7 @@
 
 /* Types */
 
-typedef struct _user_ui
+typedef struct _user_login_ui
 {
     GtkWidget *window;
     GtkWidget *parent_win;
@@ -64,22 +64,22 @@ typedef struct _user_ui
     GtkWidget *btn_hbox;
     GtkWidget *main_vbox;
     int close_handler;
-} UserUi;
+} UserLoginUi;
 
 
 /* Prototypes */
 
 void user_main(IspData *, GtkWidget *);
-void user_ui(IspData *, UserUi *);
-UserUi * new_user_ui();
-void user_control(UserUi *);
+void user_ui(IspData *, UserLoginUi *);
+UserLoginUi * new_user_ui();
+void user_control(UserLoginUi *);
 int check_user_creds(IspData *);
 int store_user_creds(IspData *);
 
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
 gboolean OnUserDelete(GtkWidget*, GdkEvent *, gpointer);
-void close_user_ui(GtkWidget *, UserUi *);
+void close_user_ui(GtkWidget *, UserLoginUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
@@ -92,14 +92,14 @@ extern int ssl_service_details(IspData *, MainUi *);
 
 /* Globals */
 
-static const char *debug_hdr = "DEBUG-user_ui.c ";
+static const char *debug_hdr = "DEBUG-user_login_ui.c ";
 
 
 /* Display and maintenance of user preferences */
 
 void user_main(IspData *isp_data, GtkWidget *parent_win)
 {
-    UserUi *ui;
+    UserLoginUi *ui;
 
     /* Initial */
     ui = new_user_ui();
@@ -117,10 +117,10 @@ void user_main(IspData *isp_data, GtkWidget *parent_win)
 
 /* Create new screen data variable */
 
-UserUi * new_user_ui()
+UserLoginUi * new_user_ui()
 {
-    UserUi *ui = (UserUi *) malloc(sizeof(UserUi));
-    memset(ui, 0, sizeof(UserUi));
+    UserLoginUi *ui = (UserLoginUi *) malloc(sizeof(UserLoginUi));
+    memset(ui, 0, sizeof(UserLoginUi));
 
     return ui;
 }
@@ -128,7 +128,7 @@ UserUi * new_user_ui()
 
 /* Create the user interface and set the CallBacks */
 
-void user_ui(IspData *isp_data, UserUi *u_ui)
+void user_ui(IspData *isp_data, UserLoginUi *u_ui)
 {  
     /* Set up the UI window */
     u_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
@@ -180,7 +180,7 @@ void user_ui(IspData *isp_data, UserUi *u_ui)
 
 /* Control container for user details */
 
-void user_control(UserUi *u_ui)
+void user_control(UserLoginUi *u_ui)
 {  
     GtkWidget *label;  
     PangoFontDescription *pf;
@@ -248,12 +248,12 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
 {
     const gchar *uname, *pw;
     int len;
-    UserUi *u_ui;
+    UserLoginUi *u_ui;
     MainUi *m_ui;
     IspData *isp_data;
 
     /* Get data */
-    u_ui = (UserUi *) user_data;
+    u_ui = (UserLoginUi *) user_data;
     isp_data = (IspData *) g_object_get_data (G_OBJECT (u_ui->window), "isp");
 
     /* Read and store details */
@@ -306,11 +306,11 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
 void OnUserCancel(GtkWidget *window, gpointer user_data)
 { 
     GtkWidget *dialog;
-    UserUi *ui;
+    UserLoginUi *ui;
     gint response;
 
     /* Get data */
-    ui = (UserUi *) g_object_get_data (G_OBJECT (window), "ui");
+    ui = (UserLoginUi *) g_object_get_data (G_OBJECT (window), "ui");
 
     /* Confirm */
     dialog = gtk_message_dialog_new (GTK_WINDOW (window),
@@ -347,7 +347,7 @@ gboolean OnUserDelete(GtkWidget *window, GdkEvent *ev, gpointer user_data)
 
 /* Common close */
 
-void close_user_ui(GtkWidget *window, UserUi *ui)
+void close_user_ui(GtkWidget *window, UserLoginUi *ui)
 { 
     g_signal_handler_block (window, ui->close_handler);
 
