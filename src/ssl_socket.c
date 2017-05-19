@@ -20,7 +20,7 @@
 
 
 /*
-** Description:	Module ISP service and data usage functions
+** Description:	Module SSL socket functions
 **
 ** Author:	Anthony Buckley
 **
@@ -63,12 +63,14 @@
 
 /* Prototypes */
 
-int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui);
+int ssl_service_details(IspData *, MainUi *);
+int ssl_service_init(IspData *, MainUi *);
+int ssl_isp_connect(IspData *, MainUi *);
+char * setup_get(char *, IspData *);
+void encode_un_pw(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
-int get_default_basic(IspData *, MainUi *);
-IspListObj * default_srv_type(IspData *, MainUi *);
-IspListObj * search_list(char *, GList *);
+int get_default_service(IspData *, MainUi *);
 int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
 int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
@@ -76,6 +78,22 @@ int get_usage(IspListObj *, IspData *, MainUi *);
 int get_service(IspListObj *, IspData *, MainUi *);
 int get_history(IspListObj *, int, IspData *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
+void set_param(int, char *);
+int check_listobj(IspListObj **);
+
+extern void log_msg(char*, char*, char*, GtkWidget*);
+extern int get_user_pref(char *, char **);
+extern void date_tm_add(struct tm *, char *, int);
+extern int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui);
+extern int load_usage(char *, IspData *, MainUi *);
+extern int load_service(char *, IspData *, MainUi *);
+extern int load_usage_hist(char *, IspData *, MainUi *);
+
+IspListObj * default_srv_type(IspData *, MainUi *);
+IspListObj * search_list(char *, GList *);
+void clean_up(IspData *);
+void free_srv_list(gpointer);
+void free_hist_list(gpointer);
 char * get_tag(char *, char *, int, MainUi *);
 char * get_next_tag(char *, char **, MainUi *);
 char * get_named_tag_attr(char *, char *, char **, MainUi *);
@@ -84,20 +102,6 @@ char * get_tag_attr(char *, char **, char **, MainUi *);
 int get_tag_val(char *, char **, MainUi *);
 char * get_list_count(char *, char *, int *, MainUi *);
 int process_list_item(char *, IspListObj **, MainUi *);
-int load_usage(char *, IspData *, MainUi *);
-int total_usage(char *, ServUsage *, MainUi *);
-int load_service(char *, IspData *, MainUi *);
-int load_usage_hist(char *, IspData *, MainUi *);
-void set_param(int, char *);
-int check_listobj(IspListObj **);
-void clean_up(IspData *);
-void free_srv_list(gpointer);
-void free_hist_list(gpointer);
-
-extern void log_msg(char*, char*, char*, GtkWidget*);
-extern int get_user_pref(char *, char **);
-extern void date_tm_add(struct tm *, char *, int);
-
 
 /* Globals */
 
@@ -139,7 +143,7 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
     BIO_reset(isp_data->web);
 
     /* 3. Usage and Service details for 'Default' service */
-    if (get_default_basic(isp_data, m_ui) == FALSE)
+    if (get_default_service(isp_data, m_ui) == FALSE)
     	return FALSE;
 
     BIO_reset(isp_data->web);
@@ -270,6 +274,71 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 }  
 
 
+/* Encode the username and password in base64 */
+
+void encode_un_pw(IspData *isp_data, MainUi *m_ui)
+{ 
+    gchar *unpw_b64;
+    int len;
+    char *tmp;
+
+    len = strlen(isp_data->uname) + strlen(isp_data->pw);
+    tmp = (char *) malloc(len + 2);
+    sprintf(tmp, "%s:%s", isp_data->uname, isp_data->pw);
+
+    isp_data->enc64 = g_base64_encode ((const guchar *) tmp, len + 1);
+
+    free(tmp);
+
+    return;
+}  
+
+
+/* ISP service listing */
+
+int service_list(IspData *isp_data, MainUi *m_ui)
+{  
+    int r;ISP service and data usage
+    char *get_qry;
+
+    r = TRUE;
+    sprintf(isp_data->url, "/api/%s/", API_VER);
+    
+    /* Construct GET */
+    get_qry = setup_get(isp_data->url, isp_data);
+
+    /* Send the query */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    r = get_serv_list(isp_data->web, isp_data, m_ui);
+
+    /* Clean up */
+    free(get_qry);
+
+    return r;
+}  
+
+
+/* Read and Parse xml and set up a list of services */
+
+int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
+{  
+    char *xml = NULL;
+    int r;
+
+    /* Read xml */
+    xml = bio_read_xml(web, m_ui);
+printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Services list */
+    r = parse_serv_list(xml, isp_data, m_ui);
+
+    return r;
+}
+
+
 /* Iterate each service type found and get the associated resource listing */
 
 int srv_resource_list(IspData *isp_data, MainUi *m_ui)
@@ -301,9 +370,9 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-/* Get the current usage and service details for the default service */
+/* Get the current usage and details for the default service */
 
-int get_default_basic(IspData *isp_data, MainUi *m_ui)
+int get_default_service(IspData *isp_data, MainUi *m_ui)
 {  
     IspListObj *srv_type, *rsrc;
     GList *l;
@@ -340,81 +409,92 @@ int get_default_basic(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-// Set default order - User sets a default
-//		     - User has only a single service type
-//		     - If 'Personal_ADSL' is present, use it
-//		     - Pick the first in the list
+/* Set up the query */
 
-IspListObj * default_srv_type(IspData *isp_data, MainUi *m_ui)
+char * setup_get(char *url, IspData *isp_data)
 {  
-    char *p;
-    IspListObj *srv_type;
-    GList *l;
+    char *query;
 
-    get_user_pref(DEFAULT_SRV_TYPE, &p);
+    query = (char *) malloc(strlen(url) +
+			    strlen(HOST) +
+			    strlen(isp_data->user_agent) +
+			    strlen(isp_data->enc64) +
+			    strlen(REALM) +
+			    strlen(GET_TPL) - 7);	// Note 7 accounts for 4 x %s in template plus \0
 
-    if (p != NULL)
-    {
-    	if ((srv_type = search_list(p, isp_data->srv_list_head)) == NULL)
-    	{
-	    log_msg("ERR0034", p, "ERR0034", m_ui->window);
-	    return NULL;
-	}
-    }
-    else if ((srv_type = search_list(DEFAULT_SRV_TYPE, isp_data->srv_list_head)) == NULL)
-    {
-    	l = isp_data->srv_list_head;
-    	srv_type = (IspListObj *) l->data;
-    }
+    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, isp_data->enc64, REALM);
 
-    return srv_type;
+    return query;
 }  
 
 
-/* Read and Parse xml and set up a list of services */
+/* Set up the query and parameters */
 
-int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui)
+char * setup_get_param(char *url, char *param, IspData *isp_data)
 {  
-    char *p;
-    int i, r;
-    IspListObj *isp_srv;
+    int param_len;
+    char *query;
 
-    /* Services count */
-    if ((p = get_list_count(xml, "services", &(isp_data)->srv_cnt, m_ui)) == NULL)
+    param_len = strlen(param);
+
+    query = (char *) malloc(strlen(url) +
+			    strlen(HOST) +
+			    strlen(isp_data->user_agent) +
+			    param_len +
+			    strlen(isp_data->enc64) +
+			    strlen(REALM) +
+			    strlen(PARAM_GET_TPL) - 8);	// Note 8 accounts for 4 x %s, %d and \0 in template
+
+    sprintf(query, PARAM_GET_TPL, url, HOST, isp_data->user_agent, param_len, isp_data->enc64, REALM);
+    strcat(query, param);
+
+    return query;
+}  
+
+
+/* Send the query to the server - encrypted */
+
+int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
+{  
+    int r, sent, qlen;
+    char s[20];
+
+    sent = 0;
+    qlen = strlen(get_qry);
+
+    while(sent < qlen)
     {
-    	free(xml);
-    	return FALSE;
-    }
+	r = BIO_write(web, get_qry + sent, qlen - sent);
 
-    r = TRUE;
-
-    /* Create a service list */
-    for(i = 0; i < isp_data->srv_cnt; i++)
-    {
-	if ((p = get_tag(p, "service", TRUE, m_ui)) != NULL)
+	if (r <= 0)
 	{
-	    isp_srv = (IspListObj *) malloc(sizeof(IspListObj));
-	    memset(isp_srv, 0, sizeof(IspListObj));
-
-	    if ((r = process_list_item(p, &isp_srv, m_ui)) == FALSE)
-	    	break;
-
-	    isp_data->srv_list = g_list_append (isp_data->srv_list_head, isp_srv);
-
-	    if (isp_data->srv_list_head == NULL)
-		isp_data->srv_list_head = isp_data->srv_list;
+	    log_msg("ERR0010", NULL, "ERR0010", m_ui->window);
+	    return FALSE;
 	}
 	else
 	{
-	    log_msg("ERR0030", "<service ", "ERR0030", m_ui->window);
-	    r = FALSE;
-	    break;
+	    sent += r;
 	}
     }
 
-    free(xml);
+    //r = BIO_puts(web, get_qry);		// Try this for starters - perhaps BIO_write may better
+
+    /*
+    if (r >= 0 && r < strlen(get_qry))
+    {
+    	sprintf(s, "%d", r);
+	log_msg("ERR0023", s, "ERR0023", m_ui->window);
+	return FALSE;
+    }
+
+    if (r < 0)
+    {
+	log_msg("ERR0024", NULL, "ERR0024", m_ui->window);
+	return FALSE;
+    }
+    */
     
-    return r;
+    return TRUE;
 }  
 
 
@@ -474,89 +554,6 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
 }  
 
 
-/* Read and Parse xml and determine the list count */
-
-char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
-{  
-    char *p, *val;
-
-    if ((p = get_tag(xml, tag, TRUE, m_ui)) == NULL)
-    	return NULL;
-    
-    if ((p = get_named_tag_attr(p + strlen(tag) + 1, "count", &val, m_ui)) == NULL)
-    	return NULL;
-
-    *cnt = atoi(val);
-    free(val);
-
-    if (*cnt == 0)
-    {
-	log_msg("ERR0033", tag, "ERR0033", m_ui->window);
-    	return NULL;
-    }
-
-    return p;
-}  
-
-
-/* Extract the Type, URL and Value from an xml object */
-
-int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
-{  
-    char *val;
-    int r;
-
-    r = TRUE;
-
-    /* Type */
-    if ((p = get_named_tag_attr(p, "type", &val, m_ui)) != NULL)
-    {
-	(*listobj)->type = (char *) malloc(strlen(val) + 1);
-	strcpy((*listobj)->type, val);
-	free(val);
-    }
-
-    /* URL */
-    if ((p = get_named_tag_attr(p, "href", &val, m_ui)) != NULL)
-    {
-	(*listobj)->href = (char *) malloc(strlen(val) + 1);
-	strcpy((*listobj)->href, val);
-	free(val);
-    }
-
-    /* Value */
-    get_tag_val(p, (&(*listobj)->val), m_ui);
-
-    /* Validate */
-    if (check_listobj(&(*listobj)) == FALSE)
-	r = FALSE;
-
-    return r;
-}  
-
-
-/* Check the list object structure is valid */
-
-int check_listobj(IspListObj **listobj)
-{  
-    if ((*listobj)->type && (*listobj)->href && (*listobj)->val)
-	return TRUE;
-
-    if ((*listobj)->type)
-    	free((*listobj)->type);
-    
-    if ((*listobj)->href)
-    	free((*listobj)->href);
-    
-    if ((*listobj)->val)
-    	free((*listobj)->val);
-
-    free(*listobj);
-    
-    return FALSE;
-}
-
-
 /* Get the current period usage */
 
 int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
@@ -591,122 +588,6 @@ printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
 }
 
 
-/* Save the current usage data */
-
-int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
-{  
-    int err;
-    char *p, *val;
-
-    err = TRUE;
-    p = xml;
-    memset(&srv_usage, 0, sizeof(ServUsage));
-
-    while((p = get_tag(p, "traffic", err, m_ui)) != NULL)
-    {
-	p += 8;
-	err = FALSE;
-
-	if ((p = get_named_tag_attr(p, "name", &val, m_ui)) != NULL)
-	{
-	    if (strcmp(val, "metered") == 0)
-	    {
-		get_tag_val(p, &(srv_usage.metered_bytes), m_ui);
-		free(val);
-		continue;
-	    }
-	    else if (strcmp(val, "unmetered") == 0)
-	    {
-		get_tag_val(p, &(srv_usage.unmetered_bytes), m_ui);
-		free(val);
-		continue;
-	    }
-	    else if (strcmp(val, "total") == 0)
-	    {
-		total_usage(p, &srv_usage, m_ui);
-		free(val);
-		continue;
-	    }
-	}
-    }
-
-    return TRUE;
-}  
-
-
-/* Save the total usage details */
-
-int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
-{  
-    int i, r, len;
-    char *p, *val;
-    const char *tag_arr[] = {"rollover", "plan-interval", "quota", "unit"};
-    const int tag_cnt = 4;
-
-    /* Setup */
-    r = TRUE;
-
-    /* Get all the tag attributes */
-    for(i = 0, p = xml; i < tag_cnt; i++)
-    {
-	if ((p = get_named_tag_attr(p, (char *) tag_arr[i], &val, m_ui)) == NULL)
-	{
-	    r = FALSE;
-	    break;
-	}
-
-	len = strlen(val) + 1;
-
-	switch(i)
-	{
-	    case 0:
-		usg->rollover_dt = (char *) malloc(len);
-	    	strcpy(usg->rollover_dt, val);
-	    	free(val);
-	    	break;
-	    case 1:
-		usg->plan_interval = (char *) malloc(len);
-	    	strcpy(usg->plan_interval, val);
-	    	free(val);
-	    	break;
-	    case 2:
-		usg->quota = (char *) malloc(len);
-	    	strcpy(usg->quota, val);
-	    	free(val);
-	    	break;
-	    case 3:
-		usg->unit = (char *) malloc(len);
-	    	strcpy(usg->unit, val);
-	    	free(val);
-	    	break;
-	    default:
-		log_msg("ERR0035", val, "ERR0035", m_ui->window);
-		r = FALSE;
-	    	free(val);
-	    	break;
-	}
-    }
-
-    /* Flag a warning if not all are found */
-    if (i != tag_cnt)
-    {
-	log_msg("ERR0036", NULL, "ERR0036", m_ui->window);
-	r = FALSE;
-    }
-
-    /* Get the actual value */
-    get_tag_val(p, &(usg->total_bytes), m_ui);
-
-/* Test debug
-*/
-printf("%s\nTotal Usage: %s %s %s %s %s %s %s\n\n", debug_hdr, usg->rollover_dt, usg->plan_interval,
-						    usg->quota, usg->unit, usg->metered_bytes,
-						    usg->unmetered_bytes, usg->total_bytes); fflush(stdout);
-
-    return r;
-}  
-
-
 /* Get the service details */
 
 int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
@@ -738,103 +619,6 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml);
 
     return r;
 }
-
-
-/* Save the current usage data */
-
-int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
-{  
-    int i, r;
-    char *p, *tag, *val, *units;
-    char msg[20];
-    const char *tag_arr[] = {"username", "quota", "plan", "carrier", "speed", "usage-rating",
-    			     "rollover", "excess-cost", "excess-charged", "excess-shaped", 
-    			     "excess-restrict-access", "plan-interval", "plan-cost"};
-    const int tag_cnt = 13;
-
-    r = TRUE;
-    p = xml;
-    memset(&srv_plan, 0, sizeof(SrvPlan));
-
-    // It appears that some tags may not be present depending on the plan
-    // so just search thru the xml and get whatever is present
-    while(p != NULL)
-    {
-    	/* Find any tag */
-    	if ((p = get_next_tag(p, &tag, m_ui)) == NULL)
-	    continue;
-
-	p += strlen(tag) + 1;
-
-	/* Try to match with one we want */
-	for(i = 0; i < tag_cnt; i++)
-	{
-	    if (strcmp(tag, tag_arr[i]) == 0)	    
-	    	break;
-	}
-
-	/* No match */
-	if (i >= tag_cnt)
-	{
-	    free(tag);
-	    continue;
-	}
-
-	/* Some tags have 'units' attribute */
-	switch(i)
-	{
-	    case 1:		// Quota
-		units = srv_plan.quota_units;
-		strcpy(msg, "Quota units");
-		break;
-
-	    case 7:		// Excess Cost
-		units = srv_plan.excess_cost_units;
-		strcpy(msg, "Excess Cost units");
-		break;
-
-	    case 12:		// Plan Cost
-		units = srv_plan.plan_cost_units;
-		strcpy(msg, "Plan Cost units");
-		break;
-
-	    default:
-		units = NULL;
-		break;
-	}
-
-	if (units != NULL)
-	{
-	    if ((p = get_named_tag_attr(p, "units", &val, m_ui)) == NULL)
-	    {
-		log_msg("ERR0031", msg, "ERR0031", m_ui->window);
-		r = FALSE;
-	    }
-	    else
-	    {
-		strncpy(units, val, UNIT_MAX);
-		free(val);
-	    }
-	}
-
-	/* Get the tag value */
-	get_tag_val(p, &(srv_plan.srv_plan_item[i]), m_ui);
-	free(tag);
-    }
-
-/* Test debug
-*/
-printf("%s\nService Plan \n", debug_hdr); fflush(stdout);
-for(i = 0; i < tag_cnt; i++)
-{
-printf("%s: %s\n", tag_arr[i], srv_plan.srv_plan_item[i]); fflush(stdout);
-}
-printf("Quota units: %s Plan Cost units: %s Excess Cost units: %s\n\n", 
-		srv_plan.quota_units, srv_plan.plan_cost_units, srv_plan.excess_cost_units); 
-fflush(stdout);
-
-    return r;
-}  
 
 
 /* Get the usage day history details as per a parameter type */
@@ -872,139 +656,6 @@ printf("%s get_history:xml\n%s\n", debug_hdr, xml);
 
     return r;
 }
-
-
-/* Keep a list of the history usage days */
-
-int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
-{  
-    int r, i;
-    int max_attr;
-    char *p, *attr, *tag, *val;
-    UsageDay *usg_day;
-
-    /* Clear history if necessary */
-    if (usg_hist_list != NULL)
-    	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
-
-    /* Process all the '<usage tags' */
-    r = TRUE;
-    p = xml;
-
-    while(p != NULL)
-    {
-	if ((p = get_tag(p, "usage", FALSE, m_ui)) == NULL)
-	    break;
-
-	/* New usage day */
-	p += 6;
-	i = 0;
-	usg_day = malloc(sizeof(UsageDay));
-	memset(usg_day, 0, sizeof(UsageDay));
-
-	/* Date */
-	if ((p = get_named_tag_attr(p, "day", &val, m_ui)) == NULL)
-	{
-	    r = FALSE;
-	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
-	    break;
-	}
-
-	usg_day->usg_dt = malloc(strlen(val) + 1);
-	strcpy(usg_day->usg_dt, val);
-	free(val);
-
-    	/* Process the traffic tags (metered, unmetered, up, down) */
-    	while((p = get_next_tag(p, &tag, m_ui)) != NULL)
-	{
-	    if (strcmp(tag, "traffic") != 0)
-	    {
-	    	free(tag);
-	    	break;
-	    }
-
-	    max_attr = 3;
-
-	    while(max_attr > 0)
-	    {
-		if ((p = get_next_tag_attr(p, &attr, &val, m_ui)) == NULL)
-		    break;
-
-		if (strcmp(attr, "direction") == 0)
-		{
-		    /* Direction is 'up' or 'down' */
-		    max_attr--;
-
-		    if (strcmp(val, "up") == 0)
-			usg_day->traffic[i].direction = 0;
-		    else
-			usg_day->traffic[i].direction = 1;
-		}
-		else if (strcmp(attr, "name") == 0)
-		{
-		    /* Traffic name is 'metered' or 'unmetered' or 'total' */
-		    max_attr--;
-
-		    if (strcmp(val, "metered") == 0)
-			usg_day->traffic[i].tr_name = 0;
-
-		    else if (strcmp(val, "total") == 0)
-		    {
-			usg_day->traffic[i].tr_name = 2;
-			max_attr--;
-		    }
-		    else
-			usg_day->traffic[i].tr_name = 1;
-		}
-		else if (strcmp(attr, "unit") == 0)
-		{
-		    /* Unit of measurement */
-		    max_attr--;
-		    usg_day->traffic[i].unit = malloc(strlen(val) + 1);
-		    strcpy(usg_day->traffic[i].unit, val);
-		}
-
-		free(attr);
-		free(val);
-	    }
-
-	    /* Amount of data */
-	    get_tag_val(p, &val, m_ui);
-	    usg_day->traffic[i].traffic_amt = atol(val);
-	    free(val);
-
-	    i++;
-	}
-
-	/* Add to history list */
-	usg_hist_list = g_list_prepend (usg_hist_list, usg_day);
-    }
-
-    /* Reset the list */
-    usg_hist_list = g_list_reverse (usg_hist_list);
-
-    /* Clear if error */
-    if (r == FALSE)
-    	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
-
-/* Test debug
-*/
-printf("%s\nUsage History\n", debug_hdr); fflush(stdout);
-for(GList *l = usg_hist_list; l != NULL; l = l->next)
-{
-usg_day = (UsageDay *) l->data;
-printf("Date: %s\n", usg_day->usg_dt); fflush(stdout);
-for(i = 0; i < 5; i++)
-    {
-    printf("Dir: %d Name: %d Unit: %s, Amt %ld\n", 
-	    usg_day->traffic[i].direction, usg_day->traffic[i].tr_name,
-	    usg_day->traffic[i].unit, usg_day->traffic[i].traffic_amt); fflush(stdout);
-    }
-}
-printf("\n");
-
-    return r;
-}  
 
 
 
@@ -1317,95 +968,3 @@ void set_param(int param_type, char *s_param)
 
     return;
 }  
-
-
-/* Search the service list for a given type */
-
-IspListObj * search_list(char *type, GList *srv_list)
-{  
-    GList *l;
-    IspListObj *srv;
-
-    for(l = srv_list; l != NULL; l = l->next)
-    {
-    	srv = (IspListObj *) l->data;
-
-    	if (strcmp(type, srv->type) == 0)
-	    return srv;
-    }
-
-    return NULL;
-}  
-
-
-/* Clear any service lists, memory, etc. */
-
-void clean_up(IspData *isp_data)
-{  
-    g_list_free_full(isp_data->srv_list_head, (GDestroyNotify) free_srv_list);
-
-    if (srv_usage.rollover_dt)
-    	free(srv_usage.rollover_dt);
-
-    if (srv_usage.plan_interval)
-    	free(srv_usage.plan_interval);
-
-    if (srv_usage.quota)
-    	free(srv_usage.quota);
-
-    if (srv_usage.unit)
-    	free(srv_usage.unit);
-
-    if (srv_usage.total_bytes)
-    	free(srv_usage.total_bytes);
-
-    if (srv_usage.metered_bytes)
-    	free(srv_usage.metered_bytes);
-
-    if (srv_usage.unmetered_bytes)
-    	free(srv_usage.unmetered_bytes);
-
-    return;
-}  
-
-
-/* Free a service list item */
-
-void free_srv_list(gpointer data)
-{  
-    IspListObj *isp_srv;
-
-    isp_srv = (IspListObj *) data;
-    free(isp_srv->val);
-    free(isp_srv->href);
-    free(isp_srv->type);
-
-    free(isp_srv);
-
-    return;
-}  
-
-
-/* Free a history list item */
-
-void free_hist_list(gpointer data)
-{  
-    int i;
-    UsageDay *usg_day;
-    TrafficData traffic_data;
-
-    usg_day = (UsageDay *) data;
-    
-    if (usg_day->usg_dt)
-	free(usg_day->usg_dt);
-
-    for(i = 0; i < 5; i++)
-    {
-    	if (usg_day->traffic[i].unit != NULL)
-	    free(usg_day->traffic[i].unit);
-    }
-
-    free(usg_day);
-
-    return;
-}
