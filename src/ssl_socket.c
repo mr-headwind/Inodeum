@@ -66,49 +66,35 @@
 int ssl_service_details(IspData *, MainUi *);
 int ssl_service_init(IspData *, MainUi *);
 int ssl_isp_connect(IspData *, MainUi *);
-char * setup_get(char *, IspData *);
-void encode_un_pw(IspData *, MainUi *);
 int service_list(IspData *, MainUi *);
-int srv_resource_list(IspData *, MainUi *);
-int get_default_service(IspData *, MainUi *);
-int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
-int bio_send_query(BIO *, char *, MainUi *);
 int get_serv_list(BIO *, IspData *, MainUi *);
+int srv_resource_list(IspData *, MainUi *);
+int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
+int get_default_service(IspData *, MainUi *);
 int get_usage(IspListObj *, IspData *, MainUi *);
 int get_service(IspListObj *, IspData *, MainUi *);
 int get_history(IspListObj *, int, IspData *, MainUi *);
+void encode_un_pw(IspData *, MainUi *);
+char * setup_get(char *, IspData *);
+char * setup_get_param(char *, char *, IspData *);
+int bio_send_query(BIO *, char *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 void set_param(int, char *);
-int check_listobj(IspListObj **);
 
-extern void log_msg(char*, char*, char*, GtkWidget*);
-extern int get_user_pref(char *, char **);
-extern void date_tm_add(struct tm *, char *, int);
-extern int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui);
+extern int parse_serv_list(char *, IspData *, MainUi *);
+extern int parse_resource_list(char *, IspListObj *, IspData *, MainUi *);
+extern IspListObj * default_srv_type(IspData *, MainUi *);
 extern int load_usage(char *, IspData *, MainUi *);
 extern int load_service(char *, IspData *, MainUi *);
 extern int load_usage_hist(char *, IspData *, MainUi *);
+extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void date_tm_add(struct tm *, char *, int);
+extern char * next_rollover_dt();
 
-IspListObj * default_srv_type(IspData *, MainUi *);
-IspListObj * search_list(char *, GList *);
-void clean_up(IspData *);
-void free_srv_list(gpointer);
-void free_hist_list(gpointer);
-char * get_tag(char *, char *, int, MainUi *);
-char * get_next_tag(char *, char **, MainUi *);
-char * get_named_tag_attr(char *, char *, char **, MainUi *);
-char * get_next_tag_attr(char *, char **, char **, MainUi *);
-char * get_tag_attr(char *, char **, char **, MainUi *);
-int get_tag_val(char *, char **, MainUi *);
-char * get_list_count(char *, char *, int *, MainUi *);
-int process_list_item(char *, IspListObj **, MainUi *);
 
 /* Globals */
 
-static const char *debug_hdr = "DEBUG-service.c ";
-static ServUsage srv_usage;
-static SrvPlan srv_plan;
-static GList *usg_hist_list = NULL;
+static const char *debug_hdr = "DEBUG-ssl_socket.c ";
 
 
 /* API Webtools service requests */
@@ -274,31 +260,11 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-/* Encode the username and password in base64 */
-
-void encode_un_pw(IspData *isp_data, MainUi *m_ui)
-{ 
-    gchar *unpw_b64;
-    int len;
-    char *tmp;
-
-    len = strlen(isp_data->uname) + strlen(isp_data->pw);
-    tmp = (char *) malloc(len + 2);
-    sprintf(tmp, "%s:%s", isp_data->uname, isp_data->pw);
-
-    isp_data->enc64 = g_base64_encode ((const guchar *) tmp, len + 1);
-
-    free(tmp);
-
-    return;
-}  
-
-
 /* ISP service listing */
 
 int service_list(IspData *isp_data, MainUi *m_ui)
 {  
-    int r;ISP service and data usage
+    int r;
     char *get_qry;
 
     r = TRUE;
@@ -327,14 +293,17 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
-printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml);
+printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
 
     /* Services list */
     r = parse_serv_list(xml, isp_data, m_ui);
+printf("%s get_serv_list 1\n", debug_hdr); fflush(stdout);
+    free(xml);
 
+printf("%s get_serv_list 2\n", debug_hdr); fflush(stdout);
     return r;
 }
 
@@ -348,24 +317,49 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
     IspListObj *isp_srv;
 
     GList *l;
+    r = TRUE;
 
+printf("%s srv_resource_list 1\n", debug_hdr); fflush(stdout);
     for(l = isp_data->srv_list_head; l != NULL; l = l->next)
     {
-	r = TRUE;
     	isp_srv = (IspListObj *) l->data;
 	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->val);
 	
 	/* Construct GET */
 	get_qry = setup_get(isp_data->url, isp_data);
 
-	/* Send the query */
+	/* Send the query, then clean up */
 	bio_send_query(isp_data->web, get_qry, m_ui);
-	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
-
-	/* Clean up */
 	free(get_qry);
+
+	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
+	 
+	if (r = FALSE)
+	    break;
     }
 
+    return r;
+}  
+
+
+/* Read and Parse xml and set up a list of resources for a service type */
+
+int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *m_ui)
+{  
+    char *xml = NULL;
+    int i, r;
+
+    /* Read xml */
+    xml = bio_read_xml(web, m_ui);
+printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Resources list */
+    r = parse_resource_list(xml, isp_srv, isp_data, m_ui);
+    free(xml);
+    
     return r;
 }  
 
@@ -406,6 +400,130 @@ int get_default_service(IspData *isp_data, MainUi *m_ui)
     }
 
     return TRUE;
+}  
+
+
+/* Get the current period usage */
+
+int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char *get_qry;
+    char *xml = NULL;
+    
+    r = TRUE;
+
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
+// ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
+    /* Construct GET */
+    //get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
+    get_qry = setup_get(isp_data->url, isp_data);
+printf("%s get_usage:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
+
+    /* Send the query and read xml result */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    free(get_qry);
+
+    xml = bio_read_xml(isp_data->web, m_ui);
+printf("%s get_usage:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Save the current usage data */
+    r = load_usage(xml, isp_data, m_ui);
+
+    return r;
+}
+
+
+/* Get the service details */
+
+int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char *get_qry;
+    char *xml = NULL;
+    
+    r = TRUE;
+
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
+	
+    /* Construct GET */
+    get_qry = setup_get(isp_data->url, isp_data);
+printf("%s get_service:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
+
+    /* Send the query and read xml result */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    free(get_qry);
+
+    xml = bio_read_xml(isp_data->web, m_ui);
+printf("%s get_service:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Save the current service data */
+    r = load_service(xml, isp_data, m_ui);
+
+    return r;
+}
+
+
+/* Get the usage day history details as per a parameter type */
+
+int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
+{  
+    int r;
+    char s_param[60];
+    char *get_qry;
+    char *xml = NULL;
+    
+    r = TRUE;
+
+    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
+	
+    /* Build an appropriate parameter string */
+    set_param(param_type, s_param);
+
+    /* Construct GET */
+    get_qry = setup_get_param(isp_data->url, s_param, isp_data);
+printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
+
+    /* Send the query and read xml result */
+    bio_send_query(isp_data->web, get_qry, m_ui);
+    free(get_qry);
+
+    xml = bio_read_xml(isp_data->web, m_ui);
+printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+
+    if (xml == NULL)
+    	return FALSE;
+
+    /* Save a list of the usage data days */
+    r = load_usage_hist(xml, isp_data, m_ui);
+
+    return r;
+}
+
+
+/* Encode the username and password in base64 */
+
+void encode_un_pw(IspData *isp_data, MainUi *m_ui)
+{ 
+    gchar *unpw_b64;
+    int len;
+    char *tmp;
+
+    len = strlen(isp_data->uname) + strlen(isp_data->pw);
+    tmp = (char *) malloc(len + 2);
+    sprintf(tmp, "%s:%s", isp_data->uname, isp_data->pw);
+
+    isp_data->enc64 = g_base64_encode ((const guchar *) tmp, len + 1);
+
+    free(tmp);
+
+    return;
 }  
 
 
@@ -498,167 +616,6 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 }  
 
 
-/* Read and Parse xml and set up a list of resources for a service type */
-
-int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *m_ui)
-{  
-    char *xml = NULL;
-    char *p;
-    int i, r;
-    IspListObj *rsrc;
-
-    /* Read xml */
-    xml = bio_read_xml(web, m_ui);
-printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    /* Resources count */
-    if ((p = get_list_count(xml, "resources", &(isp_srv)->cnt, m_ui)) == NULL)
-    {
-    	free(xml);
-    	return FALSE;
-    }
-
-    r = TRUE;
-
-    /* Create a resource list */
-    for(i = 0; i < isp_srv->cnt; i++)
-    {
-	if ((p = get_tag(p, "resource", TRUE, m_ui)) != NULL)
-	{
-	    rsrc = (IspListObj *) malloc(sizeof(IspListObj));
-	    memset(rsrc, 0, sizeof(IspListObj));
-	    p += 9;
-
-	    if ((r = process_list_item(p, &rsrc, m_ui)) == FALSE)
-	    	break;
-
-	    isp_srv->sub_list = g_list_append (isp_srv->sub_list_head, rsrc);
-
-	    if (isp_srv->sub_list_head == NULL)
-		isp_srv->sub_list_head = isp_srv->sub_list;
-	}
-	else
-	{
-	    log_msg("ERR0030", "service", "ERR0030", m_ui->window);
-	    r = FALSE;
-	    break;
-	}
-    }
-
-    free(xml);
-    
-    return r;
-}  
-
-
-/* Get the current period usage */
-
-int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
-{  
-    int r;
-    char *get_qry;
-    char *xml = NULL;
-    
-    r = TRUE;
-
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-// ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
-    /* Construct GET */
-    //get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
-    get_qry = setup_get(isp_data->url, isp_data);
-printf("%s get_usage:query\n%s\n", debug_hdr, get_qry);
-
-    /* Send the query and read xml result */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    free(get_qry);
-
-    xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_usage:xml\n%s\n", debug_hdr, xml);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    /* Save the current usage data */
-    r = load_usage(xml, isp_data, m_ui);
-
-    return r;
-}
-
-
-/* Get the service details */
-
-int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
-{  
-    int r;
-    char *get_qry;
-    char *xml = NULL;
-    
-    r = TRUE;
-
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-	
-    /* Construct GET */
-    get_qry = setup_get(isp_data->url, isp_data);
-printf("%s get_service:query\n%s\n", debug_hdr, get_qry);
-
-    /* Send the query and read xml result */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    free(get_qry);
-
-    xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_service:xml\n%s\n", debug_hdr, xml);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    /* Save the current service data */
-    r = load_service(xml, isp_data, m_ui);
-
-    return r;
-}
-
-
-/* Get the usage day history details as per a parameter type */
-
-int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
-{  
-    int r;
-    char s_param[60];
-    char *get_qry;
-    char *xml = NULL;
-    
-    r = TRUE;
-
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-	
-    /* Build an appropriate parameter string */
-    set_param(param_type, s_param);
-
-    /* Construct GET */
-    get_qry = setup_get_param(isp_data->url, s_param, isp_data);
-printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
-
-    /* Send the query and read xml result */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    free(get_qry);
-
-    xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_history:xml\n%s\n", debug_hdr, xml);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    /* Save a list of the usage data days */
-    r = load_usage_hist(xml, isp_data, m_ui);
-
-    return r;
-}
-
-
-
 /* Read the encrypted output from the server */
 
 char * bio_read_xml(BIO *web, MainUi *m_ui)
@@ -699,219 +656,6 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
 }  
 
 
-/* Find and return the next tag */
-
-char * get_next_tag(char *xml, char **tag, MainUi *m_ui)
-{  
-    int i;
-    char *p, *p2;
-
-    p = xml;
-    *tag = NULL;
-
-    while(p != NULL)
-    {
-    	if ((p = strchr(p, '<')) == NULL)
-	    break;
-
-	if (*(p + 1) == '/')
-	{
-	    p++;
-	    continue;
-	}
-
-	for(p2 = p + 1, i = 0; *p2 != ' ' && *p2 != '>'; p2++)
-	    i++;
-
-	if (i > 0)
-	{
-	    *tag = (char *) malloc(i + 1);
-	    memcpy(*tag, p + 1, i);
-	    *(*tag + i) = '\0';
-	}
-
-	break;
-    }
-printf("%s get_next_tag tag %s p\n%s\n", debug_hdr, *tag, p); fflush(stdout);
-
-    return p;
-}  
-
-
-/* Return a pointer to a tag */
-
-char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
-{  
-    int len;
-    char *p;
-    int fnd;
-
-    fnd = FALSE;
-    p = xml;
-    len = strlen(tag);
-
-    while(fnd == FALSE)
-    {
-	if ((p = strstr(p, tag)) == NULL)
-	{
-	    if (err == TRUE)
-		log_msg("ERR0030", tag, "ERR0030", m_ui->window);
-
-	    break;
-	}
-
-	if ((*(p + len) == ' ' || *(p + len) == '>') && (*(p - 1) == '<'))
-	{
-	    fnd = TRUE;
-	    p--;
-	}
-	else
-	{
-	    p++;
-	}
-    }
-printf("%s get_tag tag %s fnd %d p\n%s\n", debug_hdr, tag, fnd, p); fflush(stdout);
-
-    return p;
-}  
-
-
-
-/* Return a position pointer and an attibute value of a named attribute */
-
-char * get_named_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
-{  
-    char *p;
-
-    p = get_tag_attr(xml, &attr, &(*val), m_ui);
-
-    if (*val == NULL)
-	log_msg("ERR0031", attr, "ERR0031", m_ui->window);
-
-    return p;
-}  
-
-
-/* Return a position pointer and an attibute value of the next attribute */
-
-char * get_next_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
-{  
-    char *p;
-
-    *attr = NULL;
-    p = get_tag_attr(xml, &(*attr), &(*val), m_ui);
-
-    return p;
-}  
-
-
-/* Return a position pointer and the value and (optionally) the name of an attribute */
-
-char * get_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
-{  
-    int fnd, i;
-    char *p, *p2;
-
-    /* Initial, current pointer must be either '<' (tag start) or space (attribute start) */ 
-    *val = NULL;
-    p = xml;
-    fnd = FALSE;
-
-    if (*p == '<')
-    	p = strchr(p, ' ');
-
-    if (*p != ' ')
-    	return NULL;
-
-    /* Should now point at attribute */
-    p++;
-
-    /* Examine each for a match or if the search attribute is NULL, return the next one */
-    while(! fnd)
-    {
-	/* Search for start of attribute value or end tag (or NULL) */
-	for(p2 = p; p2 != NULL; p2++)
-	{
-	    if (*p2 == '=' && *(p2 + 1) == '\"')
-	    	break;
-
-	    if ((*p2 == '>' && *(p2 + 1) == '<') || (*p2 == '<' && *(p2 + 1) == '/'))
-	    	break;
-	}
-
-	if (p2 == NULL)
-	{
-	    log_msg("ERR0031", "Tag Attribute", "ERR0039", m_ui->window);
-	    break;
-	}
-	    
-	/* If the search attribute is null, set it to the one found */ 
-	if (*attr == NULL)
-	{
-	    *attr = (char *) malloc(p2 - p + 1);
-	    memcpy(*attr, p, p2 - p);
-	    *(*attr + (p2 - p)) = '\0';
-	    fnd = TRUE;
-	}
-	else
-	{
-	    /* Named attribute */
-	    if (strlen(*attr) == (p2 - p))
-	    	if (strncmp(*attr, p, p2 - p) == 0)
-		    fnd = TRUE;
-	}
-
-	/* Get the attibute value */
-	if (fnd)
-	{
-	    for(p2 += 2, i = 0; *p2 != '\"'; p2++)
-	    	i++;
-
-	    if (i > 0)
-	    {
-	    	*val = (char *) malloc(i + 1);
-	    	memcpy(*val, p2 - i, i);
-	    	*(*val + i) = '\0';
-	    }
-	}
-
-	p = ++p2;
-    }
-//printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, attr, *val, p); fflush(stdout);
-printf("%s get_next_tag_attr attr %s val %s p\n%s\n", debug_hdr, *attr, *val, p); fflush(stdout);
-
-    return p;
-}  
-
-
-/* Determine a tag value */
-
-int get_tag_val(char *xml, char **s, MainUi *m_ui)
-{  
-    char *p, *p2;
-
-    *s == NULL;
-
-    if ((p = strchr(xml,'>')) == NULL)
-    {
-	log_msg("ERR0032", NULL, "ERR0032", m_ui->window);
-    	return FALSE;
-    }
-
-    if ((p2 = strchr(p,'<')) == NULL)
-    {
-	log_msg("ERR0032", NULL, "ERR0032", m_ui->window);
-    	return FALSE;
-    }
-
-    *s = (char *) malloc(p2 - p);
-    memset(*s, 0, p2 - p);
-    memcpy(*s, p + 1, p2 - p - 1);
-
-    return TRUE;
-}  
-
-
 /* Set up an appropriate parameter string */
 
 void set_param(int param_type, char *s_param)
@@ -936,7 +680,7 @@ void set_param(int param_type, char *s_param)
 	    break;
 
     	case 2:						// Total all for period to date
-	    dt = srv_plan.srv_plan_item[6];		// Next Rollover date
+	    dt = next_rollover_dt();			// Next Rollover date
 	    memset((void *) &p_tm, 0, sizeof(p_tm));
 
 	    memcpy(s, dt, 4);
