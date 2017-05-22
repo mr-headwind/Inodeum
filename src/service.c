@@ -128,10 +128,7 @@ int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui)
 
     /* Services count */
     if ((p = get_list_count(xml, "services", &(isp_data)->srv_cnt, m_ui)) == NULL)
-    {
-    	free(xml);
     	return FALSE;
-    }
 
     r = TRUE;
 
@@ -159,8 +156,6 @@ int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui)
 	}
     }
 
-    free(xml);
-    
     return r;
 }  
 
@@ -175,10 +170,7 @@ int parse_resource_list(char *xml, IspListObj *isp_srv, IspData *isp_data, MainU
 
     /* Resources count */
     if ((p = get_list_count(xml, "resources", &(isp_srv)->cnt, m_ui)) == NULL)
-    {
-    	free(xml);
     	return FALSE;
-    }
 
     r = TRUE;
 
@@ -215,10 +207,11 @@ int parse_resource_list(char *xml, IspListObj *isp_srv, IspData *isp_data, MainU
 
 int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
-    int err;
+    int r, err;
     char *p, *val;
 
     err = TRUE;
+    r = TRUE;
     p = xml;
     memset(&srv_usage, 0, sizeof(ServUsage));
 
@@ -243,14 +236,21 @@ int load_usage(char *xml, IspData *isp_data, MainUi *m_ui)
 	    }
 	    else if (strcmp(val, "total") == 0)
 	    {
-		total_usage(p, &srv_usage, m_ui);
+		r = total_usage(p, &srv_usage, m_ui);
 		free(val);
-		continue;
+
+		if (r == TRUE)
+		    continue;
+		else
+		    break;
 	    }
 	}
     }
 
-    return TRUE;
+    if (p == NULL && err == TRUE)		// No data
+    	r = FALSE;
+
+    return r;
 }  
 
 
@@ -611,8 +611,7 @@ int process_list_item(char *p, IspListObj **listobj, MainUi *m_ui)
     get_tag_val(p, (&(*listobj)->val), m_ui);
 
     /* Validate */
-    if (check_listobj(&(*listobj)) == FALSE)
-	r = FALSE;
+    r = check_listobj(&(*listobj));
 
     return r;
 }  
@@ -691,8 +690,8 @@ char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 	    p++;
 	}
     }
-printf("%s get_tag tag %s fnd %d p\n%s\n", debug_hdr, tag, fnd, p); fflush(stdout);
 
+//printf("%s get_tag tag %s fnd %d p\n%s\n", debug_hdr, tag, fnd, p); fflush(stdout);
     return p;
 }  
 
@@ -730,8 +729,8 @@ char * get_next_tag(char *xml, char **tag, MainUi *m_ui)
 
 	break;
     }
-printf("%s get_next_tag tag %s p\n%s\n", debug_hdr, *tag, p); fflush(stdout);
 
+//printf("%s get_next_tag tag %s p\n%s\n", debug_hdr, *tag, p); fflush(stdout);
     return p;
 }  
 
@@ -836,9 +835,8 @@ char * get_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
 
 	p = ++p2;
     }
-//printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, attr, *val, p); fflush(stdout);
-printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, *attr, *val, p); fflush(stdout);
 
+//printf("%s get_tag_attr attr %s val %s p\n%s\n", debug_hdr, *attr, *val, p); fflush(stdout);
     return p;
 }  
 
@@ -955,3 +953,56 @@ void free_hist_list(gpointer data)
 
     return;
 }
+
+
+// Check http status 
+// 'Response' Status is always 1st line (formatted as such: version code reason)
+// html document has full description
+
+int check_http_status(char *xml, MainUi *m_ui)
+{
+    int code;
+    char *p;
+    char s_code[5];
+
+    /* Get the 3 digit code to see if there was a problem and what, if any, action is required */
+    if ((p = strchr(xml, ' ')) == NULL)
+    	return FALSE;
+
+    strncpy(s_code, p + 1, 3);
+    s_code[3] = '\0';
+    code = atoi(s_code);
+
+    /* Determine status type */
+    switch(s_code[0])
+    {
+	case '1':		// Informational
+	    break;
+
+	case '2':		// Success
+	    if (code == 200)
+	    	break;
+
+	    break;
+
+	case '3':		// Redirection
+	    break;
+
+	case '4':		// Client error
+	    get_error_txt(p, &err_title, &err_txt);
+
+	    if (code == 401)
+	    	user_creds_error(err_txt)
+	    else
+	    	client_error();
+
+	    break;
+
+	case '5':		// Server error
+	    break;
+
+	default:
+    }
+
+    return TRUE;
+}  

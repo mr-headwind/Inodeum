@@ -300,10 +300,8 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     /* Services list */
     r = parse_serv_list(xml, isp_data, m_ui);
-printf("%s get_serv_list 1\n", debug_hdr); fflush(stdout);
     free(xml);
 
-printf("%s get_serv_list 2\n", debug_hdr); fflush(stdout);
     return r;
 }
 
@@ -319,7 +317,6 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
     GList *l;
     r = TRUE;
 
-printf("%s srv_resource_list 1\n", debug_hdr); fflush(stdout);
     for(l = isp_data->srv_list_head; l != NULL; l = l->next)
     {
     	isp_srv = (IspListObj *) l->data;
@@ -334,7 +331,7 @@ printf("%s srv_resource_list 1\n", debug_hdr); fflush(stdout);
 
 	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
 	 
-	if (r = FALSE)
+	if (r == FALSE)
 	    break;
     }
 
@@ -368,6 +365,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
 int get_default_service(IspData *isp_data, MainUi *m_ui)
 {  
+    int r;
     IspListObj *srv_type, *rsrc;
     GList *l;
 
@@ -376,6 +374,7 @@ int get_default_service(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
 
     /* Get the current Usage */
+    r = TRUE;
     isp_data->curr_srv_id = srv_type->val;
 
     for(l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
@@ -384,22 +383,25 @@ int get_default_service(IspData *isp_data, MainUi *m_ui)
     	
     	if (strcmp(rsrc->type, USAGE) == 0)
     	{
-	    get_usage(rsrc, isp_data, m_ui);
+	    r = get_usage(rsrc, isp_data, m_ui);
 	    BIO_reset(isp_data->web);
 	}
 	else if (strcmp(rsrc->type, SERVICE) == 0)
     	{
-	    get_service(rsrc, isp_data, m_ui);
+	    r = get_service(rsrc, isp_data, m_ui);
 	    BIO_reset(isp_data->web);
 	}
 	else if (strcmp(rsrc->type, HISTORY) == 0)
     	{
-	    get_history(rsrc, 2, isp_data, m_ui);
+	    r = get_history(rsrc, 2, isp_data, m_ui);
 	    BIO_reset(isp_data->web);
 	}
+
+	if (r == FALSE)
+	    break;
     }
 
-    return TRUE;
+    return r;
 }  
 
 

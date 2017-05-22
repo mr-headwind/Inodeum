@@ -270,7 +270,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     strcpy(isp_data->uname, uname);
 
     pw = gtk_entry_get_text (GTK_ENTRY (u_ui->pw_ent));
-    len = gtk_entry_get_text_length (GTK_ENTRY (u_ui->uname_ent));
+    len = gtk_entry_get_text_length (GTK_ENTRY (u_ui->pw_ent));
 
     if (len == 0)
     {
