@@ -961,9 +961,9 @@ void free_hist_list(gpointer data)
 
 int check_http_status(char *xml, MainUi *m_ui)
 {
-    int code;
-    char *p;
+    int n_code, r;
     char s_code[5];
+    char *p, *p2, *txt, *err_txt;
 
     /* Get the 3 digit code to see if there was a problem and what, if any, action is required */
     if ((p = strchr(xml, ' ')) == NULL)
@@ -971,38 +971,93 @@ int check_http_status(char *xml, MainUi *m_ui)
 
     strncpy(s_code, p + 1, 3);
     s_code[3] = '\0';
-    code = atoi(s_code);
+    n_code = atoi(s_code);
+
+    /* Get the reason text and code */
+    if ((p2 = strstr(p + 1, "\r\n")) == NULL)
+    	return FALSE;
+
+    txt = (char *) malloc(p2 - p + 1);
+    memset(txt, 0, p2 - p + 1);
+    memcpy(txt, p, p2 - p);
 
     /* Determine status type */
+    r = TRUE;
+
     switch(s_code[0])
     {
 	case '1':		// Informational
+	    sprintf(app_msg_extra, "The 'Information' code received was unexpected.\n"
+	    			   "Note only. Continue anyway.");
+	    log_msg("ERR0025", txt, NULL, NULL);
 	    break;
 
 	case '2':		// Success
-	    if (code == 200)
+	    if (n_code == 200)
 	    	break;
 
+	    sprintf(app_msg_extra, "While 'Success' code %d was received, it is not the "
+				   "code expected.\n"
+	    			   "However, it is probably not a concern. Continue anyway.", n_code);
+	    log_msg("ERR0025", txt, NULL, NULL);
 	    break;
 
 	case '3':		// Redirection
+	    sprintf(app_msg_extra, "The 'Redirection' code received was unexpected. "
+	    			   "This indicates that the Client needs to take additional action.\n"
+	    			   "Continue anyway, but there may be problems requiring investigation.");
+	    log_msg("ERR0025", txt, NULL, NULL);
 	    break;
 
 	case '4':		// Client error
-	    get_error_txt(p, &err_title, &err_txt);
+	    r = FALSE;
+	    err_txt = get_error_txt(xml);
 
-	    if (code == 401)
-	    	user_creds_error(err_txt)
+	    if (n_code == 401)
+	    {
+		sprintf(app_msg_extra, "%s", err_txt);
+		log_msg("ERR0025", txt, NULL, NULL);
+		sprintf(app_msg_extra, "Check the log file for more details.");
+		app_msg("ERR0026", NULL, m_ui->window);
+	    }
 	    else
-	    	client_error();
-
+	    {
+		sprintf(app_msg_extra, "Client errors indicate a problem with the program "
+				       "or the setup of the request.\n"
+				       "The program cannot continue and investigation is required.\n"
+				       "Further details follow:\n %s", err_txt);
+		log_msg("ERR0025", txt, NULL, NULL);
+		sprintf(app_msg_extra, "Check the log file for more details.");
+		app_msg("ERR0025", NULL, m_ui->window);
+	    }
+	    	
+	    free(err_txt);
 	    break;
 
 	case '5':		// Server error
+	    if (n_code == 500)
+	    {
+		sprintf(app_msg_extra, "Internal Server errors indicate an error of unknown origin "
+				       "at the Server (ISP), but generally do not effect results.\n"
+				       "Note only. Continue anyway.");
+	    }
+	    else
+	    {
+		err_txt = get_error_txt(xml);
+		sprintf(app_msg_extra, "A Server error was received that may or may not effect the "
+				       "program. It indicates some problem at the Server (ISP) "
+				       "preventing the request being fulfilled. Continue anyway.\n"
+				       "Further details (if any) follow:\n %s", err_txt);
+		free(err_txt);
+	    }
+
+	    log_msg("ERR0025", txt, NULL, NULL);
 	    break;
 
 	default:
     }
 
-    return TRUE;
+    free(txt);
+
+    return r;
 }  

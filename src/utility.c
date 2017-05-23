@@ -123,6 +123,8 @@ static const char *app_messages[][2] =
     { "ERR0022", "Error: Unable to verify certificate. "},
     { "ERR0023", "Failed to send full query to server. "},
     { "ERR0024", "Error: Unable send query to server. "},
+    { "ERR0025", "HTML - %s - response status found. "},
+    { "ERR0026", "Username / Password invalid "},
     { "ERR0030", "Error: XML tag %s not found. "},
     { "ERR0031", "Error: XML tag attribute %s not found. "},
     { "ERR0032", "Error: XML tag value not found. "},
@@ -136,7 +138,7 @@ static const char *app_messages[][2] =
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 37;
+static const int Msg_Count = 39;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
