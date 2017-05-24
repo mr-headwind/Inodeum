@@ -286,14 +286,14 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt)) == TRUE)
     	store_user_creds(isp_data);
 
-    /* Close the window, free the screen data and block any secondary close signal */
-    close_user_ui(u_ui->window, u_ui);
-
     /* Initiate a service request, quit if failure */
     m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");
 
     if (ssl_service_details(isp_data, m_ui) == FALSE)
-	OnQuit(u_ui->parent_win, NULL);
+	return;
+
+    /* Close the window, free the screen data and block any secondary close signal */
+    close_user_ui(u_ui->window, u_ui);
 
     return;
 }

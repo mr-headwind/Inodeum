@@ -73,8 +73,11 @@ char * next_rollover_dt();
 void clean_up(IspData *);
 void free_srv_list(gpointer);
 void free_hist_list(gpointer);
+int check_http_status(char *, int *, MainUi *);
+char * resp_status_desc(char *, MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
 
 
@@ -956,10 +959,10 @@ void free_hist_list(gpointer data)
 
 
 // Check http status 
-// 'Response' Status is always 1st line (formatted as such: version code reason)
-// html document has full description
+// 'Response' Status is always 1st line (formatted as such: version code reason CRLF)
+// html document has full description (if any)
 
-int check_http_status(char *xml, MainUi *m_ui)
+int check_http_status(char *xml, int *html_code, MainUi *m_ui)
 {
     int n_code, r;
     char s_code[5];
@@ -972,6 +975,7 @@ int check_http_status(char *xml, MainUi *m_ui)
     strncpy(s_code, p + 1, 3);
     s_code[3] = '\0';
     n_code = atoi(s_code);
+    *html_code = n_code;
 
     /* Get the reason text and code */
     if ((p2 = strstr(p + 1, "\r\n")) == NULL)
@@ -1003,7 +1007,7 @@ int check_http_status(char *xml, MainUi *m_ui)
 	    break;
 
 	case '3':		// Redirection
-	    sprintf(app_msg_extra, "The 'Redirection' code received was unexpected. "
+	    sprintf(app_msg_extra, "The 'Redirection' code received was unexpected.\n"
 	    			   "This indicates that the Client needs to take additional action.\n"
 	    			   "Continue anyway, but there may be problems requiring investigation.");
 	    log_msg("ERR0025", txt, NULL, NULL);
@@ -1011,21 +1015,24 @@ int check_http_status(char *xml, MainUi *m_ui)
 
 	case '4':		// Client error
 	    r = FALSE;
-	    err_txt = get_error_txt(xml);
+	    err_txt = resp_status_desc(xml, m_ui);
 
 	    if (n_code == 401)
 	    {
 		sprintf(app_msg_extra, "%s", err_txt);
 		log_msg("ERR0025", txt, NULL, NULL);
-		sprintf(app_msg_extra, "Check the log file for more details.");
+		sprintf(app_msg_extra, "If your password has been changed you may\n"
+				       "need to log in and store securely again.\n"
+				       "Check the log file for more details.");
 		app_msg("ERR0026", NULL, m_ui->window);
 	    }
 	    else
 	    {
-		sprintf(app_msg_extra, "Client errors indicate a problem with the program "
-				       "or the setup of the request.\n"
-				       "The program cannot continue and investigation is required.\n"
-				       "Further details follow:\n %s", err_txt);
+		snprintf(app_msg_extra, sizeof(app_msg_extra),
+			    "Client errors indicate a problem with the program "
+			    "or the setup of the request.\n"
+			    "The program cannot continue and investigation is required.\n"
+			    "Further details follow:\n %s", err_txt);
 		log_msg("ERR0025", txt, NULL, NULL);
 		sprintf(app_msg_extra, "Check the log file for more details.");
 		app_msg("ERR0025", NULL, m_ui->window);
@@ -1037,17 +1044,18 @@ int check_http_status(char *xml, MainUi *m_ui)
 	case '5':		// Server error
 	    if (n_code == 500)
 	    {
-		sprintf(app_msg_extra, "Internal Server errors indicate an error of unknown origin "
-				       "at the Server (ISP), but generally do not effect results.\n"
-				       "Note only. Continue anyway.");
+		sprintf(app_msg_extra, "This is an error of unknown origin at the Server (ISP).\n"
+				       "It is 'Note only' and should not effect results.\n"
+				       "Continue anyway.");
 	    }
 	    else
 	    {
-		err_txt = get_error_txt(xml);
-		sprintf(app_msg_extra, "A Server error was received that may or may not effect the "
-				       "program. It indicates some problem at the Server (ISP) "
-				       "preventing the request being fulfilled. Continue anyway.\n"
-				       "Further details (if any) follow:\n %s", err_txt);
+		err_txt = resp_status_desc(xml, m_ui);
+		snprintf(app_msg_extra, sizeof(app_msg_extra),
+			    "A Server error was received that may or may not effect the "
+			    "program. It indicates some problem at the Server (ISP) "
+			    "preventing the request being fulfilled. Continue anyway.\n"
+			    "Further details (if any) follow:\n %s", err_txt);
 		free(err_txt);
 	    }
 
@@ -1055,9 +1063,41 @@ int check_http_status(char *xml, MainUi *m_ui)
 	    break;
 
 	default:
+	    break;
     }
 
     free(txt);
 
     return r;
+}  
+
+
+/* Return any error or message text associated with a html response status */
+
+char * resp_status_desc(char *xml, MainUi *m_ui)
+{  
+    char *p, *txt;
+    const char *htmldoc = "<!DOCTYPE HTML PUBLIC";
+    const char *no_msg = "No further description provided.";
+
+    /* Check for html document and subsequent paragraph */
+    if ((p = strstr(xml, htmldoc)) == NULL)
+    {
+    	txt = (char *) malloc(strlen(no_msg));
+    	strcpy(txt, no_msg);
+    }
+    else
+    {
+	if ((p = get_tag(p, "p", FALSE, m_ui)) == NULL)
+	{
+	    txt = (char *) malloc(strlen(no_msg));
+	    strcpy(txt, no_msg);
+	}
+	else
+	{
+	    get_tag_val(p, &txt, m_ui);
+	}
+    }
+
+    return txt;
 }  

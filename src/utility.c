@@ -190,7 +190,7 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
     fprintf(lf, "%s - %s\n", date_str, msg);
 
     if (strlen(app_msg_extra) > 0)
-	fprintf(lf, "\t%s\n", app_msg_extra);
+	fprintf(lf, "%s\n", app_msg_extra);
 
     fflush(lf);
 

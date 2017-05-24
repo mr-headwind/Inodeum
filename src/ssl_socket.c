@@ -90,6 +90,7 @@ extern int load_usage_hist(char *, IspData *, MainUi *);
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void date_tm_add(struct tm *, char *, int);
 extern char * next_rollover_dt();
+extern int check_http_status(char *, int *, MainUi *);
 
 
 /* Globals */
@@ -104,6 +105,8 @@ static const char *debug_hdr = "DEBUG-ssl_socket.c ";
 
 int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 {  
+    int r;
+
     /* Initial */
     if (ssl_service_init(isp_data, m_ui) == FALSE)
     	return FALSE;
@@ -117,8 +120,8 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
     encode_un_pw(isp_data, m_ui);
 
     /* 1. Service Listing */
-    if (service_list(isp_data, m_ui) == FALSE)
-    	return FALSE;
+    if ((r = service_list(isp_data, m_ui)) != TRUE)
+    	return r;
 
     BIO_reset(isp_data->web);
 
@@ -289,7 +292,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 {  
     char *xml = NULL;
-    int r;
+    int r, html_code;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
@@ -297,6 +300,16 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
+
+    r = check_http_status(xml, &html_code, m_ui);
+
+    if (r != TRUE)
+    {
+    	if (html_code == 401)
+	    return -1;
+    	else
+	    return r;
+    }
 
     /* Services list */
     r = parse_serv_list(xml, isp_data, m_ui);
@@ -344,13 +357,16 @@ int srv_resource_list(IspData *isp_data, MainUi *m_ui)
 int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *m_ui)
 {  
     char *xml = NULL;
-    int i, r;
+    int i, r, html_code;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
 printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
+    	return FALSE;
+
+    if (check_http_status(xml, &html_code, m_ui) == FALSE)
     	return FALSE;
 
     /* Resources list */
@@ -409,7 +425,7 @@ int get_default_service(IspData *isp_data, MainUi *m_ui)
 
 int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 {  
-    int r;
+    int r, html_code;
     char *get_qry;
     char *xml = NULL;
     
@@ -432,6 +448,9 @@ printf("%s get_usage:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     if (xml == NULL)
     	return FALSE;
 
+    if (check_http_status(xml, &html_code, m_ui) == FALSE)
+    	return FALSE;
+
     /* Save the current usage data */
     r = load_usage(xml, isp_data, m_ui);
 
@@ -443,7 +462,7 @@ printf("%s get_usage:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
 int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 {  
-    int r;
+    int r, html_code;
     char *get_qry;
     char *xml = NULL;
     
@@ -462,6 +481,9 @@ printf("%s get_service:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
     xml = bio_read_xml(isp_data->web, m_ui);
 printf("%s get_service:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
+    if (check_http_status(xml, &html_code, m_ui) == FALSE)
+    	return FALSE;
+
     if (xml == NULL)
     	return FALSE;
 
@@ -476,7 +498,7 @@ printf("%s get_service:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
 int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
 {  
-    int r;
+    int r, html_code;
     char s_param[60];
     char *get_qry;
     char *xml = NULL;
@@ -500,6 +522,9 @@ printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
 printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
+    	return FALSE;
+
+    if (check_http_status(xml, &html_code, m_ui) == FALSE)
     	return FALSE;
 
     /* Save a list of the usage data days */
