@@ -69,7 +69,7 @@ typedef struct _user_login_ui
 
 /* Prototypes */
 
-void user_main(IspData *, GtkWidget *);
+void user_login_main(IspData *, GtkWidget *);
 void user_ui(IspData *, UserLoginUi *);
 UserLoginUi * new_user_ui();
 void user_control(UserLoginUi *);
@@ -97,7 +97,7 @@ static const char *debug_hdr = "DEBUG-user_login_ui.c ";
 
 /* Display and maintenance of user preferences */
 
-void user_main(IspData *isp_data, GtkWidget *parent_win)
+void user_login_main(IspData *isp_data, GtkWidget *parent_win)
 {
     UserLoginUi *ui;
 
@@ -286,10 +286,10 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt)) == TRUE)
     	store_user_creds(isp_data);
 
-    /* Initiate a service request, quit if failure */
+    /* Initiate a service request, close if failure, return to login if auth error */
     m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");
 
-    if (ssl_service_details(isp_data, m_ui) == FALSE)
+    if (ssl_service_details(isp_data, m_ui) == -1)
 	return;
 
     /* Close the window, free the screen data and block any secondary close signal */

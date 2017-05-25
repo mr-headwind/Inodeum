@@ -55,10 +55,11 @@ void xml_recv_area(IspData *, MainUi *);
 void ctrl_btns(MainUi *);
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
 void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
+void display_usage();
 GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
-extern void user_main(IspData *, GtkWidget *);
+extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *);
 extern int ssl_service_details(IspData *, MainUi *);
 
@@ -79,6 +80,7 @@ static const char *debug_hdr = "DEBUG-main_ui.c ";
 
 void main_ui(IspData *isp_data, MainUi *m_ui)
 {  
+    int login_req, r;
     PangoFontDescription *font_desc;
 
     /* Initial */
@@ -127,17 +129,30 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show_all(m_ui->window);
 
     /* Check user credentials from the gnome keyring */
+    login_req = FALSE;
+
     if (check_user_creds(isp_data) == FALSE)
     {
 	/* Get user credentials and service request via user entry interface */
-    	user_main(isp_data, m_ui->window);
+	login_req = TRUE;
     }
     else
     {
 	/* Initiate a service request */
-	if (ssl_service_details(isp_data, m_ui) == FALSE)
-	    OnQuit(m_ui->window, NULL);
+	r = ssl_service_details(isp_data, m_ui);
+	
+	if (r == -1)
+	    login_req = TRUE;
+
+	else if (r == FALSE)
+	    return;
     }
+
+    /* User login or display usage details */
+    if (login_req == TRUE)
+    	user_login_main(isp_data, m_ui->window);
+    else
+    	display_usage();
 
     return;
 }
@@ -146,8 +161,8 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 /*
 ** Menu function for application.
 **
-**  File	     Help
-**   - Exit    	      - About
+**  File       Service	     Help
+**   - Exit    	-Login        - About
 */
 
 void create_menu(IspData *isp_data, MainUi *m_ui)
@@ -318,6 +333,15 @@ void ctrl_btns(MainUi *m_ui)
 
     /* Clean up */
     pango_font_description_free (font_desc);
+
+    return;
+}
+
+
+/* Display usage details */
+
+void display_usage()
+{  
 
     return;
 }
