@@ -79,7 +79,7 @@ int store_user_creds(IspData *);
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
 gboolean OnUserDelete(GtkWidget*, GdkEvent *, gpointer);
-void close_user_ui(GtkWidget *, UserLoginUi *);
+void close_login_ui(GtkWidget *, UserLoginUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
@@ -88,6 +88,8 @@ extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
 extern void OnQuit(GtkWidget*, gpointer);
 extern int ssl_service_details(IspData *, MainUi *);
+extern void disable_login(MainUi *);
+extern void display_usage();
 
 
 /* Globals */
@@ -247,7 +249,7 @@ int store_user_creds(IspData *isp_data)
 void OnUserOK(GtkWidget *btn, gpointer user_data)
 {
     const gchar *uname, *pw;
-    int len;
+    int len, r;
     UserLoginUi *u_ui;
     MainUi *m_ui;
     IspData *isp_data;
@@ -289,11 +291,19 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     /* Initiate a service request, close if failure, return to login if auth error */
     m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");
 
-    if (ssl_service_details(isp_data, m_ui) == -1)
+    r = ssl_service_details(isp_data, m_ui);
+
+    if (r == TRUE)
+    {
+    	disable_login(m_ui);
+    	display_usage();
+    }
+
+    else if (r == -1)
 	return;
 
     /* Close the window, free the screen data and block any secondary close signal */
-    close_user_ui(u_ui->window, u_ui);
+    close_login_ui(u_ui->window, u_ui);
 
     return;
 }
@@ -326,7 +336,7 @@ void OnUserCancel(GtkWidget *window, gpointer user_data)
 	return;
 
     /* Close the window, free the screen data and block any secondary close signal */
-    close_user_ui(window, ui);
+    close_login_ui(window, ui);
 
     /* Quit Inodeum */
     OnQuit(ui->parent_win, NULL);
@@ -347,7 +357,7 @@ gboolean OnUserDelete(GtkWidget *window, GdkEvent *ev, gpointer user_data)
 
 /* Common close */
 
-void close_user_ui(GtkWidget *window, UserLoginUi *ui)
+void close_login_ui(GtkWidget *window, UserLoginUi *ui)
 { 
     g_signal_handler_block (window, ui->close_handler);
 

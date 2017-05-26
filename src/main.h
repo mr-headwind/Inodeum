@@ -49,9 +49,10 @@ typedef struct _main_ui
 
     /* Menu items */
     GtkWidget *menu_bar; 
-    GtkWidget *file_menu, *help_menu;
-    GtkWidget *file_hdr, *help_hdr;
+    GtkWidget *file_menu, *service_menu, *help_menu;
+    GtkWidget *file_hdr, *service_hdr, *help_hdr;
     GtkWidget *file_exit;
+    GtkWidget *user_login;
     GtkWidget *help_about;
 
     /* Main Frame widgets */

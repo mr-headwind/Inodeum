@@ -48,6 +48,7 @@
 /* Prototypes */
 
 void OnOK(GtkWidget*, gpointer);
+void OnUserLogin(GtkWidget*, gpointer);
 void OnAbout(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
@@ -57,17 +58,7 @@ extern void close_open_ui();
 extern int is_ui_reg(char *, int);
 extern int about_main(GtkWidget *);
 extern int ssl_service_details(IspData *, MainUi *);
-
-/* ??? */
-/*
-extern void log_msg(char*, char*, char*, GtkWidget*);
-extern void app_msg(char*, char*, GtkWidget*);
-extern char * log_name();
-extern int val_str2numb(char *, int *, char *, GtkWidget *);
-extern int set_eos(MainUi *);
-extern int close_ui(char *);
-extern gint query_dialog(GtkWidget *, char *, char *);
-*/
+extern void user_login_main(IspData *, GtkWidget *);
 
 
 /* Globals */
@@ -92,6 +83,28 @@ void OnOK(GtkWidget *ok_btn, gpointer user_data)
     /* Submit a service request */
     if (ssl_service_details(isp_data, m_ui) == FALSE)
     	return;
+
+    return;
+}  
+
+
+/* Callback - User Login */
+
+void OnUserLogin(GtkWidget *menu_item, gpointer user_data)
+{  
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Check if already open */
+    if (is_ui_reg(USER_UI, TRUE))
+    	return;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Open */
+    user_login_main(isp_data, m_ui->window);
 
     return;
 }  

@@ -55,6 +55,7 @@ void xml_recv_area(IspData *, MainUi *);
 void ctrl_btns(MainUi *);
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
 void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
+void disable_login(MainUi *);
 void display_usage();
 GtkWidget * debug_cntr(GtkWidget *);
 
@@ -64,6 +65,7 @@ extern int check_user_creds(IspData *);
 extern int ssl_service_details(IspData *, MainUi *);
 
 extern void OnOK(GtkRange*, gpointer);
+extern void OnUserLogin(GtkWidget*, gpointer);
 extern void OnAbout(GtkWidget*, gpointer);
 extern void OnQuit(GtkWidget*, gpointer);
 
@@ -150,9 +152,14 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 
     /* User login or display usage details */
     if (login_req == TRUE)
+    {
     	user_login_main(isp_data, m_ui->window);
+    }
     else
+    {
+    	disable_login(m_ui);
     	display_usage();
+    }
 
     return;
 }
@@ -189,6 +196,22 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show (m_ui->file_exit);
 
 
+    /* SERVICE MENU */
+    m_ui->service_menu = gtk_menu_new();
+
+    /* Service menu items */
+    m_ui->user_login = gtk_menu_item_new_with_mnemonic ("User Login...");
+
+    /* Add to menu */
+    gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->service_menu), m_ui->user_login);
+
+    /* Callbacks */
+    g_signal_connect_swapped (m_ui->user_login, "activate", G_CALLBACK (OnUserLogin), m_ui); 
+
+    /* Show menu items */
+    gtk_widget_show (m_ui->user_login);
+
+
     /* HELP MENU */
     m_ui->help_menu = gtk_menu_new();
 
@@ -210,6 +233,12 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show (m_ui->file_hdr);
     gtk_menu_item_set_submenu (GTK_MENU_ITEM (m_ui->file_hdr), m_ui->file_menu);
     gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->menu_bar), m_ui->file_hdr);
+
+    /* Service header menu */
+    m_ui->service_hdr = gtk_menu_item_new_with_mnemonic ("_Service");
+    gtk_widget_show (m_ui->service_hdr);
+    gtk_menu_item_set_submenu (GTK_MENU_ITEM (m_ui->service_hdr), m_ui->service_menu);
+    gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->menu_bar), m_ui->service_hdr);
 
     /* Help header menu */
     m_ui->help_hdr = gtk_menu_item_new_with_mnemonic ("_Help");
@@ -338,10 +367,21 @@ void ctrl_btns(MainUi *m_ui)
 }
 
 
+/* The manual login menu should be disabled once logged in */
+
+void disable_login(MainUi *m_ui)
+{  
+    gtk_widget_set_sensitive (m_ui->user_login, FALSE);
+
+    return;
+}
+
+
 /* Display usage details */
 
 void display_usage()
 {  
+    printf("%s Display usage not yet available\n", debug_hdr);
 
     return;
 }
