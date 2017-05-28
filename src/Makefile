@@ -17,11 +17,11 @@
 #  along with Inodeum.  If not, see <http://www.gnu.org/licenses/>.
 
 CC=cc
-CFLAGS=-I. `pkg-config --cflags gtk+-3.0` 
+CFLAGS=-I. `pkg-config --cflags gtk+-3.0 gnome-keyring-1` 
 CFLAGS2=-Wno-deprecated-declarations
 DEPS = defs.h main.h isp.h version.h
 OBJ = um_main.o callbacks.o main_ui.o utility.o service.o ssl_socket.o socket.o about_ui.o prefs.o user_login_ui.o date_util.o
-LIBS = `pkg-config --libs gtk+-3.0`
+LIBS = `pkg-config --libs gtk+-3.0 gnome-keyring-1`
 LIBS2 = -lssl -lcrypto -lpthread
 #LIBS2 = -lpthread
 

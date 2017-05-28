@@ -38,6 +38,8 @@
 #include <libgen.h>  
 #include <gtk/gtk.h>  
 #include <gdk/gdkkeysyms.h>  
+#include <glib.h>  
+#include <gnome-keyring.h>  
 #include <isp.h>
 #include <defs.h>
 #include <main.h>
@@ -75,6 +77,7 @@ UserLoginUi * new_user_ui();
 void user_control(UserLoginUi *);
 int check_user_creds(IspData *);
 int store_user_creds(IspData *);
+static void found_password(GnomeKeyringResult, const gchar *, gpointer);
 
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
@@ -95,6 +98,16 @@ extern void display_usage();
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-user_login_ui.c ";
+
+static GnomeKeyringPasswordSchema ISP_SCHEMA = {
+      GNOME_KEYRING_ITEM_GENERIC_SECRET,
+      {
+           { "user", GNOME_KEYRING_ATTRIBUTE_TYPE_STRING },
+           { "desc", GNOME_KEYRING_ATTRIBUTE_TYPE_STRING },
+           { "isp_uname", GNOME_KEYRING_ATTRIBUTE_TYPE_STRING },
+           { NULL, 0 }
+      }
+  };
 
 
 /* Display and maintenance of user preferences */
@@ -225,11 +238,35 @@ void user_control(UserLoginUi *u_ui)
 /* Check Gnome keyring for stored user credentials */
 
 int check_user_creds(IspData *isp_data)
-{  
+{
+    gnome_keyring_find_password (GNOME_KEYRING_NETWORK_PASSWORD,  /* The password type */
+				 found_password,                  /* A function called when complete */
+				 NULL, NULL,                      /* User data for callback, and destroy notify */
+
+				 /* These are the attributes */
+				 "user", "me", 
+				 "server", "gnome.org",
+
+				 NULL); /* Always end with NULL */
     printf("%s Gnome keyring retrieval not yet available\n", debug_hdr);
     return FALSE;
 
     return TRUE;
+}
+
+
+/* A callback called when the operation completes */
+
+static void found_password (GnomeKeyringResult res, const gchar* password, gpointer user_data)
+{
+    /* user_data will be the same as was passed to gnome_keyring_find_password() */
+
+    if (res == GNOME_KEYRING_RESULT_OK)
+	g_print ("password found was: %s\n", password);
+    else
+	g_print ("couldn't find password: %s", gnome_keyring_result_to_message (res));
+
+    /* Once this function returns |password| will be freed */
 }
 
 
