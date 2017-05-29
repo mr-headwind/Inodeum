@@ -61,7 +61,7 @@ GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void user_login_main(IspData *, GtkWidget *);
-extern int check_user_creds(IspData *);
+extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 
 extern void OnOK(GtkRange*, gpointer);
@@ -133,7 +133,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     /* Check user credentials from the gnome keyring */
     login_req = FALSE;
 
-    if (check_user_creds(isp_data) == FALSE)
+    if (check_user_creds(isp_data, m_ui) == FALSE)
     {
 	/* Get user credentials and service request via user entry interface */
 	login_req = TRUE;

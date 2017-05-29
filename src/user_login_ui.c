@@ -75,7 +75,7 @@ void user_login_main(IspData *, GtkWidget *);
 void user_ui(IspData *, UserLoginUi *);
 UserLoginUi * new_user_ui();
 void user_control(UserLoginUi *);
-int check_user_creds(IspData *);
+int check_user_creds(IspData *, MainUi *);
 int store_user_creds(IspData *);
 static void found_password(GnomeKeyringResult, const gchar *, gpointer);
 
@@ -98,16 +98,7 @@ extern void display_usage();
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-user_login_ui.c ";
-
-static GnomeKeyringPasswordSchema ISP_SCHEMA = {
-      GNOME_KEYRING_ITEM_GENERIC_SECRET,
-      {
-           { "user", GNOME_KEYRING_ATTRIBUTE_TYPE_STRING },
-           { "desc", GNOME_KEYRING_ATTRIBUTE_TYPE_STRING },
-           { "isp_uname", GNOME_KEYRING_ATTRIBUTE_TYPE_STRING },
-           { NULL, 0 }
-      }
-  };
+static const char *keyring = "login";
 
 
 /* Display and maintenance of user preferences */
@@ -235,10 +226,74 @@ void user_control(UserLoginUi *u_ui)
 }
 
 
-/* Check Gnome keyring for stored user credentials */
+/* Check Gnome (login) keyring for stored user credentials */
 
-int check_user_creds(IspData *isp_data)
+int check_user_creds(IspData *isp_data, MainUi *m_ui)
 {
+    GList *item_ids, *l;
+    GnomeKeyringResult res;
+    GnomeKeyringItemInfo *info;
+    GnomeKeyringAttributeList *attrs;
+    int fnd;
+    guint32 id;
+    char s[30];
+    char *display_name;
+
+    /* Check all the keyring items */
+    res = gnome_keyring_list_item_ids_sync (keyring, &item_ids);
+
+    if (res != GNOME_KEYRING_RESULT_OK)
+    {
+    	sprintf(s, "%d (list ids)", res);
+	log_msg("ERR0027", s, "ERR0027", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Find item(s) for this application and retrieve the relevant item info */
+    fnd = FALSE;
+
+    for(l = item_ids; l != NULL; l = l->next)
+    {
+    	id = GPOINTER_TO_UINT (l->data);
+
+    	res = gnome_keyring_item_get_info_sync (keyring, id, &info);
+
+	if (res != GNOME_KEYRING_RESULT_OK)
+	{
+	    sprintf(s, "%d (item info)", res);
+	    log_msg("ERR0027", s, "ERR0027", m_ui->window);
+	    return FALSE;
+	}
+
+	display_name = gnome_keyring_item_info_get_display_name (info);
+	gnome_keyring_item_info_free (info);
+
+	if (strncmp(display_name, TITLE, strlen(TITLE)) == 0)
+	{
+	    res = gnome_keyring_item_get_info_sync (keyring, id, &attrs);
+
+	    if (res != GNOME_KEYRING_RESULT_OK)
+	    {
+		sprintf(s, "%d (item attributes)", res);
+		log_msg("ERR0027", s, "ERR0027", m_ui->window);
+		return FALSE;
+	    }
+
+	    free(display_name);
+	    fnd = TRUE;
+	    break;
+	}
+	else
+	{
+	    free(display_name);
+	}
+    }
+
+    /* Clean up */
+    g_list_free(item_ids);
+
+    return fnd;
+
     gnome_keyring_find_password (GNOME_KEYRING_NETWORK_PASSWORD,  /* The password type */
 				 found_password,                  /* A function called when complete */
 				 NULL, NULL,                      /* User data for callback, and destroy notify */
