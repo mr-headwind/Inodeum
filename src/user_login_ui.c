@@ -77,7 +77,6 @@ UserLoginUi * new_user_ui();
 void user_control(UserLoginUi *);
 int check_user_creds(IspData *, MainUi *);
 int store_user_creds(IspData *);
-static void found_password(GnomeKeyringResult, const gchar *, gpointer);
 
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
@@ -234,12 +233,13 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
     GnomeKeyringResult res;
     GnomeKeyringItemInfo *info;
     GnomeKeyringAttributeList *attrs;
-    int fnd;
+    GnomeKeyringAttribute attr;
+    int i, fnd;
     guint32 id;
     char s[30];
     char *display_name;
 
-    /* Check all the keyring items */
+    /* List all the keyring items */
     res = gnome_keyring_list_item_ids_sync (keyring, &item_ids);
 
     if (res != GNOME_KEYRING_RESULT_OK)
@@ -249,11 +249,12 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
     }
 
-    /* Find item(s) for this application and retrieve the relevant item info */
+    /* Examine each item until the desired one is found */
     fnd = FALSE;
 
-    for(l = item_ids; l != NULL; l = l->next)
+    for(l = item_ids; l != NULL && fnd == FALSE; l = l->next)
     {
+	/* Get the keyring item info */
     	id = GPOINTER_TO_UINT (l->data);
 
     	res = gnome_keyring_item_get_info_sync (keyring, id, &info);
@@ -265,63 +266,52 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 	    return FALSE;
 	}
 
+	/* Get the display name for comparison */
 	display_name = gnome_keyring_item_info_get_display_name (info);
-	gnome_keyring_item_info_free (info);
 
 	if (strncmp(display_name, TITLE, strlen(TITLE)) == 0)
 	{
-	    res = gnome_keyring_item_get_info_sync (keyring, id, &attrs);
+	    /* Found it, get the attributes */
+	    res = gnome_keyring_item_get_attributes_sync (keyring, id, &attrs);
 
 	    if (res != GNOME_KEYRING_RESULT_OK)
 	    {
-		sprintf(s, "%d (item attributes)", res);
+		sprintf(s, "%d (item attributes list)", res);
 		log_msg("ERR0027", s, "ERR0027", m_ui->window);
 		return FALSE;
 	    }
 
-	    free(display_name);
+	    /* Get the username and password */
+	    for(i = 0; i < attrs->len; i++)
+	    {
+	    	attr = gnome_keyring_attribute_list_index(attrs, i);
+
+	    	if (attr.type == GNOME_KEYRING_ATTRIBUTE_TYPE_STRING)
+		    if (strcmp(attr.name, "username") == 0)
+		    	break;
+	    }
+
+	    if (i >= attrs->len)
+	    {
+		sprintf(s, "%d (username attribute)", res);
+		log_msg("ERR0027", s, "ERR0027", m_ui->window);
+		return FALSE;
+	    }
+
+	    isp_data->uname = (char *) attr.value.string;
+	    isp_data->pw = gnome_keyring_item_info_get_secret (info);
+	    gnome_keyring_attribute_list_free (attrs);
 	    fnd = TRUE;
-	    break;
 	}
-	else
-	{
-	    free(display_name);
-	}
+
+	gnome_keyring_item_info_free (info);
+	free(display_name);
     }
 
     /* Clean up */
     g_list_free(item_ids);
 
     return fnd;
-
-    gnome_keyring_find_password (GNOME_KEYRING_NETWORK_PASSWORD,  /* The password type */
-				 found_password,                  /* A function called when complete */
-				 NULL, NULL,                      /* User data for callback, and destroy notify */
-
-				 /* These are the attributes */
-				 "user", "me", 
-				 "server", "gnome.org",
-
-				 NULL); /* Always end with NULL */
-    printf("%s Gnome keyring retrieval not yet available\n", debug_hdr);
-    return FALSE;
-
-    return TRUE;
-}
-
-
-/* A callback called when the operation completes */
-
-static void found_password (GnomeKeyringResult res, const gchar* password, gpointer user_data)
-{
-    /* user_data will be the same as was passed to gnome_keyring_find_password() */
-
-    if (res == GNOME_KEYRING_RESULT_OK)
-	g_print ("password found was: %s\n", password);
-    else
-	g_print ("couldn't find password: %s", gnome_keyring_result_to_message (res));
-
-    /* Once this function returns |password| will be freed */
 }
 
 
