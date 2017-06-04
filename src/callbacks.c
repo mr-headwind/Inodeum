@@ -49,6 +49,7 @@
 
 void OnOK(GtkWidget*, gpointer);
 void OnUserLogin(GtkWidget*, gpointer);
+void OnResetPW(GtkWidget*, gpointer);
 void OnAbout(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
@@ -105,6 +106,15 @@ void OnUserLogin(GtkWidget *menu_item, gpointer user_data)
 
     /* Open */
     user_login_main(isp_data, m_ui->window);
+
+    return;
+}  
+
+
+/* Callback - Remove a securely saved password */
+
+void OnResetPW(GtkWidget *menu_item, gpointer user_data)
+{  
 
     return;
 }  

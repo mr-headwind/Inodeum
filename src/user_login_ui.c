@@ -40,6 +40,7 @@
 #include <gdk/gdkkeysyms.h>  
 #include <glib.h>  
 #include <gnome-keyring.h>  
+#include <gnome-keyring-memory.h>  
 #include <isp.h>
 #include <defs.h>
 #include <main.h>
@@ -72,11 +73,12 @@ typedef struct _user_login_ui
 /* Prototypes */
 
 void user_login_main(IspData *, GtkWidget *);
+void initial(IspData *);
 void user_ui(IspData *, UserLoginUi *);
 UserLoginUi * new_user_ui();
 void user_control(UserLoginUi *);
 int check_user_creds(IspData *, MainUi *);
-int store_user_creds(IspData *);
+int store_user_creds(IspData *, MainUi *);
 
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
@@ -107,6 +109,7 @@ void user_login_main(IspData *isp_data, GtkWidget *parent_win)
     UserLoginUi *ui;
 
     /* Initial */
+    initial(isp_data);
     ui = new_user_ui();
     ui->parent_win = parent_win;
 
@@ -115,6 +118,21 @@ void user_login_main(IspData *isp_data, GtkWidget *parent_win)
 
     /* Register the window */
     register_window(ui->window);
+
+    return;
+}
+
+
+/* Initial work */
+
+void initial(IspData *isp_data)
+{
+    if (isp_data->uname != NULL)
+        free(isp_data->uname);
+
+    if (isp_data->pw != NULL)
+        gnome_keyring_memory_free (isp_data->pw);
+        //free(isp_data->pw);
 
     return;
 }
@@ -233,11 +251,11 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
     GnomeKeyringResult res;
     GnomeKeyringItemInfo *info;
     GnomeKeyringAttributeList *attrs;
-    GnomeKeyringAttribute attr;
+    GnomeKeyringAttribute *attr;
     int i, fnd;
     guint32 id;
     char s[30];
-    char *display_name;
+    char *display_name, *tmp;
 
     /* List all the keyring items */
     res = gnome_keyring_list_item_ids_sync (keyring, &item_ids);
@@ -284,10 +302,10 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 	    /* Get the username and password */
 	    for(i = 0; i < attrs->len; i++)
 	    {
-	    	attr = gnome_keyring_attribute_list_index(attrs, i);
+	    	attr = &gnome_keyring_attribute_list_index(attrs, i);
 
-	    	if (attr.type == GNOME_KEYRING_ATTRIBUTE_TYPE_STRING)
-		    if (strcmp(attr.name, "username") == 0)
+	    	if (attr->type == GNOME_KEYRING_ATTRIBUTE_TYPE_STRING)
+		    if (strcmp(attr->name, "username") == 0)
 		    	break;
 	    }
 
@@ -298,8 +316,14 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 		return FALSE;
 	    }
 
-	    isp_data->uname = (char *) attr.value.string;
-	    isp_data->pw = gnome_keyring_item_info_get_secret (info);
+	    isp_data->uname = (char *) malloc(strlen(attr->value.string) + 1);
+	    strcpy(isp_data->uname, (char *) attr->value.string);
+
+	    tmp = gnome_keyring_item_info_get_secret (info);
+	    isp_data->pw = gnome_keyring_memory_alloc((gulong) strlen(tmp) + 1);
+	    isp_data->pw = gnome_keyring_memory_strdup(tmp);
+
+	    free(tmp);
 	    gnome_keyring_attribute_list_free (attrs);
 	    fnd = TRUE;
 	}
@@ -317,10 +341,25 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 
 /* Store user credentials securely in the Gnome keyring */
 
-int store_user_creds(IspData *isp_data)
+int store_user_creds(IspData *isp_data, MainUi *m_ui)
 {  
-    printf("%s Gnome keyring storage not yet available\n", debug_hdr);
-    return FALSE;
+    char *display_name;
+    guint32 id;
+    GnomeKeyringResult res;
+    GnomeKeyringAttributeList *attrs;
+
+    display_name = (char *) malloc(strlen(TITLE) + strlen(isp_data->uname) + 3);
+    sprintf(display_name, "%s: %s", TITLE, isp_data->uname);
+
+    attrs = gnome_keyring_attribute_list_new ();
+    gnome_keyring_attribute_list_append_string (attrs, "username", isp_data->uname);
+    gnome_keyring_attribute_list_append_string (attrs, "application", TITLE);
+
+    res = gnome_keyring_item_create_sync (keyring, GNOME_KEYRING_ITEM_GENERIC_SECRET, display_name,
+					  attrs, isp_data->pw, TRUE, &id);
+
+    free(display_name);
+    gnome_keyring_attribute_list_free (attrs);
 
     return TRUE;
 }
@@ -363,12 +402,14 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     	return;
     }
 
-    isp_data->pw = (char *) malloc(len + 1);
-    strcpy(isp_data->pw, pw);
+    //isp_data->pw = (char *) malloc(len + 1);
+    //strcpy(isp_data->pw, pw);
+    isp_data->pw = gnome_keyring_memory_alloc((gulong) len + 1);
+    isp_data->pw = gnome_keyring_memory_strdup(pw);
 
     /* Check if save requested */
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt)) == TRUE)
-    	store_user_creds(isp_data);
+    	store_user_creds(isp_data, m_ui);
 
     /* Initiate a service request, close if failure, return to login if auth error */
     m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");

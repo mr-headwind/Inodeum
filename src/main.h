@@ -53,6 +53,7 @@ typedef struct _main_ui
     GtkWidget *file_hdr, *service_hdr, *help_hdr;
     GtkWidget *file_exit;
     GtkWidget *user_login;
+    GtkWidget *reset_pw;
     GtkWidget *help_about;
 
     /* Main Frame widgets */

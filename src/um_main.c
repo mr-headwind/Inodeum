@@ -38,6 +38,7 @@
 #include <stdlib.h>  
 #include <string.h>  
 #include <gtk/gtk.h>  
+#include <gnome-keyring-memory.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -123,7 +124,8 @@ void final(IspData *isp_data)
 	free(isp_data->uname);
 
     if (isp_data->pw != NULL)
-	free(isp_data->pw);
+	gnome_keyring_memory_free (isp_data->pw);
+	//free(isp_data->pw);
 
     if (isp_data->enc64 != NULL)
 	g_free(isp_data->enc64);
