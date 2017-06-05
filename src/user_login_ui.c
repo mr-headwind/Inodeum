@@ -79,6 +79,7 @@ UserLoginUi * new_user_ui();
 void user_control(UserLoginUi *);
 int check_user_creds(IspData *, MainUi *);
 int store_user_creds(IspData *, MainUi *);
+int delete_user_creds(IspData *, MainUi *);
 
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
@@ -281,7 +282,7 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 	{
 	    sprintf(s, "%d (item info)", res);
 	    log_msg("ERR0027", s, "ERR0027", m_ui->window);
-	    return FALSE;
+	    break;
 	}
 
 	/* Get the display name for comparison */
@@ -296,7 +297,9 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 	    {
 		sprintf(s, "%d (item attributes list)", res);
 		log_msg("ERR0027", s, "ERR0027", m_ui->window);
-		return FALSE;
+		gnome_keyring_item_info_free (info);
+		free(display_name);
+		break;
 	    }
 
 	    /* Get the username and password */
@@ -313,7 +316,9 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 	    {
 		sprintf(s, "%d (username attribute)", res);
 		log_msg("ERR0027", s, "ERR0027", m_ui->window);
-		return FALSE;
+		gnome_keyring_item_info_free (info);
+		free(display_name);
+		break;
 	    }
 
 	    isp_data->uname = (char *) malloc(strlen(attr->value.string) + 1);
@@ -362,6 +367,77 @@ int store_user_creds(IspData *isp_data, MainUi *m_ui)
     gnome_keyring_attribute_list_free (attrs);
 
     return TRUE;
+}
+
+
+/* Remove user credentials */
+
+int delete_user_creds(IspData *isp_data, MainUi *m_ui)
+{
+    GList *item_ids, *l;
+    GnomeKeyringResult res;
+    GnomeKeyringItemInfo *info;
+    int fnd, r;
+    guint32 id;
+    char s[30];
+    char *display_name;
+
+    /* List all the keyring items */
+    res = gnome_keyring_list_item_ids_sync (keyring, &item_ids);
+
+    if (res != GNOME_KEYRING_RESULT_OK)
+    {
+    	sprintf(s, "%d (list ids)", res);
+	log_msg("ERR0027", s, "ERR0027", m_ui->window);
+    	return FALSE;
+    }
+
+    /* Examine each item until the desired one is found */
+    fnd = FALSE;
+    r = FALSE;
+
+    for(l = item_ids; l != NULL && fnd == FALSE; l = l->next)
+    {
+	/* Get the keyring item info */
+    	id = GPOINTER_TO_UINT (l->data);
+
+    	res = gnome_keyring_item_get_info_sync (keyring, id, &info);
+
+	if (res != GNOME_KEYRING_RESULT_OK)
+	{
+	    sprintf(s, "%d (item info)", res);
+	    log_msg("ERR0027", s, "ERR0027", m_ui->window);
+	    break;
+	}
+
+	/* Get the display name for comparison */
+	display_name = gnome_keyring_item_info_get_display_name (info);
+
+	if (strncmp(display_name, TITLE, strlen(TITLE)) == 0)
+	{
+	    /* Found it, delete it */
+	    fnd = TRUE;
+	    res = gnome_keyring_item_delete_sync (keyring, id);
+
+	    if (res == GNOME_KEYRING_RESULT_OK)
+	    {
+		r = TRUE;
+	    }
+	    else
+	    { 
+		sprintf(s, "%d (item delete)", res);
+		log_msg("ERR0027", s, "ERR0027", m_ui->window);
+	    }
+	}
+
+	gnome_keyring_item_info_free (info);
+	free(display_name);
+    }
+
+    /* Clean up */
+    g_list_free(item_ids);
+
+    return r;
 }
 
 

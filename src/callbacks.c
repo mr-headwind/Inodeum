@@ -60,6 +60,8 @@ extern int is_ui_reg(char *, int);
 extern int about_main(GtkWidget *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void user_login_main(IspData *, GtkWidget *);
+extern int delete_user_creds(IspData *, MainUi *);
+extern void log_msg(char*, char*, char*, GtkWidget*);
 
 
 /* Globals */
@@ -115,6 +117,31 @@ void OnUserLogin(GtkWidget *menu_item, gpointer user_data)
 
 void OnResetPW(GtkWidget *menu_item, gpointer user_data)
 {  
+    MainUi *m_ui;
+    IspData *isp_data;
+    GtkWidget *dialog;
+    gint response;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Confirm and delete */
+    dialog = gtk_message_dialog_new (GTK_WINDOW (m_ui->window),
+				     GTK_DIALOG_MODAL,
+				     GTK_MESSAGE_QUESTION,
+				     GTK_BUTTONS_OK_CANCEL,
+				     "This will remove your securely stored login password.\n"
+				     "Please confirm.");
+
+    response = gtk_dialog_run (GTK_DIALOG (dialog));
+    gtk_widget_destroy (dialog);
+
+    if (response == GTK_RESPONSE_CANCEL)
+	return;
+
+    if (delete_user_creds(isp_data, m_ui) == FALSE)
+    	log_msg("ERR0028", NULL, "ERR0028", m_ui->window);
 
     return;
 }  

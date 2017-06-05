@@ -126,6 +126,7 @@ static const char *app_messages[][2] =
     { "ERR0025", "HTML - %s - response status found. "},
     { "ERR0026", "Username / Password invalid "},
     { "ERR0027", "Unable to access Keyring. Error: %s. "},
+    { "ERR0028", "Could not remove user credentials. "},
     { "ERR0030", "Error: XML tag %s not found. "},
     { "ERR0031", "Error: XML tag attribute %s not found. "},
     { "ERR0032", "Error: XML tag value not found. "},
@@ -139,7 +140,7 @@ static const char *app_messages[][2] =
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 40;
+static const int Msg_Count = 41;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
