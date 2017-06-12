@@ -47,11 +47,17 @@
 
 /* Prototypes */
 
-void OnOK(GtkWidget*, gpointer);
+void OnOverview(GtkWidget*, gpointer);
+void OnService(GtkWidget*, gpointer);
+void OnMonitor(GtkWidget*, gpointer);
+void OnHistory(GtkWidget*, gpointer);
+void OnLog(GtkWidget*, gpointer);
+void OnAbout(GtkWidget*, gpointer);
 void OnUserLogin(GtkWidget*, gpointer);
 void OnResetPW(GtkWidget*, gpointer);
-void OnAbout(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
+
+void OnOK(GtkWidget*, gpointer);
 
 
 extern void free_window_reg();
@@ -86,6 +92,116 @@ void OnOK(GtkWidget *ok_btn, gpointer user_data)
     /* Submit a service request */
     if (ssl_service_details(isp_data, m_ui) == FALSE)
     	return;
+
+    return;
+}  
+
+
+/* Callback - Usage overview */
+
+void OnOverview(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Get details */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Display usage overview details */
+    printf("%s Overview not available yet\n", debug_hdr); fflush(stdout);
+
+    return;
+}  
+
+
+/* Callback - Service details */
+
+void OnService(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Get details */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Display service plan details */
+    printf("%s Service plan not available yet\n", debug_hdr); fflush(stdout);
+
+    return;
+}  
+
+
+/* Callback - Network monitor */
+
+void OnMonitor(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Get details */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Display current network information */
+    printf("%s Network monitor not available yet\n", debug_hdr); fflush(stdout);
+
+    return;
+}  
+
+
+/* Callback - History usage */
+
+void OnHistory(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Get details */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Display usage history */
+    printf("%s History not available yet\n", debug_hdr); fflush(stdout);
+
+    return;
+}  
+
+
+/* Callback - Log file */
+
+void OnLog(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Get details */
+    m_ui = (MainUi *) user_data;
+    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Display log file contents */
+    printf("%s Log not available yet\n", debug_hdr); fflush(stdout);
+
+    return;
+}  
+
+
+/* Callback - Show About details */
+
+void OnAbout(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+
+    /* Check if already open */
+    if (is_ui_reg(ABOUT_UI, TRUE))
+    	return;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Display About details */
+    about_main(m_ui->window);
 
     return;
 }  
@@ -142,26 +258,6 @@ void OnResetPW(GtkWidget *menu_item, gpointer user_data)
 
     if (delete_user_creds(isp_data, m_ui) == FALSE)
     	log_msg("ERR0028", NULL, "ERR0028", m_ui->window);
-
-    return;
-}  
-
-
-/* Callback - Show About details */
-
-void OnAbout(GtkWidget *menu_item, gpointer user_data)
-{  
-    MainUi *m_ui;
-
-    /* Check if already open */
-    if (is_ui_reg(ABOUT_UI, TRUE))
-    	return;
-
-    /* Get data */
-    m_ui = (MainUi *) user_data;
-
-    /* Open */
-    about_main(m_ui->window);
 
     return;
 }  

@@ -51,27 +51,38 @@
 void main_ui(IspData *, MainUi *);
 void create_menu(IspData *, MainUi *);
 void create_main_view(IspData *, MainUi *);
-void xml_recv_area(IspData *, MainUi *);
+void usage_btns(MainUi *);
+void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int, PangoFontDescription *);
+void overview_panel(MainUi *);
+void serrvice_panel(MainUi *);
+void monitor_panel(MainUi *);
+void history_panel(MainUi *);
+void log_panel(MainUi *);
+void about_panel(MainUi *);
+void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int, PangoFontDescription *);
+GtkWidget * debug_cntr(GtkWidget *);
+
 void ctrl_btns(MainUi *);
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
-void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
 void disable_login(MainUi *);
 void display_usage();
-GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 
-extern void OnOK(GtkRange*, gpointer);
+extern void OnOverview(GtkWidget*, gpointer);
+extern void OnService(GtkWidget*, gpointer);
+extern void OnMonitor(GtkWidget*, gpointer);
+extern void OnHistory(GtkWidget*, gpointer);
+extern void OnLog(GtkWidget*, gpointer);
+extern void OnAbout(GtkWidget*, gpointer);
 extern void OnUserLogin(GtkWidget*, gpointer);
 extern void OnResetPW(GtkWidget*, gpointer);
-extern void OnAbout(GtkWidget*, gpointer);
 extern void OnQuit(GtkWidget*, gpointer);
 
-/* ??? */
-extern void app_msg(char*, char *, GtkWidget *);
+extern void OnOK(GtkRange*, gpointer);
 
 
 /* Globals */
@@ -273,12 +284,192 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
     /* Usage button panel */
     usage_btns(m_ui);
 
-    /* Return data area */
-    xml_recv_area(isp_data, m_ui);
+    /* Scrolled window to attach the different panels to */
+    m_ui->scrollwin = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_size_request (m_ui->scrollwin, 300, 200);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (m_ui->scrollwin),
+    				   GTK_POLICY_AUTOMATIC,
+    				   GTK_POLICY_AUTOMATIC);
+
+    /* Usage panels */
+    overview_panel(m_ui);
+    serrvice_panel(m_ui);
+    monitor_panel(m_ui);
+    history_panel(m_ui);
+    log_panel(m_ui);
+    about_panel(m_ui);
 
     /* Combine everything onto the main view */
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->scrollwin, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->ok_btn, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->btn_panel, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->scrollwin, TRUE, TRUE, 0);
+
+    return;
+}
+
+
+/* Usage monitor button (menu) panel */
+
+void usage_btns(MainUi *m_ui)
+{  
+    int i, j;
+    PangoFontDescription *pf;
+
+    /* Set font */
+    pf = pango_font_description_from_string ("Sans 9");
+    pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
+
+    /* Create grid to contain the usage monitor function buttons */
+    m_ui->btn_panel = gtk_grid_new();
+    gtk_widget_set_name(m_ui->btn_panel, "btn_panel");
+    gtk_grid_set_row_spacing(GTK_GRID (m_ui->btn_panel), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (m_ui->btn_panel), 2);
+    gtk_container_set_border_width (GTK_CONTAINER (m_ui->btn_panel), 2);
+    gtk_widget_set_hexpand (m_ui->btn_panel, TRUE);
+    gtk_widget_set_vexpand (m_ui->btn_panel, TRUE);
+
+    /* Create buttons */
+    i = j = 0;
+    m_ui->overview_btn = gtk_button_new_with_label("Overview");  
+    set_panel_btn(m_ui->overview_btn, "overview_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+
+    i++;
+    m_ui->service_btn = gtk_button_new_with_label("Service");  
+    set_panel_btn(m_ui->service_btn, "service_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+
+    i++;
+    m_ui->monitor_btn = gtk_button_new_with_label("Monitor");  
+    set_panel_btn(m_ui->monitor_btn, "monitor_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+
+    i = 0;
+    j++;
+    m_ui->history_btn = gtk_button_new_with_label("History");  
+    set_panel_btn(m_ui->history_btn, "history_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+
+    i++;
+    m_ui->log_btn = gtk_button_new_with_label("Log");  
+    set_panel_btn(m_ui->log_btn, "log_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+
+    i++;
+    m_ui->about_btn = gtk_button_new_with_label("About");  
+    set_panel_btn(m_ui->about_btn, "about_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+
+    /* Callbacks */
+    g_signal_connect (m_ui->overview_btn, "clicked", G_CALLBACK (OnOverview), m_ui);
+    g_signal_connect (m_ui->service_btn, "clicked", G_CALLBACK (OnService), m_ui);
+    g_signal_connect (m_ui->monitor_btn, "clicked", G_CALLBACK (OnMonitor), m_ui);
+    g_signal_connect (m_ui->history_btn, "clicked", G_CALLBACK (OnHistory), m_ui);
+    g_signal_connect (m_ui->log_btn, "clicked", G_CALLBACK (OnLog), m_ui);
+    g_signal_connect (m_ui->about_btn, "clicked", G_CALLBACK (OnAbout), m_ui);
+
+    pango_font_description_free (pf);
+
+    return;
+}
+
+
+/* Set a panel button in the grid */
+
+void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
+		   int col, int row, int c_spn, int r_spn, 
+		   PangoFontDescription *font_desc)
+{
+
+    gtk_widget_set_name(btn, nm);
+    gtk_widget_override_font (btn, font_desc);
+    gtk_widget_set_vexpand (btn, TRUE);
+    gtk_widget_set_hexpand (btn, TRUE);
+    gtk_grid_attach(GTK_GRID (cntr), btn, col, row, c_spn, r_spn);
+
+    return;
+}
+
+
+/* Create widgets for the overview panel */
+
+void overview_panel(MainUi *m_ui)
+{  
+    int i, j;
+    PangoFontDescription *pf;
+
+    /* Set font */
+    pf = pango_font_description_from_string ("Sans 9");
+
+    /* Create container grid */
+    m_ui->oview_cntr = gtk_grid_new();
+    gtk_widget_set_name(m_ui->oview_cntr, "oview_panel");
+    gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
+    gtk_container_set_border_width (GTK_CONTAINER (m_ui->oview_cntr), 2);
+
+    /* Create widgets for the overview panel */
+    pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
+    i = 0;
+
+    create_label(m_ui->quota_lbl, "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+
+    pango_font_description_set_weight(*pf, PANGO_WEIGHT_BOLD);
+
+    m_ui->txt_view = gtk_text_view_new();
+    gtk_container_add(GTK_CONTAINER(m_ui->scrollwin), m_ui->txt_view);
+    gtk_widget_set_name(m_ui->txt_view, "xml");
+    gtk_text_view_set_editable (GTK_TEXT_VIEW (m_ui->txt_view), FALSE);
+
+    pango_font_description_free (pf);
+
+    return;
+}
+
+
+/* The manual login menu should be disabled once logged in */
+
+void disable_login(MainUi *m_ui)
+{  
+    gtk_widget_set_sensitive (m_ui->user_login, FALSE);
+
+    return;
+}
+
+
+{  
+    GtkWidget *lbl;
+
+    pango_font_description_set_weight(*pf, PANGO_WEIGHT_NORMAL);
+    *ent = gtk_entry_new();  
+    gtk_widget_set_name(*ent, nm);
+    gtk_entry_set_max_length (GTK_ENTRY (*ent), 32);
+    gtk_entry_set_width_chars (GTK_ENTRY (*ent), 15);
+    gtk_widget_override_font (*ent, *pf);
+
+    gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
+    gtk_grid_attach(GTK_GRID (*cntr), *ent, col, row, 1, 1);
+
+    return;
+}
+
+
+/* Create standard label */
+
+void create_label(GtkWidget **lbl, char *nm, char txt, GtkWidget *cntr, 
+		  int col, int row, int c_spn, int r_spn,
+		  PangoFontDescription *pf)
+{  
+    lbl = gtk_label_new(lbl_txt);  
+    gtk_widget_override_font (lbl, *pf);
+
+    gtk_widget_set_valign(GTK_WIDGET (lbl), GTK_ALIGN_CENTER);
+    gtk_grid_attach(GTK_GRID (*cntr), lbl, col, row, 1, 1);
+
+    return;
+}
+
+
+/* Debug widget container */
+
+/* Display usage details */
+
+void display_usage()
+{  
+    printf("%s Display usage not yet available\n", debug_hdr);
 
     return;
 }
@@ -308,122 +499,16 @@ void create_entry(GtkWidget **ent, char *nm,
 
 /* Create standard label */
 
-void create_label(char *lbl_txt, 
-		    int col, int row, GtkWidget **cntr, 
-		    PangoFontDescription **pf)
+void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr, 
+		  int col, int row, int c_spn, int r_spn,
+		  PangoFontDescription *pf)
 {  
-    GtkWidget *lbl;
+    *lbl = gtk_label_new(txt);  
+    gtk_widget_set_name(*lbl, nm);
+    gtk_widget_override_font (*lbl, *pf);
 
-    pango_font_description_set_weight(*pf, PANGO_WEIGHT_BOLD);
-    lbl = gtk_label_new(lbl_txt);  
-    gtk_widget_override_font (lbl, *pf);
-
-    gtk_widget_set_valign(GTK_WIDGET (lbl), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (*cntr), lbl, col, row, 1, 1);
-
-    return;
-}
-
-
-/* Set a panel button in the grid */
-
-void set_panel_btn(GTkWidget btn, char *nm, GtkWidget *cntr, int col, int row, int c_spn, int r_spn) 
-{
-    PangoFontDescription *font_desc;
-
-    font_desc = pango_font_description_from_string ("Sans 9");
-    pango_font_description_set_weight(font_desc, PANGO_WEIGHT_NORMAL);
-
-    gtk_widget_set_name(btn, nm);
-    gtk_widget_override_font (btn, font_desc);
-    gtk_widget_set_valign(GTK_WIDGET (btn), GTK_ALIGN_CENTER);
-    gtk_widget_set_halign(GTK_WIDGET (btn), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (cntr), btn, col, row, c_spn, r_spn);
-
-    pango_font_description_free (font_desc);
-
-    return;
-}
-
-
-/* Text area to view returned (xml) data */
-
-void xml_recv_area(IspData *isp_data, MainUi *m_ui)
-{  
-    /* Scrolled window for TextView */
-    m_ui->scrollwin = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (m_ui->scrollwin),
-    				   GTK_POLICY_AUTOMATIC,
-    				   GTK_POLICY_AUTOMATIC);
-
-    /* Text area for xml */
-    m_ui->txt_view = gtk_text_view_new();
-    gtk_container_add(GTK_CONTAINER(m_ui->scrollwin), m_ui->txt_view);
-    gtk_widget_set_size_request (m_ui->scrollwin, 300, 200);
-    gtk_widget_set_name(m_ui->txt_view, "xml");
-    gtk_text_view_set_editable (GTK_TEXT_VIEW (m_ui->txt_view), FALSE);
-
-    return;
-}
-
-
-/* Usage monitor button (menu) panel */
-
-void usage_btns(MainUi *m_ui)
-{  
-    int i, j;
-
-    /* Create grid to contain the usage monitor function buttons */
-    m_ui->btn_panel = gtk_grid_new();
-    gtk_widget_set_name(m_ui->btn_panel, "btn_panel");
-    gtk_grid_set_row_spacing(GTK_GRID (m_ui->btn_panel), 2);
-    gtk_grid_set_column_spacing(GTK_GRID (m_ui->btn_panel), 2);
-    gtk_container_set_border_width (GTK_CONTAINER (m_ui->btn_panel), 2);
-
-    /* Create buttons */
-    i = j = 0;
-    m_ui->overview_btn = gtk_button_new_with_label("Overview");  
-    set_panel_btn(m_ui->overview_btn, "overview_btn",  m_ui->btn_panel, i, j, 1, 1);
-
-    i++;
-    m_ui->service_btn = gtk_button_new_with_label("Service");  
-    set_panel_btn(m_ui->service_btn, "service_btn",  m_ui->btn_panel, i, j, 1, 1);
-
-    i++;
-    m_ui->monitor_btn = gtk_button_new_with_label("Monitor");  
-    set_panel_btn(m_ui->monitor_btn, "monitor_btn",  m_ui->btn_panel, i, j, 1, 1);
-
-    i++;
-    j++;
-    m_ui->log_btn = gtk_button_new_with_label("Log");  
-    set_panel_btn(m_ui->log_btn, "log_btn",  m_ui->btn_panel, i, j, 1, 1);
-
-    i++;
-    m_ui->about_btn = gtk_button_new_with_label("About");  
-    set_panel_btn(m_ui->about_btn, "about_btn",  m_ui->btn_panel, i, j, 1, 1);
-
-    /* Callbacks */
-    g_signal_connect (m_ui->overview_btn, "clicked", G_CALLBACK (OnOK), m_ui);
-
-    return;
-}
-
-
-/* The manual login menu should be disabled once logged in */
-
-void disable_login(MainUi *m_ui)
-{  
-    gtk_widget_set_sensitive (m_ui->user_login, FALSE);
-
-    return;
-}
-
-
-/* Display usage details */
-
-void display_usage()
-{  
-    printf("%s Display usage not yet available\n", debug_hdr);
+    gtk_widget_set_valign(*lbl, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
 
     return;
 }

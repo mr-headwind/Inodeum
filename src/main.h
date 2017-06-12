@@ -58,16 +58,31 @@ typedef struct _main_ui
 
     /* Main Frame widgets */
     GtkWidget *ctrl_box;
-    GtkWidget *cntl_grid;
-    GtkWidget *main_frame_grid;  
-    GtkWidget *frame;
+    GtkWidget *btn_panel;
+    GtkWidget *scrollwin;
+
+    /* Button panel widgets */
+    GtkWidget *overview_btn;
+    GtkWidget *service_btn;
+    GtkWidget *monitor_btn;
+    GtkWidget *history_btn;
+    GtkWidget *log_btn;
+    GtkWidget *about_btn;
+
+    /* Data panels */
+    GtkWidget *oview_cntr;
+    GtkWidget *srv_cntr;
+    GtkWidget *mon_cntr;
+    GtkWidget *hist_cntr;
+    GtkWidget *log_cntr;
+    GtkWidget *about_cntr;
 
     /* Data widgets */
-    GtkWidget *txt_view;
+    GtkWidget *quota, *interval, *rollover_dt, *usage, *unit;
+    GtkWidget *quota_lbl, *next_dt_lbl, *usage_lbl;
 
     /* Other */
-    GtkWidget *ok_btn;
-    GtkWidget *scrollwin;
+    GtkWidget *curr_cntr;
 
     /* Callback Handlers */
     int close_hndlr_id;
