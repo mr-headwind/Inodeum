@@ -67,6 +67,7 @@ extern int about_main(GtkWidget *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void user_login_main(IspData *, GtkWidget *);
 extern int delete_user_creds(IspData *, MainUi *);
+extern void display_overview(IspData *isp_data, MainUi *m_ui);
 extern void log_msg(char*, char*, char*, GtkWidget*);
 
 
@@ -109,7 +110,7 @@ void OnOverview(GtkWidget *btn, gpointer user_data)
     isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display usage overview details */
-    printf("%s Overview not available yet\n", debug_hdr); fflush(stdout);
+    display_overview(isp_data, m_ui);
 
     return;
 }  

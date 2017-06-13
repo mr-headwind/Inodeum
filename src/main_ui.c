@@ -54,7 +54,7 @@ void create_main_view(IspData *, MainUi *);
 void usage_btns(MainUi *);
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int, PangoFontDescription *);
 void overview_panel(MainUi *);
-void serrvice_panel(MainUi *);
+void service_panel(MainUi *);
 void monitor_panel(MainUi *);
 void history_panel(MainUi *);
 void log_panel(MainUi *);
@@ -62,15 +62,14 @@ void about_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int, PangoFontDescription *);
 GtkWidget * debug_cntr(GtkWidget *);
 
-void ctrl_btns(MainUi *);
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
 void disable_login(MainUi *);
-void display_usage();
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
+extern void display_overview(IspData *, MainUi *);
 
 extern void OnOverview(GtkWidget*, gpointer);
 extern void OnService(GtkWidget*, gpointer);
@@ -170,7 +169,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     else
     {
     	disable_login(m_ui);
-    	display_usage();
+    	display_overview(isp_data, m_ui);
     }
 
     return;
@@ -293,7 +292,7 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
 
     /* Usage panels */
     overview_panel(m_ui);
-    serrvice_panel(m_ui);
+    service_panel(m_ui);
     monitor_panel(m_ui);
     history_panel(m_ui);
     log_panel(m_ui);
@@ -401,18 +400,36 @@ void overview_panel(MainUi *m_ui)
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->oview_cntr), 2);
 
-    /* Create widgets for the overview panel */
+    /* Title labels */
     pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
-    i = 0;
 
-    create_label(m_ui->quota_lbl, "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    i = j = 0;
+    create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
-    pango_font_description_set_weight(*pf, PANGO_WEIGHT_BOLD);
+    i++;
+    create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
+    i++;
+    create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+
+    /* Data labels */
+    pango_font_description_set_weight(pf, PANGO_WEIGHT_BOLD);
+
+    i = j = 0;
+    create_label(&(m_ui->quota), "quota", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+
+    i++;
+    create_label(&(m_ui->rollover_dt), "rollover_dt", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+
+    i++;
+    create_label(&(m_ui->usage), "usage", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+
+    /*
     m_ui->txt_view = gtk_text_view_new();
     gtk_container_add(GTK_CONTAINER(m_ui->scrollwin), m_ui->txt_view);
     gtk_widget_set_name(m_ui->txt_view, "xml");
     gtk_text_view_set_editable (GTK_TEXT_VIEW (m_ui->txt_view), FALSE);
+    */
 
     pango_font_description_free (pf);
 
@@ -420,28 +437,46 @@ void overview_panel(MainUi *m_ui)
 }
 
 
-/* The manual login menu should be disabled once logged in */
+/* Create widgets for the service panel */
 
-void disable_login(MainUi *m_ui)
+void service_panel(MainUi *m_ui)
 {  
-    gtk_widget_set_sensitive (m_ui->user_login, FALSE);
 
     return;
 }
 
 
+/* Create widgets for the monitor panel */
+
+void monitor_panel(MainUi *m_ui)
 {  
-    GtkWidget *lbl;
 
-    pango_font_description_set_weight(*pf, PANGO_WEIGHT_NORMAL);
-    *ent = gtk_entry_new();  
-    gtk_widget_set_name(*ent, nm);
-    gtk_entry_set_max_length (GTK_ENTRY (*ent), 32);
-    gtk_entry_set_width_chars (GTK_ENTRY (*ent), 15);
-    gtk_widget_override_font (*ent, *pf);
+    return;
+}
 
-    gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (*cntr), *ent, col, row, 1, 1);
+
+/* Create widgets for the history panel */
+
+void history_panel(MainUi *m_ui)
+{  
+
+    return;
+}
+
+
+/* Create widgets for the log panel */
+
+void log_panel(MainUi *m_ui)
+{  
+
+    return;
+}
+
+
+/* Create widgets for the about panel */
+
+void about_panel(MainUi *m_ui)
+{  
 
     return;
 }
@@ -449,27 +484,16 @@ void disable_login(MainUi *m_ui)
 
 /* Create standard label */
 
-void create_label(GtkWidget **lbl, char *nm, char txt, GtkWidget *cntr, 
+void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr, 
 		  int col, int row, int c_spn, int r_spn,
 		  PangoFontDescription *pf)
 {  
-    lbl = gtk_label_new(lbl_txt);  
-    gtk_widget_override_font (lbl, *pf);
+    *lbl = gtk_label_new(txt);  
+    gtk_widget_set_name(*lbl, nm);
+    gtk_widget_override_font (*lbl, pf);
 
-    gtk_widget_set_valign(GTK_WIDGET (lbl), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (*cntr), lbl, col, row, 1, 1);
-
-    return;
-}
-
-
-/* Debug widget container */
-
-/* Display usage details */
-
-void display_usage()
-{  
-    printf("%s Display usage not yet available\n", debug_hdr);
+    gtk_widget_set_valign(*lbl, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
 
     return;
 }
@@ -497,18 +521,11 @@ void create_entry(GtkWidget **ent, char *nm,
 }
 
 
-/* Create standard label */
+/* The manual login menu should be disabled once logged in */
 
-void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr, 
-		  int col, int row, int c_spn, int r_spn,
-		  PangoFontDescription *pf)
+void disable_login(MainUi *m_ui)
 {  
-    *lbl = gtk_label_new(txt);  
-    gtk_widget_set_name(*lbl, nm);
-    gtk_widget_override_font (*lbl, *pf);
-
-    gtk_widget_set_valign(*lbl, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
+    gtk_widget_set_sensitive (m_ui->user_login, FALSE);
 
     return;
 }

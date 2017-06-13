@@ -78,11 +78,14 @@ typedef struct _main_ui
     GtkWidget *about_cntr;
 
     /* Data widgets */
-    GtkWidget *quota, *interval, *rollover_dt, *usage, *unit;
     GtkWidget *quota_lbl, *next_dt_lbl, *usage_lbl;
+    GtkWidget *quota, *rollover_dt, *usage;
 
     /* Other */
     GtkWidget *curr_cntr;
+
+    /* XML processing */
+    GtkWidget *txt_view;
 
     /* Callback Handlers */
     int close_hndlr_id;

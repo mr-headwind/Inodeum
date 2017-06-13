@@ -75,6 +75,7 @@ void free_srv_list(gpointer);
 void free_hist_list(gpointer);
 int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
+void display_overview(IspData *isp_data, MainUi *m_ui);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
@@ -1101,3 +1102,26 @@ char * resp_status_desc(char *xml, MainUi *m_ui)
 
     return txt;
 }  
+
+
+/* Display usage details */
+
+void display_overview(IspData *isp_data, MainUi *m_ui)
+{  
+    char *s;
+
+    s = (char *) malloc(strlen(srv_usage.plan_interval) + 7);
+    sprintf(s, "%s Quota:", srv_usage.plan_interval);
+    gtk_label_set_text (GTK_LABEL (m_ui->quota_lbl), s);
+    gtk_label_set_text (GTK_LABEL (m_ui->quota), srv_usage.quota);
+
+    gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
+    gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), srv_usage.rollover_dt);
+
+    gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
+    gtk_label_set_text (GTK_LABEL (m_ui->usage), srv_usage.total_bytes);
+
+    free(s);
+
+    return;
+}
