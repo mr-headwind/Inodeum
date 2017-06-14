@@ -650,11 +650,11 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
     int len = 0, txt_sz;
     char buf[BUFSIZ + 1];
     char *txt, *p;
-    GtkTextBuffer *txt_buffer;  		// Possible debug use
-    GtkTextIter iter;				// Possible debug use
+    //GtkTextBuffer *txt_buffer;  		// Debug
+    //GtkTextIter iter;				// Debug
 
     /* Initial */
-    txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));	// Possible debug use
+    //txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));	// Debug
     txt = NULL;
     p = NULL;
     txt_sz = 0;
@@ -673,9 +673,9 @@ char * bio_read_xml(BIO *web, MainUi *m_ui)
 	    *(txt + txt_sz) = '\0';
 	    memcpy((char *) p, (char *) buf, len);
 	    	
-	    gtk_text_buffer_get_end_iter (txt_buffer, &iter);			// Possible debug use
-	    gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);		// Possible debug use
-	    gtk_text_iter_forward_to_end (&iter);				// Possible debug use
+	    //gtk_text_buffer_get_end_iter (txt_buffer, &iter);			// Debug
+	    //gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);		// Debug
+	    //gtk_text_iter_forward_to_end (&iter);				// Debug
 	}
     } while(len > 0 || BIO_should_retry(web));
     

@@ -399,6 +399,7 @@ void overview_panel(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->oview_cntr), 2);
+    gtk_widget_set_margin_top (m_ui->oview_cntr, 10);
 
     /* Title labels */
     pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
@@ -406,23 +407,27 @@ void overview_panel(MainUi *m_ui)
     i = j = 0;
     create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
-    i++;
+    j++;
     create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
-    i++;
+    j++;
     create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
     /* Data labels */
     pango_font_description_set_weight(pf, PANGO_WEIGHT_BOLD);
 
-    i = j = 0;
+    j = 0;
+    i++;
     create_label(&(m_ui->quota), "quota", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    gtk_widget_set_margin_left (m_ui->quota, 10);
 
-    i++;
+    j++;
     create_label(&(m_ui->rollover_dt), "rollover_dt", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    gtk_widget_set_margin_left (m_ui->rollover_dt, 10);
 
-    i++;
+    j++;
     create_label(&(m_ui->usage), "usage", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    gtk_widget_set_margin_left (m_ui->usage, 10);
 
     /*
     m_ui->txt_view = gtk_text_view_new();
@@ -492,7 +497,8 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
     gtk_widget_set_name(*lbl, nm);
     gtk_widget_override_font (*lbl, pf);
 
-    gtk_widget_set_valign(*lbl, GTK_ALIGN_START);
+    gtk_widget_set_halign(*lbl, GTK_ALIGN_START);
+    gtk_widget_set_valign(*lbl, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
 
     return;

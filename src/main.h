@@ -84,7 +84,7 @@ typedef struct _main_ui
     /* Other */
     GtkWidget *curr_cntr;
 
-    /* XML processing */
+    /* XML processing (for debug) */
     GtkWidget *txt_view;
 
     /* Callback Handlers */

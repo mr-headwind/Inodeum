@@ -1123,5 +1123,12 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
 
     free(s);
 
+    if (m_ui->curr_cntr != NULL)
+    	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_cntr);
+
+    gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), m_ui->oview_cntr);
+    m_ui->curr_cntr = m_ui->oview_cntr;
+    gtk_widget_show_all(m_ui->window);
+
     return;
 }
