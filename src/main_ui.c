@@ -399,7 +399,8 @@ void overview_panel(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->oview_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->oview_cntr, 10);
+    gtk_widget_set_margin_top (m_ui->oview_cntr, 15);
+    gtk_widget_set_margin_left (m_ui->oview_cntr, 15);
 
     /* Title labels */
     pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
@@ -414,20 +415,21 @@ void overview_panel(MainUi *m_ui)
     create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
     /* Data labels */
-    pango_font_description_set_weight(pf, PANGO_WEIGHT_BOLD);
-
     j = 0;
     i++;
     create_label(&(m_ui->quota), "quota", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
-    gtk_widget_set_margin_left (m_ui->quota, 10);
+    gtk_widget_set_margin_left (m_ui->quota, 15);
+    gtk_widget_override_color(m_ui->quota, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     j++;
     create_label(&(m_ui->rollover_dt), "rollover_dt", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
-    gtk_widget_set_margin_left (m_ui->rollover_dt, 10);
+    gtk_widget_set_margin_left (m_ui->rollover_dt, 15);
+    gtk_widget_override_color(m_ui->rollover_dt, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     j++;
     create_label(&(m_ui->usage), "usage", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
-    gtk_widget_set_margin_left (m_ui->usage, 10);
+    gtk_widget_set_margin_left (m_ui->usage, 15);
+    gtk_widget_override_color(m_ui->usage, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     /*
     m_ui->txt_view = gtk_text_view_new();
@@ -499,6 +501,7 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
 
     gtk_widget_set_halign(*lbl, GTK_ALIGN_START);
     gtk_widget_set_valign(*lbl, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top (*lbl, 5);
     gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
 
     return;

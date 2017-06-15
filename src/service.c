@@ -1113,15 +1113,17 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     s = (char *) malloc(strlen(srv_usage.plan_interval) + 7);
     sprintf(s, "%s Quota:", srv_usage.plan_interval);
     gtk_label_set_text (GTK_LABEL (m_ui->quota_lbl), s);
-    gtk_label_set_text (GTK_LABEL (m_ui->quota), srv_usage.quota);
+    free(s);
+
+    s = format_usg(srv_usage.quota, srv_usage.unit);
+    gtk_label_set_text (GTK_LABEL (m_ui->quota), s);
+    free(s);
 
     gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
     gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), srv_usage.rollover_dt);
 
     gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
     gtk_label_set_text (GTK_LABEL (m_ui->usage), srv_usage.total_bytes);
-
-    free(s);
 
     if (m_ui->curr_cntr != NULL)
     	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_cntr);
@@ -1131,4 +1133,25 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show_all(m_ui->window);
 
     return;
+}
+
+
+/* Format a usage value */
+
+char * format_usg(char *amt, char *unit)
+{  
+    char *s;
+    long l;
+
+    /* If unit is not bytes or the value is not numeric, just return as is */
+    if ((strncmp(amt, "byte", 4) != 0) || (val_str2numb(amt, &l, NULL, NULL) == FALSE))
+    {
+	s = (char *) malloc(strlen(amt) + strlen(unit) + 2);
+	sprintf(s, "%s %s", amt, unit);
+	return s;
+    }
+
+    /* Format the amount (if its numeric) into GB or MB */
+
+    return s;
 }
