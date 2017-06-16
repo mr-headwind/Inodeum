@@ -70,6 +70,7 @@ void deregister_window(GtkWidget *);
 int is_ui_reg(char *, int);
 void free_window_reg();
 void close_open_ui();
+int val_str2numb(char *, long *, char *, GtkWidget *);
 
 /* ??? */
 gint query_dialog(GtkWidget *, char *, char *);
@@ -82,7 +83,6 @@ void strlower(char *, char *);
 void dttm_stamp(char *, size_t);
 int check_dir(char *);
 int make_dir(char *);
-int val_str2numb(char *, int *, char *, GtkWidget *);
 int check_errno(char *);
 void print_bits(size_t const, void const * const);
 GtkWidget * find_parent(GtkWidget *);
@@ -137,10 +137,11 @@ static const char *app_messages[][2] =
     { "ERR0037", "You must enter your ISP login Username. "},
     { "ERR0038", "You must enter your ISP login password. "},
     { "ERR0039", "Invalid XML format found: %s. "},
+    { "ERR0040", "Unable to convert %s to a number. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 41;
+static const int Msg_Count = 42;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
@@ -607,33 +608,38 @@ int make_dir(char *s)
 
 /* Convert a string to a number and validate */
 
-int val_str2numb(char *s, int *numb, char *subst, GtkWidget *window)
+int val_str2numb(char *s, long *numb, char *subst, GtkWidget *window)
 {
-    int i;
+    long l;
     char *end;
 
+printf("%s val_str2numb 1 \n", debug_hdr); fflush(stdout);
     if (strlen(s) > 0)
     {
 	errno = 0;
-	i = strtol(s, &end, 10);
+	l = strtol(s, &end, 10);
 
 	if (errno != 0)
 	{
-	    app_msg("APP0002", subst, window);
+printf("%s val_str2numb 2 amt %s \n", debug_hdr, s); fflush(stdout);
+	    if (subst != NULL)
+		app_msg("ERR0040", subst, window);
 	    return FALSE;
 	}
 	else if (*end)
 	{
-	    app_msg("APP0002", subst, window);
+	    if (subst != NULL)
+		app_msg("ERR0040", subst, window);
 	    return FALSE;
 	}
     }
     else
     {
-    	i = 0;
+    	l = 0;
     }
 
-    *numb = i;
+printf("%s val_str2numb 3 amt %s numb %ld\n", debug_hdr, s, l); fflush(stdout);
+    *numb = l;
 
     return TRUE;
 }

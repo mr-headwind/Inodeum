@@ -75,11 +75,13 @@ void free_srv_list(gpointer);
 void free_hist_list(gpointer);
 int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
-void display_overview(IspData *isp_data, MainUi *m_ui);
+void display_overview(IspData *, MainUi *);
+char * format_usg(char *, char *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
+extern int val_str2numb(char *, long *, char *, GtkWidget *);
 
 
 /* Globals */
@@ -1140,18 +1142,47 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
 
 char * format_usg(char *amt, char *unit)
 {  
+    int i, j;
+    long l, div;
+    double qnt, tmp;
     char *s;
-    long l;
+    const char *abbrev[] = {"GB", "MB", "KB", "Bytes"};
 
+printf("%s format_usg 1 amt %s unit %s\n", debug_hdr, amt, unit); fflush(stdout);
     /* If unit is not bytes or the value is not numeric, just return as is */
-    if ((strncmp(amt, "byte", 4) != 0) || (val_str2numb(amt, &l, NULL, NULL) == FALSE))
+    if ((strncmp(unit, "byte", 4) != 0) || (val_str2numb(amt, &l, NULL, NULL) == FALSE))
     {
 	s = (char *) malloc(strlen(amt) + strlen(unit) + 2);
 	sprintf(s, "%s %s", amt, unit);
 	return s;
     }
 
-    /* Format the amount (if its numeric) into GB or MB */
+    /* Its a number, format the amount into a GB, MB or KB string */
+    qnt = 0;
+    i = 0;
+
+    for(div = 1000000000; div > 1000; div / 1000)
+    {
+    	qnt = (double) l / (double) div;
+
+    	if (qnt > 0)
+	    break;
+
+	i++;
+    }
+
+    /* Need to determine significant digits */
+    j = 0;
+    tmp = qnt;
+
+    while(tmp > 0)
+    {
+    	tmp = tmp / 10;
+    	j++;
+    }
+
+    s = (char *) malloc(j + 5);
+    sprintf(s, "%0.2f %s", qnt, abbrev[i]);
 
     return s;
 }
