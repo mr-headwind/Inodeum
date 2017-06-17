@@ -53,6 +53,7 @@
 int64_t msec_time();
 void cur_date_str(char *, int, char *);
 void date_tm_add(struct tm *, char *, int);
+time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 
 
 /* Globals */
@@ -152,4 +153,25 @@ void date_tm_add(struct tm *p_tm, char *dt_part, int amt)
     //printf("%s date_tm_add: %s\n", debug_hdr, asctime(p_tm)); fflush(stdout);
 
     return;
+}
+
+
+/* Convert a date string to a time_t */
+
+time_t strdt2tmt(char *yyyy, char *mm, char *dd, char *hh, char *min, char *sec)
+{
+    time_t tt;
+    struct tm dtm;
+    char *end;
+
+    dtm.tm_year = ((int) strtol(yyyy, &end, 10)) - 1900;
+    dtm.tm_mon = ((int) strtol(mm, &end, 10)) - 1;
+    dtm.tm_mday = ((int) strtol(dd, &end, 10));
+    dtm.tm_hour = ((int) strtol(hh, &end, 10));
+    dtm.tm_min = ((int) strtol(min, &end, 10));
+    dtm.tm_sec = ((int) strtol(sec, &end, 10));
+
+    tt = mktime(&dtm);
+
+    return tt;
 }

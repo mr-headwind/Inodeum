@@ -70,7 +70,7 @@ void deregister_window(GtkWidget *);
 int is_ui_reg(char *, int);
 void free_window_reg();
 void close_open_ui();
-int val_str2numb(char *, long *, char *, GtkWidget *);
+int val_str2dbl(char *, double *, char *, GtkWidget *);
 
 /* ??? */
 gint query_dialog(GtkWidget *, char *, char *);
@@ -606,22 +606,21 @@ int make_dir(char *s)
 }
 
 
-/* Convert a string to a number and validate */
+/* Convert a string to a (double) number and validate */
 
-int val_str2numb(char *s, long *numb, char *subst, GtkWidget *window)
+int val_str2dbl(char *s, double *numb, char *subst, GtkWidget *window)
 {
-    long l;
+    double dbl;
     char *end;
 
-printf("%s val_str2numb 1 \n", debug_hdr); fflush(stdout);
     if (strlen(s) > 0)
     {
 	errno = 0;
-	l = strtol(s, &end, 10);
+	//l = strtol(s, &end, 10);
+	dbl = strtod(s, &end);
 
 	if (errno != 0)
 	{
-printf("%s val_str2numb 2 amt %s \n", debug_hdr, s); fflush(stdout);
 	    if (subst != NULL)
 		app_msg("ERR0040", subst, window);
 	    return FALSE;
@@ -635,11 +634,10 @@ printf("%s val_str2numb 2 amt %s \n", debug_hdr, s); fflush(stdout);
     }
     else
     {
-    	l = 0;
+    	dbl = 0;
     }
 
-printf("%s val_str2numb 3 amt %s numb %ld\n", debug_hdr, s, l); fflush(stdout);
-    *numb = l;
+    *numb = dbl;
 
     return TRUE;
 }

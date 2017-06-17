@@ -77,11 +77,13 @@ int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
 void display_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
+char * format_dt(char *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
-extern int val_str2numb(char *, long *, char *, GtkWidget *);
+extern int val_str2dbl(char *, double *, char *, GtkWidget *);
+extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 
 
 /* Globals */
@@ -1122,10 +1124,14 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     free(s);
 
     gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
-    gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), srv_usage.rollover_dt);
+    s = format_dt(srv_usage.rollover_dt);
+    gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), s);
+    free(s);
 
     gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
-    gtk_label_set_text (GTK_LABEL (m_ui->usage), srv_usage.total_bytes);
+    s = format_usg(srv_usage.total_bytes, srv_usage.unit);
+    gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
+    free(s);
 
     if (m_ui->curr_cntr != NULL)
     	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_cntr);
@@ -1138,19 +1144,17 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
 }
 
 
-/* Format a usage value */
+/* Format a usage value - eg. quota, total usage */
 
 char * format_usg(char *amt, char *unit)
 {  
     int i, j;
-    long l, div;
-    double qnt, tmp;
+    double dbl, div, qnt, tmp;
     char *s;
     const char *abbrev[] = {"GB", "MB", "KB", "Bytes"};
 
-printf("%s format_usg 1 amt %s unit %s\n", debug_hdr, amt, unit); fflush(stdout);
     /* If unit is not bytes or the value is not numeric, just return as is */
-    if ((strncmp(unit, "byte", 4) != 0) || (val_str2numb(amt, &l, NULL, NULL) == FALSE))
+    if ((strncmp(unit, "byte", 4) != 0) || (val_str2dbl(amt, &dbl, NULL, NULL) == FALSE))
     {
 	s = (char *) malloc(strlen(amt) + strlen(unit) + 2);
 	sprintf(s, "%s %s", amt, unit);
@@ -1163,7 +1167,7 @@ printf("%s format_usg 1 amt %s unit %s\n", debug_hdr, amt, unit); fflush(stdout)
 
     for(div = 1000000000; div > 1000; div / 1000)
     {
-    	qnt = (double) l / (double) div;
+    	qnt = dbl / div;
 
     	if (qnt > 0)
 	    break;
@@ -1183,6 +1187,39 @@ printf("%s format_usg 1 amt %s unit %s\n", debug_hdr, amt, unit); fflush(stdout)
 
     s = (char *) malloc(j + 5);
     sprintf(s, "%0.2f %s", qnt, abbrev[i]);
+
+    return s;
+}
+
+
+/* Format a date in yyyy-mm-dd into dd-mon-yyyy and determine period days remaining */
+
+char * format_dt(char *dt)
+{  
+    char yyyy[5];
+    char mm[3];
+    char dd[3];
+    time_t tm_t;
+    struct tm *dtm;
+
+    /* Get a numeric time */
+    strncpy(yyyy, dt, 4);
+    yyyy[4] = '\0';
+
+    mm[0] = *(dt + 5);
+    mm[1] = *(dt + 6);
+    mm[2] = '\0';
+
+    dd[0] = *(dt + 8);
+    dd[1] = *(dt + 9);
+    dd[2] = '\0';
+
+    tm_t = strdt2tmt(yyyy, mm, dd, NULL, NULL, NULL);
+    dtm = localtime(&tm_t);
+
+    /* Set the new date */
+    s = (char *) malloc(30);
+    strftime(s, 20, "%d-%b-%Y", dtm);
 
     return s;
 }
