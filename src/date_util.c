@@ -54,6 +54,7 @@ int64_t msec_time();
 void cur_date_str(char *, int, char *);
 void date_tm_add(struct tm *, char *, int);
 time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
+double difftime_days(time_t, time_t);
 
 
 /* Globals */
@@ -160,7 +161,7 @@ void date_tm_add(struct tm *p_tm, char *dt_part, int amt)
 
 time_t strdt2tmt(char *yyyy, char *mm, char *dd, char *hh, char *min, char *sec)
 {
-    time_t tt;
+    time_t tm_t;
     struct tm dtm;
     char *end;
 
@@ -171,7 +172,20 @@ time_t strdt2tmt(char *yyyy, char *mm, char *dd, char *hh, char *min, char *sec)
     dtm.tm_min = ((int) strtol(min, &end, 10));
     dtm.tm_sec = ((int) strtol(sec, &end, 10));
 
-    tt = mktime(&dtm);
+    tm_t = mktime(&dtm);
 
-    return tt;
+    return tm_t;
+}
+
+
+/* Return the number of days difference between 2 dates */
+
+double difftime_days(time_t tm_t1, time_t tm_t0)
+{
+    double ndays;
+
+    ndays = difftime(tm_t1, tm_t0);
+    ndays /= (24 * 60 * 60);
+
+    return ndays;
 }

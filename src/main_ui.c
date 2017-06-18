@@ -412,6 +412,9 @@ void overview_panel(MainUi *m_ui)
     create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
     j++;
+    create_label(&(m_ui->rem_days_lbl), "rem_days_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+
+    j++;
     create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
 
     /* Data labels */
@@ -425,6 +428,11 @@ void overview_panel(MainUi *m_ui)
     create_label(&(m_ui->rollover_dt), "rollover_dt", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
     gtk_widget_set_margin_left (m_ui->rollover_dt, 15);
     gtk_widget_override_color(m_ui->rollover_dt, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
+
+    j++;
+    create_label(&(m_ui->rem_days), "rem_days", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    gtk_widget_set_margin_left (m_ui->rem_days, 15);
+    gtk_widget_override_color(m_ui->rem_days, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     j++;
     create_label(&(m_ui->usage), "usage", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);

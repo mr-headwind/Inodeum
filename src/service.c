@@ -77,13 +77,15 @@ int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
 void display_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
-char * format_dt(char *);
+char * format_dt(char *, time_t *);
+char * format_remdays(time_t);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
+extern double difftime_days(time_t, time_t);
 
 
 /* Globals */
@@ -1113,6 +1115,7 @@ char * resp_status_desc(char *xml, MainUi *m_ui)
 void display_overview(IspData *isp_data, MainUi *m_ui)
 {  
     char *s;
+    time_t time_rovr;
 
     s = (char *) malloc(strlen(srv_usage.plan_interval) + 7);
     sprintf(s, "%s Quota:", srv_usage.plan_interval);
@@ -1124,10 +1127,17 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     free(s);
 
     gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
-    s = format_dt(srv_usage.rollover_dt);
+    s = format_dt(srv_usage.rollover_dt, &time_rovr);
     gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), s);
     free(s);
 
+    gtk_label_set_text (GTK_LABEL (m_ui->rem_days_lbl), "Days remaining:");
+    s = format_remdays(time_rovr);
+    gtk_label_set_text (GTK_LABEL (m_ui->rem_days), s);
+    free(s);
+
+    /*
+    */
     gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
     s = format_usg(srv_usage.total_bytes, srv_usage.unit);
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
@@ -1152,7 +1162,9 @@ char * format_usg(char *amt, char *unit)
     double dbl, div, qnt, tmp;
     char *s;
     const char *abbrev[] = {"GB", "MB", "KB", "Bytes"};
+    const double divsr = 1000;
 
+printf("%s format_usg 1 amt %s\n", debug_hdr, amt); fflush(stdout);
     /* If unit is not bytes or the value is not numeric, just return as is */
     if ((strncmp(unit, "byte", 4) != 0) || (val_str2dbl(amt, &dbl, NULL, NULL) == FALSE))
     {
@@ -1161,26 +1173,32 @@ char * format_usg(char *amt, char *unit)
 	return s;
     }
 
+if (dbl == 0)
+dbl = (double) 100000;
+//dbl = divsr;
+printf("%s format_usg 2 dbl %0.2f\n", debug_hdr, dbl); fflush(stdout);
     /* Its a number, format the amount into a GB, MB or KB string */
     qnt = 0;
     i = 0;
 
-    for(div = 1000000000; div > 1000; div / 1000)
+    for(div = (double) 1000000000; div > divsr; div /= divsr)
     {
     	qnt = dbl / div;
+printf("%s format_usg 3 qnt %0.5f div %0.2f\n", debug_hdr, qnt, div); fflush(stdout);
 
-    	if (qnt > 0)
+    	if (qnt >= 1)
 	    break;
 
 	i++;
     }
 
     /* Need to determine significant digits */
-    j = 0;
+    j = 1;
     tmp = qnt;
 
-    while(tmp > 0)
+    while(tmp > 1)
     {
+printf("%s format_usg 4\n", debug_hdr); fflush(stdout);
     	tmp = tmp / 10;
     	j++;
     }
@@ -1192,16 +1210,18 @@ char * format_usg(char *amt, char *unit)
 }
 
 
-/* Format a date in yyyy-mm-dd into dd-mon-yyyy and determine period days remaining */
+/* Return a date in yyyy-mm-dd as dd-mmm-yyyy along with its actual time */
 
-char * format_dt(char *dt)
+char * format_dt(char *dt, time_t *time_rovr)
 {  
     char yyyy[5];
     char mm[3];
     char dd[3];
+    char *s;
     time_t tm_t;
     struct tm *dtm;
 
+printf("%s format_dt 1\n", debug_hdr); fflush(stdout);
     /* Get a numeric time */
     strncpy(yyyy, dt, 4);
     yyyy[4] = '\0';
@@ -1214,12 +1234,29 @@ char * format_dt(char *dt)
     dd[1] = *(dt + 9);
     dd[2] = '\0';
 
-    tm_t = strdt2tmt(yyyy, mm, dd, NULL, NULL, NULL);
+    tm_t = strdt2tmt(yyyy, mm, dd, "0", "0", "0");
     dtm = localtime(&tm_t);
 
     /* Set the new date */
-    s = (char *) malloc(30);
-    strftime(s, 20, "%d-%b-%Y", dtm);
+    s = (char *) malloc(12);
+    strftime(s, 12, "%d-%b-%Y", dtm);
+printf("%s format_dt s %s\n", debug_hdr, s); fflush(stdout);
+    *time_rovr = tm_t;
+
+    return s;
+}
+
+
+/* Return days remaining this period */
+
+char * format_remdays(time_t time_rovr)
+{  
+    double ndays;
+    char *s;
+
+    s = (char *) malloc(5);
+    ndays = difftime_days(time_rovr, time(NULL));
+    sprintf(s, "%0.0f", ndays);
 
     return s;
 }

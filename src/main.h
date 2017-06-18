@@ -78,8 +78,8 @@ typedef struct _main_ui
     GtkWidget *about_cntr;
 
     /* Data widgets */
-    GtkWidget *quota_lbl, *next_dt_lbl, *usage_lbl;
-    GtkWidget *quota, *rollover_dt, *usage;
+    GtkWidget *quota_lbl, *next_dt_lbl, *rem_days_lbl, *usage_lbl;
+    GtkWidget *quota, *rollover_dt, *rem_days, *usage;
 
     /* Other */
     GtkWidget *curr_cntr;
