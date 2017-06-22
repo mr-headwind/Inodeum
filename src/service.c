@@ -1164,7 +1164,6 @@ char * format_usg(char *amt, char *unit)
     const char *abbrev[] = {"GB", "MB", "KB", "Bytes"};
     const double divsr = 1000;
 
-printf("%s format_usg 1 amt %s\n", debug_hdr, amt); fflush(stdout);
     /* If unit is not bytes or the value is not numeric, just return as is */
     if ((strncmp(unit, "byte", 4) != 0) || (val_str2dbl(amt, &dbl, NULL, NULL) == FALSE))
     {
@@ -1173,18 +1172,20 @@ printf("%s format_usg 1 amt %s\n", debug_hdr, amt); fflush(stdout);
 	return s;
     }
 
-if (dbl == 0)
-dbl = (double) 100000;
-//dbl = divsr;
-printf("%s format_usg 2 dbl %0.2f\n", debug_hdr, dbl); fflush(stdout);
     /* Its a number, format the amount into a GB, MB or KB string */
+    if (dbl == 0)
+    {
+	s = (char *) malloc(8);
+	sprintf(s, "0 Bytes");
+	return s;
+    }
+
     qnt = 0;
     i = 0;
 
-    for(div = (double) 1000000000; div > divsr; div /= divsr)
+    for(div = (double) 1000000000; div >= divsr; div /= divsr)
     {
     	qnt = dbl / div;
-printf("%s format_usg 3 qnt %0.5f div %0.2f\n", debug_hdr, qnt, div); fflush(stdout);
 
     	if (qnt >= 1)
 	    break;
@@ -1192,13 +1193,15 @@ printf("%s format_usg 3 qnt %0.5f div %0.2f\n", debug_hdr, qnt, div); fflush(std
 	i++;
     }
 
+    if (div < divsr)
+    	qnt = dbl;
+
     /* Need to determine significant digits */
     j = 1;
     tmp = qnt;
 
     while(tmp > 1)
     {
-printf("%s format_usg 4\n", debug_hdr); fflush(stdout);
     	tmp = tmp / 10;
     	j++;
     }
@@ -1221,7 +1224,6 @@ char * format_dt(char *dt, time_t *time_rovr)
     time_t tm_t;
     struct tm *dtm;
 
-printf("%s format_dt 1\n", debug_hdr); fflush(stdout);
     /* Get a numeric time */
     strncpy(yyyy, dt, 4);
     yyyy[4] = '\0';
@@ -1240,7 +1242,6 @@ printf("%s format_dt 1\n", debug_hdr); fflush(stdout);
     /* Set the new date */
     s = (char *) malloc(12);
     strftime(s, 12, "%d-%b-%Y", dtm);
-printf("%s format_dt s %s\n", debug_hdr, s); fflush(stdout);
     *time_rovr = tm_t;
 
     return s;
