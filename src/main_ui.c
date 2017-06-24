@@ -52,17 +52,17 @@ void main_ui(IspData *, MainUi *);
 void create_menu(IspData *, MainUi *);
 void create_main_view(IspData *, MainUi *);
 void usage_btns(MainUi *);
-void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int, PangoFontDescription *);
+void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void overview_panel(MainUi *);
 void service_panel(MainUi *);
 void monitor_panel(MainUi *);
 void history_panel(MainUi *);
 void log_panel(MainUi *);
 void about_panel(MainUi *);
-void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int, PangoFontDescription *);
+void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 GtkWidget * debug_cntr(GtkWidget *);
 
-void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
+void create_entry(GtkWidget **, char *, int, int, GtkWidget **);
 void disable_login(MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -70,6 +70,7 @@ extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void display_overview(IspData *, MainUi *);
+extern void set_css();
 
 extern void OnOverview(GtkWidget*, gpointer);
 extern void OnService(GtkWidget*, gpointer);
@@ -94,10 +95,6 @@ static const char *debug_hdr = "DEBUG-main_ui.c ";
 void main_ui(IspData *isp_data, MainUi *m_ui)
 {  
     int login_req, r;
-    PangoFontDescription *font_desc;
-
-    /* Initial */
-    font_desc = pango_font_description_from_string ("Sans 9");
 
     /* Set up the UI window */
     m_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
@@ -120,7 +117,6 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 
     /* INFORMATION AREA AT BOTTOM OF WINDOW */
     m_ui->status_info = gtk_label_new(NULL);
-    gtk_widget_override_font (m_ui->status_info, font_desc);
     gtk_widget_set_margin_top(GTK_WIDGET (m_ui->status_info), 5);
     gtk_label_set_text(GTK_LABEL (m_ui->status_info), " ");
     gtk_widget_set_halign(GTK_WIDGET (m_ui->status_info), GTK_ALIGN_START);
@@ -135,10 +131,8 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     /* Exit when window closed */
     g_signal_connect(m_ui->window, "destroy", G_CALLBACK(OnQuit), m_ui->window);  
 
-    /* Clean up */
-    pango_font_description_free (font_desc);
-
     /* Show window */
+    set_css();
     gtk_widget_show_all(m_ui->window);
 
     /* Check user credentials from the gnome keyring */
@@ -311,11 +305,6 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
 void usage_btns(MainUi *m_ui)
 {  
     int i, j;
-    PangoFontDescription *pf;
-
-    /* Set font */
-    pf = pango_font_description_from_string ("Sans 9");
-    pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
 
     /* Create grid to contain the usage monitor function buttons */
     m_ui->btn_panel = gtk_grid_new();
@@ -329,28 +318,28 @@ void usage_btns(MainUi *m_ui)
     /* Create buttons */
     i = j = 0;
     m_ui->overview_btn = gtk_button_new_with_label("Overview");  
-    set_panel_btn(m_ui->overview_btn, "overview_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+    set_panel_btn(m_ui->overview_btn, "overview_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i++;
     m_ui->service_btn = gtk_button_new_with_label("Service");  
-    set_panel_btn(m_ui->service_btn, "service_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+    set_panel_btn(m_ui->service_btn, "service_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i++;
     m_ui->monitor_btn = gtk_button_new_with_label("Monitor");  
-    set_panel_btn(m_ui->monitor_btn, "monitor_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+    set_panel_btn(m_ui->monitor_btn, "monitor_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i = 0;
     j++;
     m_ui->history_btn = gtk_button_new_with_label("History");  
-    set_panel_btn(m_ui->history_btn, "history_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+    set_panel_btn(m_ui->history_btn, "history_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i++;
     m_ui->log_btn = gtk_button_new_with_label("Log");  
-    set_panel_btn(m_ui->log_btn, "log_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+    set_panel_btn(m_ui->log_btn, "log_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i++;
     m_ui->about_btn = gtk_button_new_with_label("About");  
-    set_panel_btn(m_ui->about_btn, "about_btn",  m_ui->btn_panel, i, j, 1, 1, pf);
+    set_panel_btn(m_ui->about_btn, "about_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     /* Callbacks */
     g_signal_connect (m_ui->overview_btn, "clicked", G_CALLBACK (OnOverview), m_ui);
@@ -360,8 +349,6 @@ void usage_btns(MainUi *m_ui)
     g_signal_connect (m_ui->log_btn, "clicked", G_CALLBACK (OnLog), m_ui);
     g_signal_connect (m_ui->about_btn, "clicked", G_CALLBACK (OnAbout), m_ui);
 
-    pango_font_description_free (pf);
-
     return;
 }
 
@@ -369,12 +356,10 @@ void usage_btns(MainUi *m_ui)
 /* Set a panel button in the grid */
 
 void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
-		   int col, int row, int c_spn, int r_spn, 
-		   PangoFontDescription *font_desc)
+		   int col, int row, int c_spn, int r_spn) 
 {
 
     gtk_widget_set_name(btn, nm);
-    gtk_widget_override_font (btn, font_desc);
     gtk_widget_set_vexpand (btn, TRUE);
     gtk_widget_set_hexpand (btn, TRUE);
     gtk_grid_attach(GTK_GRID (cntr), btn, col, row, c_spn, r_spn);
@@ -388,10 +373,6 @@ void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
 void overview_panel(MainUi *m_ui)
 {  
     int i, j;
-    PangoFontDescription *pf;
-
-    /* Set font */
-    pf = pango_font_description_from_string ("Sans 9");
 
     /* Create container grid */
     m_ui->oview_cntr = gtk_grid_new();
@@ -403,41 +384,35 @@ void overview_panel(MainUi *m_ui)
     gtk_widget_set_margin_left (m_ui->oview_cntr, 15);
 
     /* Title labels */
-    pango_font_description_set_weight(pf, PANGO_WEIGHT_NORMAL);
-
     i = j = 0;
-    create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
 
     j++;
-    create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
 
     j++;
-    create_label(&(m_ui->rem_days_lbl), "rem_days_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->rem_days_lbl), "rem_days_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
 
     j++;
-    create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
 
     /* Data labels */
     j = 0;
     i++;
-    create_label(&(m_ui->quota), "quota", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->quota), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->quota, 15);
-    gtk_widget_override_color(m_ui->quota, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     j++;
-    create_label(&(m_ui->rollover_dt), "rollover_dt", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->rollover_dt), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->rollover_dt, 15);
-    gtk_widget_override_color(m_ui->rollover_dt, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     j++;
-    create_label(&(m_ui->rem_days), "rem_days", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->rem_days), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->rem_days, 15);
-    gtk_widget_override_color(m_ui->rem_days, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     j++;
-    create_label(&(m_ui->usage), "usage", NULL, m_ui->oview_cntr, i, j, 1, 1, pf);
+    create_label(&(m_ui->usage), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->usage, 15);
-    gtk_widget_override_color(m_ui->usage, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 
     /*
     m_ui->txt_view = gtk_text_view_new();
@@ -445,8 +420,6 @@ void overview_panel(MainUi *m_ui)
     gtk_widget_set_name(m_ui->txt_view, "xml");
     gtk_text_view_set_editable (GTK_TEXT_VIEW (m_ui->txt_view), FALSE);
     */
-
-    pango_font_description_free (pf);
 
     return;
 }
@@ -500,12 +473,10 @@ void about_panel(MainUi *m_ui)
 /* Create standard label */
 
 void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr, 
-		  int col, int row, int c_spn, int r_spn,
-		  PangoFontDescription *pf)
+		  int col, int row, int c_spn, int r_spn)
 {  
     *lbl = gtk_label_new(txt);  
     gtk_widget_set_name(*lbl, nm);
-    gtk_widget_override_font (*lbl, pf);
 
     gtk_widget_set_halign(*lbl, GTK_ALIGN_START);
     gtk_widget_set_valign(*lbl, GTK_ALIGN_CENTER);
@@ -519,17 +490,14 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
 /* Create standard entry */
 
 void create_entry(GtkWidget **ent, char *nm, 
-		    int col, int row, GtkWidget **cntr, 
-		    PangoFontDescription **pf)
+		    int col, int row, GtkWidget **cntr) 
 {  
     GtkWidget *lbl;
 
-    pango_font_description_set_weight(*pf, PANGO_WEIGHT_NORMAL);
     *ent = gtk_entry_new();  
     gtk_widget_set_name(*ent, nm);
     gtk_entry_set_max_length (GTK_ENTRY (*ent), 32);
     gtk_entry_set_width_chars (GTK_ENTRY (*ent), 15);
-    gtk_widget_override_font (*ent, *pf);
 
     gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (*cntr), *ent, col, row, 1, 1);

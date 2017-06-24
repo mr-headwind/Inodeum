@@ -89,14 +89,15 @@ gboolean OnUserDelete(GtkWidget*, GdkEvent *, gpointer);
 void close_login_ui(GtkWidget *, UserLoginUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
-extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **, PangoFontDescription **);
-extern void create_label(char *, int, int, GtkWidget **, PangoFontDescription **);
+extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **);
+extern void create_label(char *, int, int, GtkWidget **);
 extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
 extern void OnQuit(GtkWidget*, gpointer);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void disable_login(MainUi *);
 extern void display_overview(IspData *isp_data, MainUi *m_ui);
+extern void set_css();
 
 
 /* Globals */
@@ -197,6 +198,7 @@ void user_ui(IspData *isp_data, UserLoginUi *u_ui)
     /* Show window */
     gtk_window_set_transient_for (GTK_WINDOW(u_ui->window), GTK_WINDOW(u_ui->parent_win));
     gtk_window_set_position(GTK_WINDOW(u_ui->window), GTK_WIN_POS_CENTER_ON_PARENT);
+    set_css();
     gtk_widget_show_all(u_ui->window);
     gtk_window_set_modal (GTK_WINDOW(u_ui->window), TRUE);
 
@@ -209,10 +211,6 @@ void user_ui(IspData *isp_data, UserLoginUi *u_ui)
 void user_control(UserLoginUi *u_ui)
 {  
     GtkWidget *label;  
-    PangoFontDescription *pf;
-
-    /* Font and layout setup */
-    pf = pango_font_description_from_string ("Sans 9");
 
     /* Main container */
     u_ui->user_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -225,11 +223,11 @@ void user_control(UserLoginUi *u_ui)
     gtk_container_set_border_width (GTK_CONTAINER (u_ui->ctrl_grid), 3);
 
     /* Add user and password fields with labels */
-    create_label("Username", 1, 1, &(u_ui->ctrl_grid), &pf);
-    create_entry(&(u_ui->uname_ent), "uname", 2, 1, &(u_ui->ctrl_grid), &pf);
+    create_label("Username", 1, 1, &(u_ui->ctrl_grid));
+    create_entry(&(u_ui->uname_ent), "uname", 2, 1, &(u_ui->ctrl_grid));
 
-    create_label("Password", 1, 2, &(u_ui->ctrl_grid), &pf);
-    create_entry(&(u_ui->pw_ent), "pw", 2, 2, &(u_ui->ctrl_grid), &pf);
+    create_label("Password", 1, 2, &(u_ui->ctrl_grid));
+    create_entry(&(u_ui->pw_ent), "pw", 2, 2, &(u_ui->ctrl_grid));
     gtk_entry_set_visibility (GTK_ENTRY (u_ui->pw_ent), FALSE);
 
     gtk_box_pack_start (GTK_BOX (u_ui->user_cntr), u_ui->ctrl_grid, FALSE, FALSE, 0);
@@ -238,9 +236,6 @@ void user_control(UserLoginUi *u_ui)
     u_ui->secure_opt = gtk_check_button_new_with_label ("Securely store your login details?");
     gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt), FALSE); 
     gtk_box_pack_start (GTK_BOX (u_ui->user_cntr), u_ui->secure_opt, FALSE, FALSE, 0);
-
-    /* Free font */
-    pango_font_description_free (pf);
 
     return;
 }

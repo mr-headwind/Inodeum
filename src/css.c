@@ -44,21 +44,27 @@
 
 /* Prototypes */
 
-void css();
+void set_css();
 
 
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-css.c ";
 
-    //"#main_drawing_region,GtkLabel { color: black;}", -1, NULL);
-static const gchar css_data = "label#title-label { color: Sans 15 }";
+static const gchar *css_data = 
+	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
+	"GtkButton, GtkEntry, GtkLabel { font: Sans 9; }"
+	"GtkLabel#data_label { color: @DARK_BLUE; }"
+	"GtkLabel#title_label1 { font: Sans 15; font-weight: bold; }"
+	"GtkLabel#title_label2 { font: Sans 15; }"
+	"GtkTextView { font: Sans 9; }"
+	"GtkLinkButton { font: Sans 9; color: @DARK_BLUE; }";
 
 
 
 /* Set up provider data and apply */
 
-void css()
+void set_css()
 {
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();

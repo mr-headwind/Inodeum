@@ -71,6 +71,7 @@ void OnAboutClose(GtkWidget*, gpointer);
 
 extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
+extern void set_css();
 
 
 /* Globals */
@@ -107,6 +108,7 @@ int about_main(GtkWidget *window)
 
     /* Create the interface */
     about_ui(ui);
+    set_css();
     gtk_widget_show_all(ui->window);
 
     /* Register the window */
@@ -139,10 +141,9 @@ void about_ui(AboutUi *p_ui)
     GtkWidget *scrollwin;
     GtkWidget *lbox;  
     GtkWidget *label_t, *label_f;  
-    GtkWidget *txt_view;  
+    GtkWidget *txt_view;  extern void set_css();
     GtkTextBuffer *txt_buffer;  
     GtkTextIter iter;
-    PangoFontDescription *font_desc;
     char buffer[500];
     int rc;
 
@@ -205,10 +206,12 @@ GtkWidget * about_ui_hdr(AboutUi *p_ui)
     gtk_widget_set_halign (tbox, GTK_ALIGN_START);
 
     label_t = gtk_label_new(TITLE);
+    gtk_widget_set_name(label_t, "title_label1");
     pango_font_description_set_weight(font_desc, PANGO_WEIGHT_BOLD);
     gtk_widget_override_font (GTK_WIDGET (label_t), font_desc);
 
     label_v = gtk_label_new(VERSION);
+    gtk_widget_set_name(label_v, "title_label2");
     pango_font_description_set_weight(font_desc, PANGO_WEIGHT_NORMAL);
     gtk_widget_override_font (GTK_WIDGET (label_v), font_desc);
 
@@ -240,7 +243,6 @@ GtkWidget * about_ui_misc(AboutUi *p_ui)
     int i;
     GtkWidget *misc_box, *tbox, *wbox;
     GtkWidget *label_t[2];
-    PangoFontDescription *font_desc;
     const char *desc[] = 
     	{
 	    "An application to view ISP usage and plan data.",
@@ -249,7 +251,6 @@ GtkWidget * about_ui_misc(AboutUi *p_ui)
     const int desc_max = 2;
 
     /* Set up */
-    font_desc = pango_font_description_from_string ("Sans 9");
     misc_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_margin_top(GTK_WIDGET (misc_box), 10);
 
@@ -261,15 +262,12 @@ GtkWidget * about_ui_misc(AboutUi *p_ui)
     for(i = 0; i < desc_max; i++)
     {
 	label_t[i] = gtk_label_new(desc[i]);
-	gtk_widget_override_font (GTK_WIDGET (label_t[i]), font_desc);
 	gtk_widget_set_halign (label_t[i], GTK_ALIGN_START);
 	gtk_box_pack_start (GTK_BOX (tbox), label_t[i], FALSE, FALSE, 0);
     }
 
     /* Web page */
     p_ui->home_page = gtk_link_button_new_with_label (APP_URI, "Web page");
-    gtk_widget_override_font (GTK_WIDGET (p_ui->home_page), font_desc);
-    gtk_widget_override_color(p_ui->home_page, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
     wbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_halign (wbox, GTK_ALIGN_CENTER);
     gtk_box_pack_start (GTK_BOX (wbox), p_ui->home_page, FALSE, FALSE, 0);
@@ -277,8 +275,6 @@ GtkWidget * about_ui_misc(AboutUi *p_ui)
     /* Pack */
     gtk_box_pack_start (GTK_BOX (misc_box), tbox, TRUE, TRUE, 5);
     gtk_box_pack_start (GTK_BOX (misc_box), wbox, FALSE, FALSE, 5);
-
-    pango_font_description_free (font_desc);
 
     return misc_box;
 }
@@ -315,13 +311,9 @@ GtkWidget * new_page(int i)
     GtkWidget *scroll_win;
     GtkWidget *txt_view;  
     GtkTextBuffer *txt_buffer;  
-    PangoFontDescription *font_desc;
-
-    font_desc = pango_font_description_from_string ("Sans 9");
 
     /* TextView */
     txt_view = gtk_text_view_new();
-    gtk_widget_override_font (txt_view, font_desc);
     gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (txt_view), GTK_WRAP_WORD);
     txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (txt_view));
     gtk_text_buffer_set_text (txt_buffer, about_text[i][1], -1);
@@ -348,8 +340,6 @@ GtkWidget * new_page(int i)
     gtk_container_add(GTK_CONTAINER(scroll_win), txt_view);
     gtk_container_set_border_width(GTK_CONTAINER(scroll_win), 3);
 
-    pango_font_description_free (font_desc);
-
     return scroll_win;
 }
 
@@ -361,14 +351,10 @@ void add_lic_link(GtkTextBuffer **txt_buffer, GtkWidget **txt_view)
     int i;
     GtkTextChildAnchor *anchor_lnk;
     GtkTextIter iter;
-    PangoFontDescription *font_desc;
-
-    font_desc = pango_font_description_from_string ("Sans 9");
 
     for(i = 0; i < url_max; i++)
     {
 	GtkWidget *lic_url = gtk_link_button_new (license_url[i]);
-	gtk_widget_override_font (lic_url, font_desc);
 	gtk_widget_override_color(lic_url, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 	gtk_text_buffer_get_end_iter (*txt_buffer, &iter);
 	anchor_lnk = gtk_text_buffer_create_child_anchor (*txt_buffer, &iter);
@@ -376,8 +362,6 @@ void add_lic_link(GtkTextBuffer **txt_buffer, GtkWidget **txt_view)
 	gtk_text_iter_forward_to_end (&iter);
 	gtk_text_buffer_insert (*txt_buffer, &iter, "\n", -1);
     }
-
-    pango_font_description_free (font_desc);
 
     return;
 }
