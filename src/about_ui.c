@@ -195,11 +195,7 @@ GtkWidget * about_ui_hdr(AboutUi *p_ui)
 {  
     GtkWidget *hdr_box, *tbox;
     GtkWidget *label_t, *label_v;
-    PangoFontDescription *font_desc;
     char *app_icon;
-
-    /* Set up */
-    font_desc = pango_font_description_from_string ("Sans 15");
 
     /* Title and version */
     tbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
@@ -207,13 +203,9 @@ GtkWidget * about_ui_hdr(AboutUi *p_ui)
 
     label_t = gtk_label_new(TITLE);
     gtk_widget_set_name(label_t, "title_label1");
-    pango_font_description_set_weight(font_desc, PANGO_WEIGHT_BOLD);
-    gtk_widget_override_font (GTK_WIDGET (label_t), font_desc);
 
     label_v = gtk_label_new(VERSION);
     gtk_widget_set_name(label_v, "title_label2");
-    pango_font_description_set_weight(font_desc, PANGO_WEIGHT_NORMAL);
-    gtk_widget_override_font (GTK_WIDGET (label_v), font_desc);
 
     gtk_box_pack_start (GTK_BOX (tbox), label_t, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (tbox), label_v, FALSE, FALSE, 0);
@@ -229,8 +221,6 @@ GtkWidget * about_ui_hdr(AboutUi *p_ui)
     gtk_widget_set_halign (hdr_box, GTK_ALIGN_START);
     gtk_box_pack_start (GTK_BOX (hdr_box), p_ui->icon, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (hdr_box), tbox, FALSE, FALSE, 0);
-
-    pango_font_description_free (font_desc);
 
     return hdr_box;
 }

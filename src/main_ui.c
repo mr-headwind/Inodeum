@@ -376,6 +376,7 @@ void overview_panel(MainUi *m_ui)
 
     /* Create container grid */
     m_ui->oview_cntr = gtk_grid_new();
+    g_object_set_data (G_OBJECT (m_ui->oview_cntr), "loaded", GINT_TO_POINTER (FALSE)); // ??
     gtk_widget_set_name(m_ui->oview_cntr, "oview_panel");
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
