@@ -69,6 +69,7 @@ extern void user_login_main(IspData *, GtkWidget *);
 extern int delete_user_creds(IspData *, MainUi *);
 extern void display_overview(IspData *isp_data, MainUi *m_ui);
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void show_panel(GtkWidget *, GtkWidget *);
 
 
 /* Globals */
@@ -103,14 +104,15 @@ void OnOK(GtkWidget *ok_btn, gpointer user_data)
 void OnOverview(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
-    IspData *isp_data;
+    //IspData *isp_data;
 
     /* Get details */
     m_ui = (MainUi *) user_data;
-    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+    //isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display usage overview details */
-    display_overview(isp_data, m_ui);
+    show_panel(m_ui->oview_cntr, m_ui->curr_panel);
+    //display_overview(isp_data, m_ui);
 
     return;
 }  
@@ -194,15 +196,11 @@ void OnAbout(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
 
-    /* Check if already open */
-    if (is_ui_reg(ABOUT_UI, TRUE))
-    	return;
-
     /* Get data */
     m_ui = (MainUi *) user_data;
 
     /* Display About details */
-    about_main(m_ui->window);
+    show_panel(m_ui->about_cntr, m_ui->curr_panel);
 
     return;
 }  

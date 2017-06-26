@@ -1118,15 +1118,6 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     char *s;
     time_t time_rovr;
 
-    /* Details may already be loaded */
-    ov_set = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (m_ui->oview_cntr), "loaded")); // ??
-
-    if (ov_set == TRUE)
-    {
-    	show_panel(m_ui->scrollwin, m_ui->oview_cntr, m_ui->curr_cntr);
-    	return;
-    }
-
     /* Set up display details and show */
     s = (char *) malloc(strlen(srv_usage.plan_interval) + 7);
     sprintf(s, "%s Quota:", srv_usage.plan_interval);
@@ -1152,16 +1143,14 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
     free(s);
 
-    show_panel(m_ui->scrollwin, m_ui->oview_cntr, m_ui->curr_cntr);
     /*
     if (m_ui->curr_cntr != NULL)
     	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_cntr);
-
-    g_object_set_data (G_OBJECT (m_ui->oview_cntr), "loaded", GINT_TO_POINTER (TRUE)); // ??
-    gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), m_ui->oview_cntr);
-    m_ui->curr_cntr = m_ui->oview_cntr;
-    gtk_widget_show_all(m_ui->window);
     */
+
+    gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), m_ui->oview_cntr);
+    m_ui->curr_panel = m_ui->oview_cntr;
+    gtk_widget_show_all(m_ui->window);
 
     return;
 }

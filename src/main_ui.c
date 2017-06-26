@@ -58,8 +58,8 @@ void service_panel(MainUi *);
 void monitor_panel(MainUi *);
 void history_panel(MainUi *);
 void log_panel(MainUi *);
-void about_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+void show_panel(GtkWidget *, GtkWidget *); 
 GtkWidget * debug_cntr(GtkWidget *);
 
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **);
@@ -70,6 +70,7 @@ extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void display_overview(IspData *, MainUi *);
+extern void about_panel(MainUi *);
 extern void set_css();
 
 extern void OnOverview(GtkWidget*, gpointer);
@@ -376,7 +377,6 @@ void overview_panel(MainUi *m_ui)
 
     /* Create container grid */
     m_ui->oview_cntr = gtk_grid_new();
-    g_object_set_data (G_OBJECT (m_ui->oview_cntr), "loaded", GINT_TO_POINTER (FALSE)); // ??
     gtk_widget_set_name(m_ui->oview_cntr, "oview_panel");
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
@@ -462,10 +462,19 @@ void log_panel(MainUi *m_ui)
 }
 
 
-/* Create widgets for the about panel */
+/* Maintain which panel is visible */
 
-void about_panel(MainUi *m_ui)
-{  
+void show_panel(GtkWidget *cntr, GtkWidget *curr_cntr) 
+{
+    if (cntr == curr_cntr)
+    	return;
+
+    gtk_widget_set_visible (cntr, TRUE);
+
+    if (curr_cntr != NULL)
+	gtk_widget_set_visible (curr_cntr, FALSE);
+     
+    curr_cntr = cntr;
 
     return;
 }

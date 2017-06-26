@@ -77,12 +77,16 @@ typedef struct _main_ui
     GtkWidget *log_cntr;
     GtkWidget *about_cntr;
 
-    /* Data widgets */
+    /* Widgets - overview */
     GtkWidget *quota_lbl, *next_dt_lbl, *rem_days_lbl, *usage_lbl;
     GtkWidget *quota, *rollover_dt, *rem_days, *usage;
 
+    /* Widgets - about */
+    GtkWidget *hdr_box, *misc_box, *tab_nb;
+    GtkWidget *app_icon, *home_page;
+
     /* Other */
-    GtkWidget *curr_cntr;
+    GtkWidget *curr_panel;
 
     /* XML processing (for debug) */
     GtkWidget *txt_view;
