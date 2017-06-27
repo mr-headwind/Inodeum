@@ -59,7 +59,7 @@ void monitor_panel(MainUi *);
 void history_panel(MainUi *);
 void log_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
-void show_panel(GtkWidget *, GtkWidget *); 
+void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
 
 void create_entry(GtkWidget **, char *, int, int, GtkWidget **);
@@ -464,17 +464,31 @@ void log_panel(MainUi *m_ui)
 
 /* Maintain which panel is visible */
 
-void show_panel(GtkWidget *cntr, GtkWidget *curr_cntr) 
+void show_panel(GtkWidget *cntr, MainUi *m_ui) 
 {
-    if (cntr == curr_cntr)
+printf("%s cntr %s\n", debug_hdr, gtk_widget_get_name(cntr)); fflush(stdout);
+    if (cntr == m_ui->curr_panel)
     	return;
 
+	//gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_panel);
+    if (m_ui->curr_panel != NULL)
+	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), gtk_bin_get_child (GTK_BIN (m_ui->scrollwin)));
+     
+printf("%s cur_panel 1 %s\n", debug_hdr, gtk_widget_get_name(m_ui->curr_panel)); fflush(stdout);
+    gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), cntr);
+    gtk_widget_show_all(m_ui->window);
     gtk_widget_set_visible (cntr, TRUE);
 
-    if (curr_cntr != NULL)
-	gtk_widget_set_visible (curr_cntr, FALSE);
-     
-    curr_cntr = cntr;
+    m_ui->curr_panel = cntr;
+printf("%s cur_panel 2 %s\n", debug_hdr, gtk_widget_get_name(m_ui->curr_panel)); fflush(stdout);
+if (! G_IS_OBJECT(m_ui->quota_lbl))
+printf("%s not object\n", debug_hdr); fflush(stdout);
+if (! GTK_IS_WIDGET(m_ui->quota_lbl))
+printf("%s not widget\n", debug_hdr); fflush(stdout);
+const gchar *s, *s2;
+s = gtk_label_get_text (GTK_LABEL(m_ui->quota_lbl));
+s2 = gtk_label_get_text (GTK_LABEL(m_ui->quota));
+printf("%s quota %s %s\n", debug_hdr, (char *) s, (char *) s2); fflush(stdout);
 
     return;
 }
@@ -492,6 +506,9 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
     gtk_widget_set_valign(*lbl, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_top (*lbl, 5);
     gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
+
+    g_object_ref(*lbl);
+    g_object_ref(*lbl);
 
     return;
 }

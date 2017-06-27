@@ -1151,6 +1151,7 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), m_ui->oview_cntr);
     m_ui->curr_panel = m_ui->oview_cntr;
     gtk_widget_show_all(m_ui->window);
+    g_object_ref (G_OBJECT (m_ui->oview_cntr));
 
     return;
 }
