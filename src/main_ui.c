@@ -278,12 +278,10 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
     /* Usage button panel */
     usage_btns(m_ui);
 
-    /* Scrolled window to attach the different panels to */
-    m_ui->scrollwin = gtk_scrolled_window_new(NULL, NULL);
-    gtk_widget_set_size_request (m_ui->scrollwin, 300, 200);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (m_ui->scrollwin),
-    				   GTK_POLICY_AUTOMATIC,
-    				   GTK_POLICY_AUTOMATIC);
+    /* Stack widget to attach the different panels to */
+    m_ui->panel_stk = gtk_stack_new();
+    gtk_stack_set_homogeneous(GTK_STACK (m_ui->panel_stk), TRUE);
+    gtk_stack_set_transition_type (GTK_STACK (m_ui->panel_stk), GTK_STACK_TRANSITION_TYPE_NONE); 
 
     /* Usage panels */
     overview_panel(m_ui);
@@ -295,7 +293,7 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
 
     /* Combine everything onto the main view */
     gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->btn_panel, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->scrollwin, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->ctrl_box), m_ui->panel_stk, TRUE, TRUE, 0);
 
     return;
 }
@@ -415,6 +413,9 @@ void overview_panel(MainUi *m_ui)
     create_label(&(m_ui->usage), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->usage, 15);
 
+    /* Add to the panel stack */
+    gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr, "oview_panel");
+
     /*
     m_ui->txt_view = gtk_text_view_new();
     gtk_container_add(GTK_CONTAINER(m_ui->scrollwin), m_ui->txt_view);
@@ -466,29 +467,12 @@ void log_panel(MainUi *m_ui)
 
 void show_panel(GtkWidget *cntr, MainUi *m_ui) 
 {
-printf("%s cntr %s\n", debug_hdr, gtk_widget_get_name(cntr)); fflush(stdout);
     if (cntr == m_ui->curr_panel)
     	return;
 
-	//gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_panel);
-    if (m_ui->curr_panel != NULL)
-	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), gtk_bin_get_child (GTK_BIN (m_ui->scrollwin)));
-     
-printf("%s cur_panel 1 %s\n", debug_hdr, gtk_widget_get_name(m_ui->curr_panel)); fflush(stdout);
-    gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), cntr);
-    gtk_widget_show_all(m_ui->window);
-    gtk_widget_set_visible (cntr, TRUE);
+    gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), cntr);
 
     m_ui->curr_panel = cntr;
-printf("%s cur_panel 2 %s\n", debug_hdr, gtk_widget_get_name(m_ui->curr_panel)); fflush(stdout);
-if (! G_IS_OBJECT(m_ui->quota_lbl))
-printf("%s not object\n", debug_hdr); fflush(stdout);
-if (! GTK_IS_WIDGET(m_ui->quota_lbl))
-printf("%s not widget\n", debug_hdr); fflush(stdout);
-const gchar *s, *s2;
-s = gtk_label_get_text (GTK_LABEL(m_ui->quota_lbl));
-s2 = gtk_label_get_text (GTK_LABEL(m_ui->quota));
-printf("%s quota %s %s\n", debug_hdr, (char *) s, (char *) s2); fflush(stdout);
 
     return;
 }
@@ -506,9 +490,6 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
     gtk_widget_set_valign(*lbl, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_top (*lbl, 5);
     gtk_grid_attach(GTK_GRID (cntr), *lbl, col, row, c_spn, r_spn);
-
-    g_object_ref(*lbl);
-    g_object_ref(*lbl);
 
     return;
 }

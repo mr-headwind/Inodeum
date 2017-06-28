@@ -104,15 +104,12 @@ void OnOK(GtkWidget *ok_btn, gpointer user_data)
 void OnOverview(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
-    //IspData *isp_data;
 
     /* Get details */
     m_ui = (MainUi *) user_data;
-    //isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display usage overview details */
     show_panel(m_ui->oview_cntr, m_ui);
-    //display_overview(isp_data, m_ui);
 
     return;
 }  

@@ -59,7 +59,7 @@ typedef struct _main_ui
     /* Main Frame widgets */
     GtkWidget *ctrl_box;
     GtkWidget *btn_panel;
-    GtkWidget *scrollwin;
+    GtkWidget *panel_stk;
 
     /* Button panel widgets */
     GtkWidget *overview_btn;

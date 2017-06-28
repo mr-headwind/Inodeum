@@ -1143,15 +1143,9 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
     free(s);
 
-    /*
-    if (m_ui->curr_cntr != NULL)
-    	gtk_container_remove (GTK_CONTAINER (m_ui->scrollwin), m_ui->curr_cntr);
-    */
-
-    gtk_container_add(GTK_CONTAINER (m_ui->scrollwin), m_ui->oview_cntr);
     m_ui->curr_panel = m_ui->oview_cntr;
+    gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr);
     gtk_widget_show_all(m_ui->window);
-    g_object_ref (G_OBJECT (m_ui->oview_cntr));
 
     return;
 }
