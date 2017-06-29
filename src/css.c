@@ -55,8 +55,10 @@ static const gchar *css_data =
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"GtkButton, GtkEntry, GtkLabel { font: Sans 9; }"
 	"GtkLabel#data_label { color: @DARK_BLUE; }"
+	"GtkLabel#title_deco1 { font: Comic Sans 15; font-weight: 500; color: #fa8072 }"
+	"GtkLabel#title_deco2 { font-family: Comic Sans; font-size: 15px; font-style: italic; color: #fa8072 }"
 	"GtkLabel#title_label1 { font: Sans 15; font-weight: bold; }"
-	"GtkLabel#title_label2 { font: Sans 10; }"
+	"GtkLabel#title_label2 { font: Sans 9; color: @DARK_BLUE;}"
 	"GtkTextView { font: Sans 9; }"
 	"GtkLinkButton { font: Sans 9; color: @DARK_BLUE; }";
 
