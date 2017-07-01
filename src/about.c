@@ -131,7 +131,7 @@ GtkWidget * about_hdr(MainUi *m_ui)
 
     /* Title and version */
     label_t = gtk_label_new(TITLE);
-    gtk_widget_set_name(label_t, "title_deco2");
+    gtk_widget_set_name(label_t, "title_deco1");
 
     s = (char *) malloc(strlen(VERSION) + 12);
     sprintf(s, "(Version: %s)", VERSION);
@@ -143,7 +143,7 @@ GtkWidget * about_hdr(MainUi *m_ui)
     gtk_widget_set_valign (label_v, GTK_ALIGN_END);
 
     /* Icon */
-    app_icon = g_strconcat (PACKAGE_DATA_DIR, "/pixmaps/", TITLE, "/urlIcon.png",NULL);
+    app_icon = g_strconcat (PACKAGE_DATA_DIR, "/pixmaps/", TITLE, "/inodeum.png",NULL);
     m_ui->app_icon = gtk_image_new_from_file(app_icon);
     g_free(app_icon);
     gtk_widget_set_margin_end(GTK_WIDGET (m_ui->app_icon), 15);
