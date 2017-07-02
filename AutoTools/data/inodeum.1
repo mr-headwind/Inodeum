@@ -1,0 +1,31 @@
+.\Man page for Inodeum
+.TH Inodeum 1 2017-07-01
+.SH NAME
+inodeum \- An Internet usage monitor, plus more, for Internode Linux users. (GTK+, GStreamer, V4L2)
+.SH SYNOPSIS
+.B inodeum
+.SH DESCRIPTION
+\fBinodeum\fR is an Internet usage monitor, plus more, for Internode 
+Linux users. You can view how much of your data quota you have used 
+or how much excess data has been used and how long before your quota
+rolls over.
+
+Usage history may also be viewed as desired as well as your Internode plan
+details.
+.SH OPTIONS
+inodeum has no options
+.SH EXIT STATUS
+On success inodeum will exit(0); on error it will exit(-1). Futher details will
+be in the log file.
+.SH FILES
+.TP
+$HOME/.inodeum/inodeum.log 
+Logs all messages, errors, events (viewable in GUI)
+.TP
+$HOME/.inodeum/user_preferences
+Application preferences (set up in GUI)
+.SH BUGS
+There appears to be a GTK css problem identifying / changing font families which affects
+the 'About' tab.
+.SH AUTHOR
+inodeum and this manual page were written by Anthony Buckley <tony.buckley000@gmail.com>

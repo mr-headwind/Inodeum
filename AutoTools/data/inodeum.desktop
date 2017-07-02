@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Inodeum Internet usage monitor
+_Comment=An Internet usage monitor for Internode Linux users
+TryExec=inodeum
+Exec=inodeum
+Icon=/usr/share/pixmaps/inodeum/inodeum.png
+Terminal=false
+Type=Application
+Keywords=usage;monitor;internet;internode;
+Categories=Internode;Internet;
+StartupNotify=true
