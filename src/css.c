@@ -60,6 +60,7 @@ static const gchar *css_data =
 	"GtkLabel#title_label1 { font: Sans 15; font-weight: bold; }"
 	"GtkLabel#title_label2 { font: Sans 9; color: @DARK_BLUE;}"
 	"GtkTextView { font: Sans 9; }"
+	"GtkTextView#text_view_8 { font: Sans 8; }"
 	"GtkLinkButton { font: Sans 9; color: @DARK_BLUE; }";
 
 

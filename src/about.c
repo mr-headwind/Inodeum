@@ -166,34 +166,26 @@ GtkWidget * about_hdr(MainUi *m_ui)
 GtkWidget * about_misc(MainUi *m_ui)
 {  
     int i;
-    GtkWidget *misc_box, *tbox, *wbox;
+    GtkWidget *misc_box;
     GtkWidget *label_t[DESC_MAX];
 
-    /* Set up */
-    misc_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_widget_set_margin_top(GTK_WIDGET (misc_box), 10);
-
     /* Description */
-    tbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_widget_set_halign (tbox, GTK_ALIGN_START);
-    gtk_widget_set_margin_start(GTK_WIDGET (tbox), 20);
+    misc_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+    gtk_widget_set_halign (misc_box, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(GTK_WIDGET (misc_box), 5);
+    gtk_widget_set_margin_start(GTK_WIDGET (misc_box), 5);
 
     for(i = 0; i < DESC_MAX; i++)
     {
 	label_t[i] = gtk_label_new(desc[i]);
 	gtk_widget_set_halign (label_t[i], GTK_ALIGN_START);
-	gtk_box_pack_start (GTK_BOX (tbox), label_t[i], FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (misc_box), label_t[i], FALSE, FALSE, 0);
     }
 
     /* Web page */
     m_ui->home_page = gtk_link_button_new_with_label (APP_URI, "Web page");
-    wbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_widget_set_halign (wbox, GTK_ALIGN_CENTER);
-    gtk_box_pack_start (GTK_BOX (wbox), m_ui->home_page, FALSE, FALSE, 0);
-
-    /* Pack */
-    gtk_box_pack_start (GTK_BOX (misc_box), tbox, TRUE, TRUE, 5);
-    gtk_box_pack_start (GTK_BOX (misc_box), wbox, FALSE, FALSE, 5);
+    gtk_widget_set_halign (m_ui->home_page, GTK_ALIGN_CENTER);
+    gtk_box_pack_start (GTK_BOX (misc_box), m_ui->home_page, FALSE, FALSE, 0);
 
     return misc_box;
 }
@@ -233,6 +225,7 @@ GtkWidget * new_page(int i)
 
     /* TextView */
     txt_view = gtk_text_view_new();
+    gtk_widget_set_name (txt_view, "text_view_8");
     gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (txt_view), GTK_WRAP_WORD);
     txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (txt_view));
     gtk_text_buffer_set_text (txt_buffer, about_text[i][1], -1);
@@ -263,7 +256,7 @@ GtkWidget * new_page(int i)
 }
 
 
-/* Add lins to the License page */
+/* Add links to the License page */
 
 void add_lic_link(GtkTextBuffer **txt_buffer, GtkWidget **txt_view)
 {  
@@ -274,7 +267,6 @@ void add_lic_link(GtkTextBuffer **txt_buffer, GtkWidget **txt_view)
     for(i = 0; i < url_max; i++)
     {
 	GtkWidget *lic_url = gtk_link_button_new (license_url[i]);
-	gtk_widget_override_color(lic_url, GTK_STATE_FLAG_NORMAL, &DARK_BLUE);
 	gtk_text_buffer_get_end_iter (*txt_buffer, &iter);
 	anchor_lnk = gtk_text_buffer_create_child_anchor (*txt_buffer, &iter);
 	gtk_text_view_add_child_at_anchor (GTK_TEXT_VIEW (*txt_view), lic_url, anchor_lnk);
