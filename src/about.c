@@ -68,12 +68,12 @@ static const char *debug_hdr = "DEBUG-about.c ";
 static const char *about_text[][2] =
 {
     { "License", "Copyright (C) 2017  Anthony Buckley\n\n"
-    		 "This program comes with ABSOLUTELY NO WARRANTY.\n"
-		 "See the GNU General Public License,\n" 
-		 "version 3 or later for details.\n" },
+    		 "This program comes with ABSOLUTELY NO\n"
+    		 "WARRANTY. See the GNU General Public\n" 
+		 "License, version 3 or later for details.\n" },
     { "Credits", "Tony Buckley\t (tony.buckley000@gmail.com)\n" }
 };
-static const int txt_max = 3;
+static const int txt_max = 2;
 
 static const char *license_url[] =
 {
@@ -166,6 +166,7 @@ GtkWidget * about_hdr(MainUi *m_ui)
 GtkWidget * about_misc(MainUi *m_ui)
 {  
     int i;
+    char *s;
     GtkWidget *misc_box;
     GtkWidget *label_t[DESC_MAX];
 
@@ -183,8 +184,13 @@ GtkWidget * about_misc(MainUi *m_ui)
     }
 
     /* Web page */
-    m_ui->home_page = gtk_link_button_new_with_label (APP_URI, "Web page");
+    s = (char *) malloc(strlen(TITLE) + 9);
+    sprintf(s, "%s Web Page", TITLE);
+    m_ui->home_page = gtk_link_button_new_with_label (APP_URI, s);
+    free(s);
     gtk_widget_set_halign (m_ui->home_page, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(GTK_WIDGET (m_ui->home_page), 5);
+    gtk_widget_set_margin_bottom(GTK_WIDGET (m_ui->home_page), 5);
     gtk_box_pack_start (GTK_BOX (misc_box), m_ui->home_page, FALSE, FALSE, 0);
 
     return misc_box;
@@ -200,7 +206,7 @@ GtkWidget * about_tabnb(MainUi *m_ui)
 
     /* Setup */
     tab_nb = gtk_notebook_new();
-    gtk_notebook_set_scrollable (GTK_NOTEBOOK(tab_nb), TRUE);
+    gtk_notebook_set_scrollable (GTK_NOTEBOOK(tab_nb), FALSE);
 
     /* Tab pages */
     for(i = 0; i < txt_max; i++)
@@ -246,9 +252,9 @@ GtkWidget * new_page(int i)
     /* Scrolled window for TextView */
     scroll_win = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (scroll_win),
-    				   GTK_POLICY_AUTOMATIC,
-    				   GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_size_request (scroll_win, 200, 135);
+    				   GTK_POLICY_EXTERNAL,
+    				   GTK_POLICY_EXTERNAL);
+    gtk_widget_set_size_request (scroll_win, 200, 110);
     gtk_container_add(GTK_CONTAINER(scroll_win), txt_view);
     gtk_container_set_border_width(GTK_CONTAINER(scroll_win), 3);
 
