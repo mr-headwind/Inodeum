@@ -74,7 +74,7 @@ typedef struct _main_ui
     GtkWidget *srv_cntr;
     GtkWidget *mon_cntr;
     GtkWidget *hist_cntr;
-    GtkWidget *log_cntr;
+    GtkWidget *pref_cntr;
     GtkWidget *about_cntr;
 
     /* Widgets - overview */
@@ -84,6 +84,9 @@ typedef struct _main_ui
     /* Widgets - about */
     GtkWidget *hdr_box, *misc_box, *tab_nb;
     GtkWidget *app_icon, *home_page;
+
+    /* Widgets - monitor */
+    GtkWidget *log_cntr;
 
     /* Other */
     GtkWidget *curr_panel;

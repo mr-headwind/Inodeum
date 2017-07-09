@@ -145,7 +145,8 @@ void OnMonitor(GtkWidget *btn, gpointer user_data)
     isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display current network information */
-    printf("%s Network monitor not available yet\n", debug_hdr); fflush(stdout);
+    printf("%s Network monitor not complete yet\n", debug_hdr); fflush(stdout);
+    show_panel(m_ui->mon_cntr, m_ui);
 
     return;
 }  

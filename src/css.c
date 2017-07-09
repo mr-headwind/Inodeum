@@ -57,8 +57,10 @@ static const gchar *css_data =
 	"GtkLabel#data_label { color: @DARK_BLUE; }"
 	"GtkLabel#title_deco1 { font: Comic Sans 15; font-weight: 500; color: #fa8072 }"
 	"GtkLabel#title_deco2 { font-family: Comic Sans; font-size: 15px; font-style: italic; color: #fa8072 }"
+	"GtkLabel#title_deco3 { font: Serif 15; font-style: italic; color: #fa8072; }"
 	"GtkLabel#title_label1 { font: Sans 15; font-weight: bold; }"
 	"GtkLabel#title_label2 { font: Sans 9; color: @DARK_BLUE;}"
+	"GtkNotebook * { font: Sans 8; }"
 	"GtkTextView { font: Sans 9; }"
 	"GtkTextView#text_view_8 { font: Sans 8; }"
 	"GtkLinkButton { font: Sans 9; color: @DARK_BLUE; }";

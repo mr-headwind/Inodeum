@@ -55,7 +55,6 @@ void usage_btns(MainUi *);
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void overview_panel(MainUi *);
 void service_panel(MainUi *);
-void monitor_panel(MainUi *);
 void history_panel(MainUi *);
 void log_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
@@ -71,6 +70,7 @@ extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void display_overview(IspData *, MainUi *);
 extern void about_panel(MainUi *);
+extern void monitor_panel(MainUi *);
 extern void set_css();
 
 extern void OnOverview(GtkWidget*, gpointer);
@@ -430,15 +430,6 @@ void overview_panel(MainUi *m_ui)
 /* Create widgets for the service panel */
 
 void service_panel(MainUi *m_ui)
-{  
-
-    return;
-}
-
-
-/* Create widgets for the monitor panel */
-
-void monitor_panel(MainUi *m_ui)
 {  
 
     return;

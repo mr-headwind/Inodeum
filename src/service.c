@@ -328,10 +328,10 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     get_tag_val(p, &(usg->total_bytes), m_ui);
 
 /* Test debug
-*/
 printf("%s\nTotal Usage: %s %s %s %s %s %s %s\n\n", debug_hdr, usg->rollover_dt, usg->plan_interval,
 						    usg->quota, usg->unit, usg->metered_bytes,
 						    usg->unmetered_bytes, usg->total_bytes); fflush(stdout);
+*/
 
     return r;
 }  
@@ -420,7 +420,6 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
     }
 
 /* Test debug
-*/
 printf("%s\nService Plan \n", debug_hdr); fflush(stdout);
 for(i = 0; i < tag_cnt; i++)
 {
@@ -429,6 +428,7 @@ printf("%s: %s\n", tag_arr[i], srv_plan.srv_plan_item[i]); fflush(stdout);
 printf("Quota units: %s Plan Cost units: %s Excess Cost units: %s\n\n", 
 		srv_plan.quota_units, srv_plan.plan_cost_units, srv_plan.excess_cost_units); 
 fflush(stdout);
+*/
 
     return r;
 }  
@@ -548,7 +548,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
 
 /* Test debug
-*/
 printf("%s\nUsage History\n", debug_hdr); fflush(stdout);
 for(GList *l = usg_hist_list; l != NULL; l = l->next)
 {
@@ -562,6 +561,7 @@ for(i = 0; i < 5; i++)
     }
 }
 printf("\n");
+*/
 
     return r;
 }  

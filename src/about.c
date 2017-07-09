@@ -25,7 +25,7 @@
 ** Author:	Anthony Buckley
 **
 ** History
-**	10-Jan-2017	Initial code
+**	10-Jun-2017	Initial code
 **
 */
 
@@ -131,7 +131,7 @@ GtkWidget * about_hdr(MainUi *m_ui)
 
     /* Title and version */
     label_t = gtk_label_new(TITLE);
-    gtk_widget_set_name(label_t, "title_deco1");
+    gtk_widget_set_name(label_t, "title_deco3");
 
     s = (char *) malloc(strlen(VERSION) + 12);
     sprintf(s, "(Version: %s)", VERSION);
@@ -254,7 +254,7 @@ GtkWidget * new_page(int i)
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (scroll_win),
     				   GTK_POLICY_EXTERNAL,
     				   GTK_POLICY_EXTERNAL);
-    gtk_widget_set_size_request (scroll_win, 200, 110);
+    gtk_widget_set_size_request (scroll_win, 200, 120);
     gtk_container_add(GTK_CONTAINER(scroll_win), txt_view);
     gtk_container_set_border_width(GTK_CONTAINER(scroll_win), 3);
 

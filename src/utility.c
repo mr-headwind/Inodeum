@@ -71,14 +71,14 @@ int is_ui_reg(char *, int);
 void free_window_reg();
 void close_open_ui();
 int val_str2dbl(char *, double *, char *, GtkWidget *);
+char * log_name();
+char * app_dir_path();
+char * home_dir();
 
 /* ??? */
 gint query_dialog(GtkWidget *, char *, char *);
 void string_trim(char*);
 int close_ui(char *);
-char * log_name();
-char * app_dir_path();
-char * home_dir();
 void strlower(char *, char *);
 void dttm_stamp(char *, size_t);
 int check_dir(char *);
