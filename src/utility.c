@@ -138,10 +138,11 @@ static const char *app_messages[][2] =
     { "ERR0038", "You must enter your ISP login password. "},
     { "ERR0039", "Invalid XML format found: %s. "},
     { "ERR0040", "Unable to convert %s to a number. "},
+    { "ERR0041", "File %s does not exist or cannot be read. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 42;
+static const int Msg_Count = 43;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

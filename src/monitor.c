@@ -20,7 +20,7 @@
 
 
 /*
-** Description:	Show application version, license, credits etc.
+** Description:	Monitor current items, eg. log file.
 **
 ** Author:	Anthony Buckley
 **
@@ -55,6 +55,7 @@ void monitor_panel(MainUi *m_ui);
 GtkWidget * monitor_log(MainUi *m_ui);
 
 extern char * log_name();
+extern void OnViewLog(GtkWidget*, gpointer);
 
 
 /* Globals */
@@ -106,16 +107,23 @@ GtkWidget * monitor_log(MainUi *m_ui)
     fn = log_name();
     label_fn = gtk_label_new(fn);
     gtk_widget_set_name(label_fn, "data_1");
-    gtk_widget_set_margin_start(GTK_WIDGET (label_fn), 10);
+    gtk_widget_set_margin_top(label_fn, 5);
+    gtk_widget_set_margin_start(label_fn, 10);
     gtk_widget_set_halign (label_fn, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID (log_grid), label_fn, 0, 0, 1, 1);
 
     /* View button */
     view_btn = gtk_button_new_with_label("View");
-    gtk_grid_attach(GTK_GRID (log_grid), view_btn, 0, 1, 1, 1);
+    gtk_widget_set_margin_top(view_btn, 5);
+    gtk_widget_set_margin_start(view_btn, 10);
+    gtk_widget_set_halign (label_fn, GTK_ALIGN_END);
+    gtk_grid_attach(GTK_GRID (log_grid), view_btn, 1, 1, 1, 1);
 
     /* Pack */
     gtk_container_add(GTK_CONTAINER (frame), log_grid);
+
+    /* Callback */
+    g_signal_connect(view_btn, "clicked", G_CALLBACK(OnViewLog), m_ui);
 
     return frame;
 }

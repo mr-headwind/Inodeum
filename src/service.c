@@ -75,17 +75,11 @@ void free_srv_list(gpointer);
 void free_hist_list(gpointer);
 int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
-void display_overview(IspData *, MainUi *);
-char * format_usg(char *, char *);
-char * format_dt(char *, time_t *);
-char * format_remdays(time_t);
+ServUsage * get_service_usage();
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
-extern int val_str2dbl(char *, double *, char *, GtkWidget *);
-extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
-extern double difftime_days(time_t, time_t);
 
 
 /* Globals */
@@ -1110,151 +1104,13 @@ char * resp_status_desc(char *xml, MainUi *m_ui)
 }  
 
 
-/* Display usage details */
+/* Return a pointer to the service usage details */
 
-void display_overview(IspData *isp_data, MainUi *m_ui)
-{  
-    int ov_set;
-    char *s;
-    time_t time_rovr;
+ServUsage * get_service_usage()
+{
+    ServUsage *su;
 
-    /* Set up display details and show */
-    s = (char *) malloc(strlen(srv_usage.plan_interval) + 7);
-    sprintf(s, "%s Quota:", srv_usage.plan_interval);
-    gtk_label_set_text (GTK_LABEL (m_ui->quota_lbl), s);
-    free(s);
+    su = &srv_usage;
 
-    s = format_usg(srv_usage.quota, srv_usage.unit);
-    gtk_label_set_text (GTK_LABEL (m_ui->quota), s);
-    free(s);
-
-    gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
-    s = format_dt(srv_usage.rollover_dt, &time_rovr);
-    gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), s);
-    free(s);
-
-    gtk_label_set_text (GTK_LABEL (m_ui->rem_days_lbl), "Days remaining:");
-    s = format_remdays(time_rovr);
-    gtk_label_set_text (GTK_LABEL (m_ui->rem_days), s);
-    free(s);
-
-    gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
-    s = format_usg(srv_usage.total_bytes, srv_usage.unit);
-    gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
-    free(s);
-
-    m_ui->curr_panel = m_ui->oview_cntr;
-    gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr);
-    gtk_widget_show_all(m_ui->window);
-
-    return;
-}
-
-
-/* Format a usage value - eg. quota, total usage */
-
-char * format_usg(char *amt, char *unit)
-{  
-    int i, j;
-    double dbl, div, qnt, tmp;
-    char *s;
-    const char *abbrev[] = {"GB", "MB", "KB", "Bytes"};
-    const double divsr = 1000;
-
-    /* If unit is not bytes or the value is not numeric, just return as is */
-    if ((strncmp(unit, "byte", 4) != 0) || (val_str2dbl(amt, &dbl, NULL, NULL) == FALSE))
-    {
-	s = (char *) malloc(strlen(amt) + strlen(unit) + 2);
-	sprintf(s, "%s %s", amt, unit);
-	return s;
-    }
-
-    /* Its a number, format the amount into a GB, MB or KB string */
-    if (dbl == 0)
-    {
-	s = (char *) malloc(8);
-	sprintf(s, "0 Bytes");
-	return s;
-    }
-
-    qnt = 0;
-    i = 0;
-
-    for(div = (double) 1000000000; div >= divsr; div /= divsr)
-    {
-    	qnt = dbl / div;
-
-    	if (qnt >= 1)
-	    break;
-
-	i++;
-    }
-
-    if (div < divsr)
-    	qnt = dbl;
-
-    /* Need to determine significant digits */
-    j = 1;
-    tmp = qnt;
-
-    while(tmp > 1)
-    {
-    	tmp = tmp / 10;
-    	j++;
-    }
-
-    s = (char *) malloc(j + 5);
-    sprintf(s, "%0.2f %s", qnt, abbrev[i]);
-
-    return s;
-}
-
-
-/* Return a date in yyyy-mm-dd as dd-mmm-yyyy along with its actual time */
-
-char * format_dt(char *dt, time_t *time_rovr)
-{  
-    char yyyy[5];
-    char mm[3];
-    char dd[3];
-    char *s;
-    time_t tm_t;
-    struct tm *dtm;
-
-    /* Get a numeric time */
-    strncpy(yyyy, dt, 4);
-    yyyy[4] = '\0';
-
-    mm[0] = *(dt + 5);
-    mm[1] = *(dt + 6);
-    mm[2] = '\0';
-
-    dd[0] = *(dt + 8);
-    dd[1] = *(dt + 9);
-    dd[2] = '\0';
-
-    tm_t = strdt2tmt(yyyy, mm, dd, "0", "0", "0");
-    dtm = localtime(&tm_t);
-
-    /* Set the new date */
-    s = (char *) malloc(12);
-    strftime(s, 12, "%d-%b-%Y", dtm);
-    *time_rovr = tm_t;
-
-    return s;
-}
-
-
-/* Return days remaining this period */
-
-char * format_remdays(time_t time_rovr)
-{  
-    double ndays;
-    char *s;
-
-    s = (char *) malloc(5);
-    ndays = difftime_days(time_rovr, time(NULL));
-    sprintf(s, "%0.0f", ndays);
-
-    return s;
-}
+    return su;
+}  

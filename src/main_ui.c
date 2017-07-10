@@ -53,7 +53,6 @@ void create_menu(IspData *, MainUi *);
 void create_main_view(IspData *, MainUi *);
 void usage_btns(MainUi *);
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
-void overview_panel(MainUi *);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
 void log_panel(MainUi *);
@@ -69,6 +68,7 @@ extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void display_overview(IspData *, MainUi *);
+extern void overview_panel(MainUi *);
 extern void about_panel(MainUi *);
 extern void monitor_panel(MainUi *);
 extern void set_css();
@@ -362,66 +362,6 @@ void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
     gtk_widget_set_vexpand (btn, TRUE);
     gtk_widget_set_hexpand (btn, TRUE);
     gtk_grid_attach(GTK_GRID (cntr), btn, col, row, c_spn, r_spn);
-
-    return;
-}
-
-
-/* Create widgets for the overview panel */
-
-void overview_panel(MainUi *m_ui)
-{  
-    int i, j;
-
-    /* Create container grid */
-    m_ui->oview_cntr = gtk_grid_new();
-    gtk_widget_set_name(m_ui->oview_cntr, "oview_panel");
-    gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
-    gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
-    gtk_container_set_border_width (GTK_CONTAINER (m_ui->oview_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->oview_cntr, 15);
-    gtk_widget_set_margin_left (m_ui->oview_cntr, 15);
-
-    /* Title labels */
-    i = j = 0;
-    create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
-
-    j++;
-    create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
-
-    j++;
-    create_label(&(m_ui->rem_days_lbl), "rem_days_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
-
-    j++;
-    create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
-
-    /* Data labels */
-    j = 0;
-    i++;
-    create_label(&(m_ui->quota), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
-    gtk_widget_set_margin_left (m_ui->quota, 15);
-
-    j++;
-    create_label(&(m_ui->rollover_dt), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
-    gtk_widget_set_margin_left (m_ui->rollover_dt, 15);
-
-    j++;
-    create_label(&(m_ui->rem_days), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
-    gtk_widget_set_margin_left (m_ui->rem_days, 15);
-
-    j++;
-    create_label(&(m_ui->usage), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
-    gtk_widget_set_margin_left (m_ui->usage, 15);
-
-    /* Add to the panel stack */
-    gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr, "oview_panel");
-
-    /*
-    m_ui->txt_view = gtk_text_view_new();
-    gtk_container_add(GTK_CONTAINER(m_ui->scrollwin), m_ui->txt_view);
-    gtk_widget_set_name(m_ui->txt_view, "xml");
-    gtk_text_view_set_editable (GTK_TEXT_VIEW (m_ui->txt_view), FALSE);
-    */
 
     return;
 }

@@ -55,6 +55,7 @@ void OnLog(GtkWidget*, gpointer);
 void OnAbout(GtkWidget*, gpointer);
 void OnUserLogin(GtkWidget*, gpointer);
 void OnResetPW(GtkWidget*, gpointer);
+void OnViewLog(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
 void OnOK(GtkWidget*, gpointer);
@@ -70,6 +71,8 @@ extern int delete_user_creds(IspData *, MainUi *);
 extern void display_overview(IspData *isp_data, MainUi *m_ui);
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
+extern char * log_name();
+extern GtkWidget* view_file_main(char  *);
 
 
 /* Globals */
@@ -255,6 +258,28 @@ void OnResetPW(GtkWidget *menu_item, gpointer user_data)
 
     if (delete_user_creds(isp_data, m_ui) == FALSE)
     	log_msg("ERR0028", NULL, "ERR0028", m_ui->window);
+
+    return;
+}  
+
+
+/* Callback - View Log File details */
+
+void OnViewLog(GtkWidget *view_log, gpointer user_data)
+{  
+    MainUi *m_ui;
+    char *log_fn;
+
+    /* Check if already open */
+    if (is_ui_reg(VIEW_FILE_UI, TRUE))
+    	return;
+
+    /* Open */
+    log_fn = log_name();
+    m_ui = (MainUi *) user_data;
+
+    if (view_file_main(log_fn) == NULL)
+    	log_msg("ERR0041", log_fn, "ERR0041", m_ui->window);
 
     return;
 }  
