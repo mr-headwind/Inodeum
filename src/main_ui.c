@@ -398,19 +398,19 @@ void overview_panel(MainUi *m_ui)
     /* Data labels */
     j = 0;
     i++;
-    create_label(&(m_ui->quota), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->quota), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->quota, 15);
 
     j++;
-    create_label(&(m_ui->rollover_dt), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->rollover_dt), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->rollover_dt, 15);
 
     j++;
-    create_label(&(m_ui->rem_days), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->rem_days), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->rem_days, 15);
 
     j++;
-    create_label(&(m_ui->usage), "data_label", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->usage), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->usage, 15);
 
     /* Add to the panel stack */

@@ -105,7 +105,7 @@ GtkWidget * monitor_log(MainUi *m_ui)
     /* Name and location */
     fn = log_name();
     label_fn = gtk_label_new(fn);
-    gtk_widget_set_name(label_fn, "data_lbl_2");
+    gtk_widget_set_name(label_fn, "data_1");
     gtk_widget_set_margin_start(GTK_WIDGET (label_fn), 10);
     gtk_widget_set_halign (label_fn, GTK_ALIGN_START);
     gtk_grid_attach(GTK_GRID (log_grid), label_fn, 0, 0, 1, 1);

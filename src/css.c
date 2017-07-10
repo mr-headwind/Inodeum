@@ -54,17 +54,18 @@ static const char *debug_hdr = "DEBUG-css.c ";
 static const gchar *css_data = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"GtkButton, GtkEntry, GtkLabel { font: Sans 9; }"
-	"GtkLabel#data_label { color: @DARK_BLUE; }"
-	"GtkLabel#title_deco1 { font: Comic Sans 15; font-weight: 500; color: #fa8072 }"
-	"GtkLabel#title_deco2 { font-family: Comic Sans; font-size: 15px; font-style: italic; color: #fa8072 }"
-	"GtkLabel#title_deco3 { font: Serif 15; font-style: italic; color: #fa8072; }"
-	"GtkLabel#title_label1 { font: Sans 15; font-weight: bold; }"
-	"GtkLabel#title_label2 { font: Sans 9; color: @DARK_BLUE;}"
+	"GtkLabel#data_1 { color: @DARK_BLUE; }"
+	"GtkLabel#title_1 { font: Sans 15; font-weight: bold; }"
+	"GtkLabel#title_2 { font: Serif 15; font-style: italic; color: #fa8072; }"
+	"GtkLabel#title_3 { font: Sans 9; color: @DARK_BLUE;}"
 	"GtkNotebook * { font: Sans 8; }"
 	"GtkTextView { font: Sans 9; }"
-	"GtkTextView#text_view_8 { font: Sans 8; }"
+	"GtkTextView#txtview_1 { font: Sans 8; }"
 	"GtkLinkButton { font: Sans 9; color: @DARK_BLUE; }";
 
+// These don't work
+//"GtkLabel#title_deco1 { font: Comic Sans 15; font-weight: 500; color: #fa8072 }"
+//"GtkLabel#title_deco2 { font-family: Comic Sans; font-size: 15px; font-style: italic; color: #fa8072 }"
 
 
 /* Set up provider data and apply */

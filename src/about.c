@@ -131,12 +131,12 @@ GtkWidget * about_hdr(MainUi *m_ui)
 
     /* Title and version */
     label_t = gtk_label_new(TITLE);
-    gtk_widget_set_name(label_t, "title_deco3");
+    gtk_widget_set_name(label_t, "title_2");
 
     s = (char *) malloc(strlen(VERSION) + 12);
     sprintf(s, "(Version: %s)", VERSION);
     label_v = gtk_label_new(s);
-    gtk_widget_set_name(label_v, "title_label2");
+    gtk_widget_set_name(label_v, "title_3");
     gtk_widget_set_margin_start(GTK_WIDGET (label_v), 30);
     free(s);
     gtk_widget_set_halign (label_v, GTK_ALIGN_END);
@@ -231,7 +231,7 @@ GtkWidget * new_page(int i)
 
     /* TextView */
     txt_view = gtk_text_view_new();
-    gtk_widget_set_name (txt_view, "text_view_8");
+    gtk_widget_set_name (txt_view, "txtview_1");
     gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (txt_view), GTK_WRAP_WORD);
     txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (txt_view));
     gtk_text_buffer_set_text (txt_buffer, about_text[i][1], -1);
