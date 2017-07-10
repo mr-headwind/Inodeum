@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     /* Initial work */
     initialise(&isp_data, &m_ui);
 
-    /* Initialise Gtk & GStreamer */
+    /* Initialise Gtk */
     gtk_init(&argc, &argv);  
 
     main_ui(&isp_data, &m_ui);
