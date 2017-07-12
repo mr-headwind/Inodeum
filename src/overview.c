@@ -57,6 +57,7 @@ void display_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
 char * format_dt(char *, time_t *);
 char * format_remdays(time_t);
+void draw_sum_graphs(IspData *, MainUi *);
 
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
@@ -78,7 +79,7 @@ void overview_panel(MainUi *m_ui)
 {  
     int i, j;
 
-    /* Create container grid */
+    /* Create main container grid */
     m_ui->oview_cntr = gtk_grid_new();
     gtk_widget_set_name(m_ui->oview_cntr, "oview_panel");
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
@@ -87,36 +88,53 @@ void overview_panel(MainUi *m_ui)
     gtk_widget_set_margin_top (m_ui->oview_cntr, 15);
     gtk_widget_set_margin_left (m_ui->oview_cntr, 15);
 
+    /* Create summary container grid */
+    m_ui->sum_cntr = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID (m_ui->sum_cntr), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (m_ui->sum_cntr), 2);
+    gtk_container_set_border_width (GTK_CONTAINER (m_ui->sum_cntr), 2);
+    gtk_widget_set_margin_top (m_ui->sum_cntr, 15);
+    gtk_widget_set_margin_left (m_ui->sum_cntr, 15);
+
     /* Title labels */
     i = j = 0;
-    create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->quota_lbl), "quota_lbl", NULL, m_ui->sum_cntr, i, j, 1, 1);
 
     j++;
-    create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->next_dt_lbl), "next_dt_lbl", NULL, m_ui->sum_cntr, i, j, 1, 1);
 
     j++;
-    create_label(&(m_ui->rem_days_lbl), "rem_days_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->rem_days_lbl), "rem_days_lbl", NULL, m_ui->sum_cntr, i, j, 1, 1);
 
     j++;
-    create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->usage_lbl), "usage_lbl", NULL, m_ui->sum_cntr, i, j, 1, 1);
 
     /* Data labels */
     j = 0;
     i++;
-    create_label(&(m_ui->quota), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->quota), "data_1", NULL, m_ui->sum_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->quota, 15);
 
     j++;
-    create_label(&(m_ui->rollover_dt), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->rollover_dt), "data_1", NULL, m_ui->sum_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->rollover_dt, 15);
 
     j++;
-    create_label(&(m_ui->rem_days), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->rem_days), "data_1", NULL, m_ui->sum_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->rem_days, 15);
 
     j++;
-    create_label(&(m_ui->usage), "data_1", NULL, m_ui->oview_cntr, i, j, 1, 1);
+    create_label(&(m_ui->usage), "data_1", NULL, m_ui->sum_cntr, i, j, 1, 1);
     gtk_widget_set_margin_left (m_ui->usage, 15);
+
+    /* Add summary to main overview container */
+    gtk_grid_attach(GTK_GRID (m_ui->oview_cntr), m_ui->sum_cntr, 0, 0, 1, 1);
+
+    /* Create drawing area for graphs and add to main overview container */
+    m_ui->graph_area = gtk_drawing_area_new();
+    gtk_widget_set_halign (m_ui->graph_area, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (m_ui->graph_area, GTK_ALIGN_CENTER);
+    gtk_grid_attach(GTK_GRID (m_ui->oview_cntr), m_ui->graph_area, 0, 1, 1, 1);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr, "oview_panel");
@@ -141,7 +159,7 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     time_t time_rovr;
     ServUsage *srv_usg;
 
-    /* Set up display details and show */
+    /* Show summary details in text */
     srv_usg = get_service_usage();
 
     s = (char *) malloc(strlen(srv_usg->plan_interval) + 7);
@@ -170,6 +188,11 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
 
     m_ui->curr_panel = m_ui->oview_cntr;
     gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr);
+
+    /* Draw usage graphs */
+    draw_sum_graphs(isp_data, m_ui);
+
+    /* Show */
     gtk_widget_show_all(m_ui->window);
 
     return;
@@ -280,6 +303,30 @@ char * format_remdays(time_t time_rovr)
     s = (char *) malloc(5);
     ndays = difftime_days(time_rovr, time(NULL));
     sprintf(s, "%0.0f", ndays);
+
+    return s;
+}
+
+
+/* Draw usage summary graphs */
+
+void draw_sum_graphs(IspData *isp_data, MainUi *m_ui)
+{  
+    GtkAllocation allocation;
+
+    GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
+    cairo_t *cr;
+
+    /* Main window night vision setup */
+    gtk_widget_get_allocation (m_ui->graph_area, &allocation);
+    cr = gdk_cairo_create (window);
+    cairo_set_source_rgba (cr, NIGHT.red, NIGHT.green, NIGHT.blue, NIGHT.alpha);
+    cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
+    cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+    /* Night view */
+    cairo_paint (cr);
+    cairo_destroy (cr);
 
     return s;
 }

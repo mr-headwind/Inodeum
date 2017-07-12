@@ -80,6 +80,7 @@ typedef struct _main_ui
     /* Widgets - overview */
     GtkWidget *quota_lbl, *next_dt_lbl, *rem_days_lbl, *usage_lbl;
     GtkWidget *quota, *rollover_dt, *rem_days, *usage;
+    GtkWidget *sum_cntr, *graph_area;
 
     /* Widgets - about */
     GtkWidget *hdr_box, *misc_box, *tab_nb;
