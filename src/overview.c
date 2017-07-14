@@ -41,6 +41,7 @@
 #include <libgen.h>  
 #include <stdio.h>
 #include <gtk/gtk.h>  
+#include <cairo/cairo.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -64,6 +65,7 @@ extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
+extern gboolean OnExpose (GtkWidget*, cairo_t *, gpointer);
 
 
 
@@ -135,6 +137,8 @@ void overview_panel(MainUi *m_ui)
     gtk_widget_set_halign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (m_ui->oview_cntr), m_ui->graph_area, 0, 1, 1, 1);
+
+    g_signal_connect (m_ui->graph_area, "draw", G_CALLBACK (OnExpose), m_ui);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr, "oview_panel");
@@ -317,16 +321,41 @@ void draw_sum_graphs(IspData *isp_data, MainUi *m_ui)
     GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
     cairo_t *cr;
 
-    /* Main window night vision setup */
+    /* Set drawing area */
     gtk_widget_get_allocation (m_ui->graph_area, &allocation);
     cr = gdk_cairo_create (window);
-    cairo_set_source_rgba (cr, NIGHT.red, NIGHT.green, NIGHT.blue, NIGHT.alpha);
+    //cairo_set_source_rgba (cr, 0, 0, 0, 0);
     cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
     cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-    /* Night view */
+    /* Draw arc */
+    const double M_PI = 3.14159265;
+    double xc = 128.0;
+    double yc = 128.0;
+    double radius = 100.0;
+    double angle1 = 45.0  * (M_PI/180.0);  /* angles are specified */
+    double angle2 = 180.0 * (M_PI/180.0);  /* in radians           */
+
+    cairo_set_line_width (cr, 10.0);
+    cairo_arc (cr, xc, yc, radius, angle1, angle2);
+    cairo_stroke (cr);
+
+    /* draw helping lines */
+    cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
+    cairo_set_line_width (cr, 6.0);
+
+    cairo_arc (cr, xc, yc, 10.0, 0, 2*M_PI);
+    cairo_fill (cr);
+
+    cairo_arc (cr, xc, yc, radius, angle1, angle1);
+    cairo_line_to (cr, xc, yc);
+    cairo_arc (cr, xc, yc, radius, angle2, angle2);
+    cairo_line_to (cr, xc, yc);
+    cairo_stroke (cr);
+
+    /* Draw */
     cairo_paint (cr);
     cairo_destroy (cr);
 
-    return s;
+    return;
 }

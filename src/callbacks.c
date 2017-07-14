@@ -48,6 +48,7 @@
 /* Prototypes */
 
 void OnOverview(GtkWidget*, gpointer);
+gboolean OnExpose(GtkWidget *, cairo_t *, gpointer);
 void OnService(GtkWidget*, gpointer);
 void OnMonitor(GtkWidget*, gpointer);
 void OnHistory(GtkWidget*, gpointer);
@@ -283,6 +284,63 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
     return;
 }  
+
+
+/* Callback - Reset Night Vision (only applies when switched on) */
+
+gboolean OnExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
+{  
+    MainUi *m_ui;
+    GtkAllocation allocation;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Initial */
+    GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
+    //cairo_t *cr;
+
+    gtk_widget_get_allocation (m_ui->window, &allocation);
+    //cr = gdk_cairo_create (window);
+
+    /* Redraw to original */
+    gtk_widget_draw (m_ui->window, cr);
+
+    cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
+    cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+    /* Draw arc */
+    const double M_PI = 3.14159265;
+    double xc = 128.0;
+    double yc = 128.0;
+    double radius = 100.0;
+    double angle1 = 45.0  * (M_PI/180.0);  /* angles are specified */
+    double angle2 = 180.0 * (M_PI/180.0);  /* in radians           */
+
+    cairo_set_line_width (cr, 10.0);
+    cairo_arc (cr, xc, yc, radius, angle1, angle2);
+    cairo_stroke (cr);
+
+    /* draw helping lines */
+    cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
+    cairo_set_line_width (cr, 6.0);
+
+    cairo_arc (cr, xc, yc, 10.0, 0, 2*M_PI);
+    cairo_fill (cr);
+
+    cairo_arc (cr, xc, yc, radius, angle1, angle1);
+    cairo_line_to (cr, xc, yc);
+    cairo_arc (cr, xc, yc, radius, angle2, angle2);
+    cairo_line_to (cr, xc, yc);
+    cairo_stroke (cr);
+
+    /* Draw */
+    cairo_paint (cr);
+    cairo_destroy (cr);
+
+    return TRUE;
+}
+
 
 
 /* Callback - Quit */
