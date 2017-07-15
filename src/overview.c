@@ -134,6 +134,7 @@ void overview_panel(MainUi *m_ui)
 
     /* Create drawing area for graphs and add to main overview container */
     m_ui->graph_area = gtk_drawing_area_new();
+    gtk_widget_set_size_request (m_ui->graph_area, 150, 100);
     gtk_widget_set_halign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (m_ui->oview_cntr), m_ui->graph_area, 0, 1, 1, 1);
@@ -194,7 +195,7 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr);
 
     /* Draw usage graphs */
-    draw_sum_graphs(isp_data, m_ui);
+    //draw_sum_graphs(isp_data, m_ui);
 
     /* Show */
     gtk_widget_show_all(m_ui->window);

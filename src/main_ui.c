@@ -103,7 +103,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     g_object_set_data (G_OBJECT (m_ui->window), "ui", m_ui);
     gtk_window_set_title(GTK_WINDOW(m_ui->window), TITLE);
     gtk_window_set_position(GTK_WINDOW(m_ui->window), GTK_WIN_POS_CENTER);
-    gtk_window_set_default_size(GTK_WINDOW(m_ui->window), 200, 200);
+    gtk_window_set_default_size(GTK_WINDOW(m_ui->window), 300, 390);
     gtk_container_set_border_width(GTK_CONTAINER(m_ui->window), 10);
 
     /* Main view */

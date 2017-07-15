@@ -294,20 +294,40 @@ gboolean OnExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     GtkAllocation allocation;
 
     /* Get data */
+printf("%s OnExpose 1\n", debug_hdr); fflush(stdout);
     m_ui = (MainUi *) user_data;
 
     /* Initial */
-    GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
+    GdkWindow *window = gtk_widget_get_window (widget);
+    //GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
     //cairo_t *cr;
 
-    gtk_widget_get_allocation (m_ui->window, &allocation);
+/*
+gtk_widget_get_allocation (m_ui->window, &allocation);
+printf("%s OnExpose 3 win  x %d y %d w %d h %d\n", debug_hdr,
+    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
+gtk_widget_get_allocation (m_ui->sum_cntr, &allocation);
+printf("%s OnExpose 3 sum  x %d y %d w %d h %d\n", debug_hdr,
+    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
+*/
+
+    gtk_widget_get_allocation (widget, &allocation);
+    //gtk_widget_get_allocation (m_ui->graph_area, &allocation);
     //cr = gdk_cairo_create (window);
 
     /* Redraw to original */
-    gtk_widget_draw (m_ui->window, cr);
+    //gtk_widget_draw (m_ui->window, cr);
 
-    cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
-    cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+    //cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
+    //cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+cairo_move_to (cr, allocation.x, allocation.y);
+cairo_line_to (cr, allocation.width, allocation.height);
+printf("%s OnExpose 2  x %d y %d w %d h %d\n", debug_hdr,
+    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
+cairo_set_line_width (cr, 30.0);
+cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
+cairo_stroke (cr);
+    return TRUE;
 
     /* Draw arc */
     const double M_PI = 3.14159265;
@@ -334,9 +354,10 @@ gboolean OnExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     cairo_line_to (cr, xc, yc);
     cairo_stroke (cr);
 
+printf("%s OnExpose 9\n", debug_hdr); fflush(stdout);
     /* Draw */
     cairo_paint (cr);
-    cairo_destroy (cr);
+    //cairo_destroy (cr);
 
     return TRUE;
 }
