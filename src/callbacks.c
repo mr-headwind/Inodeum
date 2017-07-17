@@ -303,13 +303,16 @@ printf("%s OnExpose 1\n", debug_hdr); fflush(stdout);
     //cairo_t *cr;
 
 /*
+*/
 gtk_widget_get_allocation (m_ui->window, &allocation);
 printf("%s OnExpose 3 win  x %d y %d w %d h %d\n", debug_hdr,
     allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
 gtk_widget_get_allocation (m_ui->sum_cntr, &allocation);
 printf("%s OnExpose 3 sum  x %d y %d w %d h %d\n", debug_hdr,
     allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
-*/
+gtk_widget_get_allocation (m_ui->oview_cntr, &allocation);
+printf("%s OnExpose 3 oview  x %d y %d w %d h %d\n", debug_hdr,
+    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
 
     gtk_widget_get_allocation (widget, &allocation);
     //gtk_widget_get_allocation (m_ui->graph_area, &allocation);
@@ -324,8 +327,14 @@ cairo_move_to (cr, allocation.x, allocation.y);
 cairo_line_to (cr, allocation.width, allocation.height);
 printf("%s OnExpose 2  x %d y %d w %d h %d\n", debug_hdr,
     allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
-cairo_set_line_width (cr, 30.0);
+cairo_set_line_width (cr, 5.0);
 cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
+cairo_stroke (cr);
+cairo_move_to (cr, allocation.x, allocation.y);
+cairo_rel_line_to (cr, allocation.width, 0);
+cairo_rel_line_to (cr, 0, allocation.height);
+cairo_rel_line_to (cr, -allocation.width, 0);
+cairo_close_path (cr);
 cairo_stroke (cr);
     return TRUE;
 
