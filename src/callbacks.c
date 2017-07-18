@@ -315,6 +315,13 @@ printf("%s OnExpose 3 oview  x %d y %d w %d h %d\n", debug_hdr,
     allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
 
     gtk_widget_get_allocation (widget, &allocation);
+
+cairo_set_source_rgba (cr, 0.57, 0.24, 0.24, 0.7);
+cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
+cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+cairo_paint (cr);
+
+
     //gtk_widget_get_allocation (m_ui->graph_area, &allocation);
     //cr = gdk_cairo_create (window);
 
