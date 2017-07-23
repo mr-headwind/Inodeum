@@ -134,7 +134,8 @@ void overview_panel(MainUi *m_ui)
 
     /* Create drawing area for graphs and add to main overview container */
     m_ui->graph_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request (m_ui->graph_area, 150, 100);
+    gtk_widget_set_margin_top (m_ui->graph_area, 10);
+    gtk_widget_set_size_request (m_ui->graph_area, 250, 160);
     gtk_widget_set_halign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (m_ui->oview_cntr), m_ui->graph_area, 0, 1, 1, 1);

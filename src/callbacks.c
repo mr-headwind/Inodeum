@@ -330,19 +330,23 @@ cairo_paint (cr);
 
     //cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
     //cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-cairo_move_to (cr, allocation.x, allocation.y);
+//cairo_move_to (cr, allocation.x, allocation.y);
+cairo_move_to (cr, 0, 0);
+cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
 cairo_line_to (cr, allocation.width, allocation.height);
 printf("%s OnExpose 2  x %d y %d w %d h %d\n", debug_hdr,
     allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
 cairo_set_line_width (cr, 5.0);
 cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
 cairo_stroke (cr);
+/*
 cairo_move_to (cr, allocation.x, allocation.y);
 cairo_rel_line_to (cr, allocation.width, 0);
 cairo_rel_line_to (cr, 0, allocation.height);
 cairo_rel_line_to (cr, -allocation.width, 0);
 cairo_close_path (cr);
 cairo_stroke (cr);
+*/
     return TRUE;
 
     /* Draw arc */
