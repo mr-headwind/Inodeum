@@ -87,7 +87,7 @@ void overview_panel(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->oview_cntr), 2);
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->oview_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->oview_cntr, 15);
+    gtk_widget_set_margin_top (m_ui->oview_cntr, 5);
     gtk_widget_set_margin_left (m_ui->oview_cntr, 15);
 
     /* Create summary container grid */
@@ -95,7 +95,7 @@ void overview_panel(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->sum_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->sum_cntr), 2);
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->sum_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->sum_cntr, 15);
+    gtk_widget_set_margin_top (m_ui->sum_cntr, 5);
     gtk_widget_set_margin_left (m_ui->sum_cntr, 15);
 
     /* Title labels */
