@@ -35,6 +35,7 @@
 #include <string.h>  
 #include <libgen.h>  
 #include <gtk/gtk.h>  
+#include <math.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -350,7 +351,7 @@ cairo_stroke (cr);
 */
 
     /* Draw arc */
-    const double M_PI = 3.14159265;
+    //const double M_PI = 3.14159265;
     double xc = 80.0;
     double yc = 55.0;
     double radius = 55.0;
@@ -360,22 +361,39 @@ cairo_stroke (cr);
     cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
     cairo_set_line_width (cr, 2.0);
     cairo_arc (cr, xc, yc, radius, angle1, angle2);
+    cairo_line_to (cr, xc, yc);
     cairo_fill (cr);
     cairo_stroke (cr);
 
+    cairo_set_font_size (cr, 10);
+    cairo_set_source_rgba (cr, 0, 0, 0, 0.5);
+    double lbl_angle = ((angle1 + angle2) / 2);
+    //double label_x = yc * (1 + 0.1 * cos (lbl_angle));
+    //double label_y = yc * (1 + 0.6 * sin (lbl_angle));
+    //double label_x = allocation.height / 2 * (1 + 0.7 * cos (lbl_angle));
+    //double label_y = allocation.height / 2 * (1 + 0.7 * sin (lbl_angle));
+    double label_x = radius * (1 + 0.2 * cos (lbl_angle));
+    double label_y = radius * (1 + 0.7 * sin (lbl_angle));
+    cairo_move_to (cr, label_x, label_y);
+    cairo_show_text (cr, "90%");
+    cairo_fill (cr);
+
+
     /* draw helping lines */
-    cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
-    cairo_set_line_width (cr, 2.0);
+    //cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
+    //cairo_set_line_width (cr, 2.0);
 
     //cairo_arc (cr, xc, yc, 10.0, 0, 2*M_PI);
     //cairo_fill (cr);
 
+    /*
     cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
     cairo_arc (cr, xc, yc, radius, angle1, angle1);
     cairo_line_to (cr, xc, yc);
     cairo_arc (cr, xc, yc, radius, angle2, angle2);
     cairo_line_to (cr, xc, yc);
     cairo_stroke (cr);
+    */
 
 printf("%s OnExpose 9\n", debug_hdr); fflush(stdout);
     /* Draw */
