@@ -374,6 +374,8 @@ cairo_stroke (cr);
     //double label_y = allocation.height / 2 * (1 + 0.7 * sin (lbl_angle));
     double label_x = radius * (1 + 0.2 * cos (lbl_angle));
     double label_y = radius * (1 + 0.7 * sin (lbl_angle));
+printf("%s OnExpose 3  angle %f cos %f sin %f\n", 
+debug_hdr, lbl_angle, cos(lbl_angle), sin(lbl_angle)); fflush(stdout);
     cairo_move_to (cr, label_x, label_y);
     cairo_show_text (cr, "90%");
     cairo_fill (cr);
