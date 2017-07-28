@@ -19,12 +19,12 @@
 
 
 /*
-** Description: Preferences user interface and management.
+** Description: Functions for drawing Cairo charts
 **
 ** Author:	Anthony Buckley
 **
 ** History
-**	8-May-2017	Initial code
+**	28-Jul-2017	Initial code
 **
 */
 
@@ -34,13 +34,12 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <cairo/cairo.h>
+#include <cairo_chart.h>
 
 
 /* Defines */
@@ -51,24 +50,41 @@
 
 /* Prototypes */
 
-int get_user_pref(char *, char **);
+PieChart * pie_chart_init(cairo_t *, char *, double, int);
 
 
 /* Globals */
 
-static const char *debug_hdr = "DEBUG-prefs.c ";
+static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 
 
 
-/* Return a pointer to a user preference value for a key or NULL */
+/* Create and initialise a new pie chart */
 
-int get_user_pref(char *key, char **val)
+// Some rules for creation:-
+// . A title is optional (may be NULL). If used, keep as short as possible.
+// . Total value is optional (zero). Code will work it out anyway, but might be a useful error check.
+// . Legend should be TRUE or FALSE.
+
+PieChart * pie_chart_init(cairo_t *cr, char *title, double total_val, int legend);
 {
-    int i;
+    PieChart *pie;
 
-printf("%s USER PREFERENCES Not Implemented yet\n", debug_hdr);
-    *val = NULL;
-    i = 0;
+    if (legend < 0) || (legend > 1)
+    	return NULL;
 
-    return i;
+    pie = (PieChart *) malloc(sizeof(PieChart));
+    memset(pie, 0, sizeof(PieChart));
+
+    if (title != NULL)
+    {
+    	pie->chart_title = malloc(strlen(title) + 1);
+    	strcpy(pie->chart_title, title);
+    }
+
+    pie->cr = cr;
+    pie->total_val = total_val;
+    pie->legend = legend;
+
+    return pie;
 }

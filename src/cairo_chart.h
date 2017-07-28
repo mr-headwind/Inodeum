@@ -18,57 +18,49 @@
 */
 
 
+
 /*
-** Description: Preferences user interface and management.
+** Description:	Main program include file
 **
 ** Author:	Anthony Buckley
 **
 ** History
-**	8-May-2017	Initial code
+**	28-Jul-2017	Initial
 **
 */
 
 
 /* Includes */
 
-#include <gtk/gtk.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <glib.h>
+#include <cairo/cairo.h>
 
 
 /* Defines */
 
-
-/* Types */
-
-
-/* Prototypes */
-
-int get_user_pref(char *, char **);
+#ifndef CAIRO_CHART_HDR
+#define CAIRO_CHART_HDR
+#endif
 
 
-/* Globals */
+/* Chart control details */
 
-static const char *debug_hdr = "DEBUG-prefs.c ";
-
-
-
-/* Return a pointer to a user preference value for a key or NULL */
-
-int get_user_pref(char *key, char **val)
+typedef struct _pie_chart
 {
-    int i;
+    cairo_t *cr;
+    char *chart_title;
+    double total_value;
+    int legend;
+    int num_slices;
+    GList *pie_slices = NULL;
+} PieChart;
 
-printf("%s USER PREFERENCES Not Implemented yet\n", debug_hdr);
-    *val = NULL;
-    i = 0;
 
-    return i;
-}
+/* Chart slice details */
+
+typedef struct _pie_slice
+{
+    char *desc;
+    double slice_value;
+    GdkRGBA *colour;
+} PieSlice;

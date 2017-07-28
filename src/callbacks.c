@@ -35,6 +35,7 @@
 #include <string.h>  
 #include <libgen.h>  
 #include <gtk/gtk.h>  
+#include <cairo/cairo.h>
 #include <math.h>
 #include <main.h>
 #include <isp.h>
@@ -287,7 +288,7 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 }  
 
 
-/* Callback - Reset Night Vision (only applies when switched on) */
+/* Callback - Cairo charts displaying usage information */
 
 gboolean OnExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {  
