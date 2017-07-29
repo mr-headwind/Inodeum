@@ -50,7 +50,7 @@
 /* Prototypes */
 
 void OnOverview(GtkWidget*, gpointer);
-gboolean OnExpose(GtkWidget *, cairo_t *, gpointer);
+gboolean OnOvExpose(GtkWidget *, cairo_t *, gpointer);
 void OnService(GtkWidget*, gpointer);
 void OnMonitor(GtkWidget*, gpointer);
 void OnHistory(GtkWidget*, gpointer);
@@ -290,7 +290,7 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
 /* Callback - Cairo charts displaying usage information */
 
-gboolean OnExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
+gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {  
     MainUi *m_ui;
     GtkAllocation allocation;

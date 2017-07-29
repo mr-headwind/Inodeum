@@ -65,7 +65,7 @@ extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
-extern gboolean OnExpose (GtkWidget*, cairo_t *, gpointer);
+extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
 
 
 
@@ -140,7 +140,7 @@ void overview_panel(MainUi *m_ui)
     gtk_widget_set_valign (m_ui->graph_area, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (m_ui->oview_cntr), m_ui->graph_area, 0, 1, 1, 1);
 
-    g_signal_connect (m_ui->graph_area, "draw", G_CALLBACK (OnExpose), m_ui);
+    g_signal_connect (m_ui->graph_area, "draw", G_CALLBACK (OnOvExpose), m_ui);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr, "oview_panel");

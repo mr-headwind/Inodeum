@@ -51,6 +51,8 @@
 /* Prototypes */
 
 PieChart * pie_chart_init(cairo_t *, char *, double, int);
+int pie_slice_create(char *, double, GdkRGBA *);
+void free_pie_chart(PieChart *);
 
 
 /* Globals */
@@ -68,23 +70,60 @@ static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 
 PieChart * pie_chart_init(cairo_t *cr, char *title, double total_val, int legend);
 {
-    PieChart *pie;
+    PieChart *pc;
 
     if (legend < 0) || (legend > 1)
     	return NULL;
 
-    pie = (PieChart *) malloc(sizeof(PieChart));
-    memset(pie, 0, sizeof(PieChart));
+    pc = (PieChart *) malloc(sizeof(PieChart));
+    memset(pc, 0, sizeof(PieChart));
 
     if (title != NULL)
     {
-    	pie->chart_title = malloc(strlen(title) + 1);
-    	strcpy(pie->chart_title, title);
+    	pc->chart_title = malloc(strlen(title) + 1);
+    	strcpy(pc->chart_title, title);
     }
 
-    pie->cr = cr;
-    pie->total_val = total_val;
-    pie->legend = legend;
+    pc->cr = cr;
+    pc->total_val = total_val;
+    pc->legend = legend;
 
-    return pie;
+    return pc;
+}
+
+
+/* Create and initialise a new pie slice */
+
+int pie_slice_create(PieChart *pc, char *desc, double val, GdkRGBA *colour)
+{
+    PieSlice *ps;
+
+    ps = (PieSlice *) malloc(sizeof(PieSlice));
+    memset(ps, 0, sizeof(PieSlice));
+
+    if (desc != NULL)
+    {
+    	ps->desc = malloc(strlen(desc) + 1);
+    	strcpy(ps->desc, desc);
+    }
+
+    ps->slice_value = val;
+    ps->colour = colour;
+    pc->pie_slices = g_list_append (pc->pie_slices, ps);
+
+    return TRUE;
+}
+
+
+/* Free all pie chart resources */
+
+void free_pie_chart(PieChart *pc)
+{
+    if (pc->chart_title)
+    	free(pc->chart_title);
+
+    g_list_free(pc->pie_slices);
+    free(pc);
+
+    return;
 }
