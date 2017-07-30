@@ -47,7 +47,7 @@
 
 typedef struct _pie_chart
 {
-    cairo_t *cr;
+    //cairo_t *cr;
     char *chart_title;
     double total_value;
     int legend;

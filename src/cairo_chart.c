@@ -50,7 +50,7 @@
 
 /* Prototypes */
 
-PieChart * pie_chart_init(cairo_t *, char *, double, int);
+PieChart * pie_chart_init(char *, double, int);
 int pie_slice_create(char *, double, GdkRGBA *);
 void free_pie_chart(PieChart *);
 
@@ -68,7 +68,7 @@ static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 // . Total value is optional (zero). Code will work it out anyway, but might be a useful error check.
 // . Legend should be TRUE or FALSE.
 
-PieChart * pie_chart_init(cairo_t *cr, char *title, double total_val, int legend);
+PieChart * pie_chart_init(char *title, double total_val, int legend);
 {
     PieChart *pc;
 
@@ -84,7 +84,7 @@ PieChart * pie_chart_init(cairo_t *cr, char *title, double total_val, int legend
     	strcpy(pc->chart_title, title);
     }
 
-    pc->cr = cr;
+    //pc->cr = cr;
     pc->total_val = total_val;
     pc->legend = legend;
 
