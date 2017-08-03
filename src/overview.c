@@ -41,10 +41,10 @@
 #include <libgen.h>  
 #include <stdio.h>
 #include <gtk/gtk.h>  
-#include <cairo/cairo.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
+#include <cairo_chart.h>
 #include <version.h>
 
 
@@ -58,7 +58,7 @@ void display_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
 char * format_dt(char *, time_t *);
 char * format_remdays(time_t);
-void draw_sum_graphs(IspData *, MainUi *);
+void create_charts(ServUsage *, IspData *, MainUi *);
 
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
@@ -66,6 +66,8 @@ extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
+extern PieChart * pie_chart_init(char *, double, int);
+extern int pie_slice_create(char *, double, GdkRGBA *);
 
 
 
@@ -195,8 +197,8 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     m_ui->curr_panel = m_ui->oview_cntr;
     gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr);
 
-    /* Draw usage graphs */
-    //draw_sum_graphs(isp_data, m_ui);
+    /* Set up usage graphs */
+    create_charts(srv_usg, isp_data, m_ui);
 
     /* Show */
     gtk_widget_show_all(m_ui->window);
@@ -314,50 +316,19 @@ char * format_remdays(time_t time_rovr)
 }
 
 
-/* Draw usage summary graphs */
+/* Create usage charts objects, drawing is handled in the 'draw' (OnOvExpose) event */
 
-void draw_sum_graphs(IspData *isp_data, MainUi *m_ui)
+void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 {  
     GtkAllocation allocation;
 
-    GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
-    cairo_t *cr;
+    /* Pie Chart */
+    m_ui->pie_chart = pie_chart_init(NULL, 100, TRUE);
 
-    /* Set drawing area */
-    gtk_widget_get_allocation (m_ui->graph_area, &allocation);
-    cr = gdk_cairo_create (window);
-    //cairo_set_source_rgba (cr, 0, 0, 0, 0);
-    cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
-    cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-
-    /* Draw arc */
-    const double M_PI = 3.14159265;
-    double xc = 128.0;
-    double yc = 128.0;
-    double radius = 100.0;
-    double angle1 = 45.0  * (M_PI/180.0);  /* angles are specified */
-    double angle2 = 180.0 * (M_PI/180.0);  /* in radians           */
-
-    cairo_set_line_width (cr, 10.0);
-    cairo_arc (cr, xc, yc, radius, angle1, angle2);
-    cairo_stroke (cr);
-
-    /* draw helping lines */
-    cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
-    cairo_set_line_width (cr, 6.0);
-
-    cairo_arc (cr, xc, yc, 10.0, 0, 2*M_PI);
-    cairo_fill (cr);
-
-    cairo_arc (cr, xc, yc, radius, angle1, angle1);
-    cairo_line_to (cr, xc, yc);
-    cairo_arc (cr, xc, yc, radius, angle2, angle2);
-    cairo_line_to (cr, xc, yc);
-    cairo_stroke (cr);
-
-    /* Draw */
-    cairo_paint (cr);
-    cairo_destroy (cr);
+    /* Slices - amount used and either unused or overdrawn */
+    pie_slice_create(m_ui->pie_chart, txt1, val1, LIGHT_BLUE);
+    pie_slice_create(m_ui->pie_chart, txt1, val1, WHITE);
+    pie_slice_create(m_ui->pie_chart, txt1, val1, LIGHT_RED);
 
     return;
 }

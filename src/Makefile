@@ -19,9 +19,9 @@
 CC=cc
 CFLAGS=-I. `pkg-config --cflags gtk+-3.0 gnome-keyring-1` 
 CFLAGS2=-Wno-deprecated-declarations
-DEPS = defs.h main.h isp.h version.h
-OBJ = um_main.o callbacks.o main_ui.o utility.o service.o ssl_socket.o socket.o overview.o about.o monitor.o prefs.o user_login_ui.o date_util.o css.o view_file_ui.o
-LIBS = `pkg-config --libs gtk+-3.0 gnome-keyring-1`
+DEPS = defs.h main.h isp.h cairo_chart.h version.h
+OBJ = um_main.o callbacks.o main_ui.o utility.o service.o ssl_socket.o socket.o overview.o about.o monitor.o prefs.o user_login_ui.o date_util.o css.o view_file_ui.o cairo_chart.o
+LIBS = `pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo`
 LIBS2 = -lssl -lcrypto -lpthread -lm
 #LIBS2 = -lpthread
 

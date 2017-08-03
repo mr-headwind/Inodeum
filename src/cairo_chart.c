@@ -53,6 +53,7 @@
 PieChart * pie_chart_init(char *, double, int);
 int pie_slice_create(char *, double, GdkRGBA *);
 void free_pie_chart(PieChart *);
+void free_slices(gpointer);
 
 
 /* Globals */
@@ -122,8 +123,25 @@ void free_pie_chart(PieChart *pc)
     if (pc->chart_title)
     	free(pc->chart_title);
 
-    g_list_free(pc->pie_slices);
+    g_list_free_full (pc->pie_slices, (GDestroyNotify) free_slices);
     free(pc);
+
+    return;
+}
+
+
+/* Free a pie chart slice */
+
+void free_slices(gpointer data)
+{  
+    PieSlice *ps;
+
+    ps = (PieSlice *) data;
+    
+    if (ps->desc)
+	free(ps->desc);
+
+    free(ps);
 
     return;
 }
