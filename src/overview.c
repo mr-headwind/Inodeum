@@ -67,7 +67,7 @@ extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
 extern PieChart * pie_chart_init(char *, double, int);
-extern int pie_slice_create(char *, double, GdkRGBA *);
+extern int pie_slice_create(char *, double, GdkRGBA *);cairo_chart.c
 
 
 
@@ -320,15 +320,24 @@ char * format_remdays(time_t time_rovr)
 
 void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 {  
-    GtkAllocation allocation;
+    double total, quota;
 
-    /* Pie Chart */
-    m_ui->pie_chart = pie_chart_init(NULL, 100, TRUE);
+    /* Pie Chart and slices (quota still available or excess) */
+    val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);
+    val_str2dbl(srv_usg->quota, &quota, NULL, NULL);
 
-    /* Slices - amount used and either unused or overdrawn */
-    pie_slice_create(m_ui->pie_chart, txt1, val1, LIGHT_BLUE);
-    pie_slice_create(m_ui->pie_chart, txt1, val1, WHITE);
-    pie_slice_create(m_ui->pie_chart, txt1, val1, LIGHT_RED);
+    m_ui->pie_chart = pie_chart_init(NULL, 0, FALSE);
+
+    if (total > quota)
+    {
+	pie_slice_create(m_ui->pie_chart, "Quota", quota, LIGHT_BLUE);
+	pie_slice_create(m_ui->pie_chart, "Overdrawn", (total - quota), LIGHT_RED);
+    }
+    else
+    {
+	pie_slice_create(m_ui->pie_chart, "Available", (quota - total), WHITE);
+	pie_slice_create(m_ui->pie_chart, "Usage", total, LIGHT_BLUE);
+    }
 
     return;
 }
