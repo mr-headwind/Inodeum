@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 #include <cairo/cairo.h>
 #include <cairo_chart.h>
 
@@ -54,6 +55,7 @@ PieChart * pie_chart_init(char *, double, int);
 int pie_slice_create(char *, double, GdkRGBA *);
 void free_pie_chart(PieChart *);
 void free_slices(gpointer);
+int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 
 
 /* Globals */
@@ -142,6 +144,54 @@ void free_slices(gpointer data)
 	free(ps->desc);
 
     free(ps);
+
+    return;
+}
+
+
+/* Draw a pie chart */
+
+int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
+{
+    int r;
+    double xc, yc, radius, total_amt;
+    double angle1, angle2;
+    GList *l;
+    PieSlice *ps;
+
+    /* Initial */
+    cairo_move_to (cr, 0, 0);
+    r = TRUE;
+
+    /* Calculate or verify the total amount */
+    total_amt = 0;
+
+    for(l = pc->pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+    	total_amt += ps->slice_value;
+    }
+
+    if (pc->total_value != 0)
+    	if (pc->total_value != total_amt)
+	    r = -1;
+
+    /* Set pie centre and radius leaving a buffer at sides (25%) */
+    xc = (double) allocation->height / 2;
+    yc = (double) allocation->width / 2;
+    radius = yc * 0.75; 
+
+    /* Loop through the slices and draw each */
+    for(l = pc->pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+    	cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
+    	cairo_set_line_width (cr, 2.0);
+    	cairo_arc (cr, xc, yc, radius, angle1, angle2);
+	cairo_line_to (cr, xc, yc);
+	cairo_fill (cr);
+	cairo_stroke (cr);
+    }
 
     return;
 }

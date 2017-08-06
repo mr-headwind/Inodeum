@@ -290,48 +290,31 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
 /* Callback - Cairo charts displaying usage information */
 
-gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
+gboolean OnOvExpose(GtkWidget *draw_area, cairo_t *cr, gpointer user_data)
 {  
     MainUi *m_ui;
     GtkAllocation allocation;
 
-    /* Get data */
-printf("%s OnExpose 1\n", debug_hdr); fflush(stdout);
+    /* Get user data, the drawing area and adjust if necessary */
     m_ui = (MainUi *) user_data;
 
-    /* Initial */
     GdkWindow *window = gtk_widget_get_window (widget);
-    //GdkWindow *window = gtk_widget_get_window (m_ui->graph_area);
-    //cairo_t *cr;
-
-/*
-*/
-gtk_widget_get_allocation (m_ui->window, &allocation);
-printf("%s OnExpose 3 win  x %d y %d w %d h %d\n", debug_hdr,
-    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
-gtk_widget_get_allocation (m_ui->sum_cntr, &allocation);
-printf("%s OnExpose 3 sum  x %d y %d w %d h %d\n", debug_hdr,
-    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
-gtk_widget_get_allocation (m_ui->oview_cntr, &allocation);
-printf("%s OnExpose 3 oview  x %d y %d w %d h %d\n", debug_hdr,
-    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
-
     gtk_widget_get_allocation (widget, &allocation);
 
+    /* Some space needs to be set aside for a bar chart */
+    allocation.width = (double) allocation.width * 0.7;
+
+    /* Draw the pie chart */
+    draw_pie_chart(cr, m_ui->pie_chart, &allocation);
+
+/*
 cairo_set_source_rgba (cr, 0.57, 0.24, 0.24, 0.7);
 cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
 cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 cairo_paint (cr);
+*/
 
 
-    //gtk_widget_get_allocation (m_ui->graph_area, &allocation);
-    //cr = gdk_cairo_create (window);
-
-    /* Redraw to original */
-    //gtk_widget_draw (m_ui->window, cr);
-
-    //cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
-    //cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 //cairo_move_to (cr, allocation.x, allocation.y);
 cairo_move_to (cr, 0, 0);
 cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
