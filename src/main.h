@@ -38,6 +38,12 @@
 #define MAIN_HDR
 #endif
 
+
+/* Includes */
+
+#include <cairo_chart.h>
+
+
 /* Structure to contain main interface items for easy access */
 
 typedef struct _main_ui

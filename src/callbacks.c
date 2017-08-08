@@ -76,6 +76,7 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
+extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 
 
 /* Globals */
@@ -290,7 +291,7 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
 /* Callback - Cairo charts displaying usage information */
 
-gboolean OnOvExpose(GtkWidget *draw_area, cairo_t *cr, gpointer user_data)
+gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {  
     MainUi *m_ui;
     GtkAllocation allocation;

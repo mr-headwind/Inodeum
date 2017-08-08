@@ -154,10 +154,11 @@ void free_slices(gpointer data)
 int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
 {
     int r;
-    double xc, yc, radius, total_amt;
-    double angle1, angle2;
+    double xc, yc, radius, total_amt, tmp;
+    double angle_from, angle_to;
     GList *l;
     PieSlice *ps;
+    GdkRGBA *rgba;
 
     /* Initial */
     cairo_move_to (cr, 0, 0);
@@ -179,19 +180,24 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     /* Set pie centre and radius leaving a buffer at sides (25%) */
     xc = (double) allocation->height / 2;
     yc = (double) allocation->width / 2;
-    radius = yc * 0.75; 
+    radius = yc * 0.75;
+    angle_from = 0.0;
 
     /* Loop through the slices and draw each */
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
-    	cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
+    	rgba = ps->colour;
+    	tmp = (ps->slice_value / total_amt) * 360.0
+    	angle_to = angle_from + (tmp * (M_PI / 180.0));
+    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 2.0);
-    	cairo_arc (cr, xc, yc, radius, angle1, angle2);
+    	cairo_arc (cr, xc, yc, radius, angle_from, angle_to);
 	cairo_line_to (cr, xc, yc);
 	cairo_fill (cr);
 	cairo_stroke (cr);
+    	angle_from = angle_to;
     }
 
-    return;
+    return r;
 }

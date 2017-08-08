@@ -52,7 +52,7 @@ typedef struct _pie_chart
     double total_value;
     int legend;
     int num_slices;
-    GList *pie_slices = NULL;
+    GList *pie_slices;
 } PieChart;
 
 

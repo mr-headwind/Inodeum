@@ -44,7 +44,6 @@
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
-#include <cairo_chart.h>
 #include <version.h>
 
 
@@ -67,7 +66,7 @@ extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
 extern PieChart * pie_chart_init(char *, double, int);
-extern int pie_slice_create(char *, double, GdkRGBA *);cairo_chart.c
+extern int pie_slice_create(PieChart *, char *, double, GdkRGBA *);
 
 
 
