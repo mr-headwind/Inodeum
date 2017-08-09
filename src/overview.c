@@ -66,7 +66,7 @@ extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
 extern PieChart * pie_chart_init(char *, double, int);
-extern int pie_slice_create(PieChart *, char *, double, GdkRGBA *);
+extern int pie_slice_create(PieChart *, char *, double, const GdkRGBA *);
 
 
 
@@ -329,13 +329,13 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 
     if (total > quota)
     {
-	pie_slice_create(m_ui->pie_chart, "Quota", quota, LIGHT_BLUE);
-	pie_slice_create(m_ui->pie_chart, "Overdrawn", (total - quota), LIGHT_RED);
+	pie_slice_create(m_ui->pie_chart, "Quota", quota, &LIGHT_BLUE);
+	pie_slice_create(m_ui->pie_chart, "Overdrawn", (total - quota), &LIGHT_RED);
     }
     else
     {
-	pie_slice_create(m_ui->pie_chart, "Available", (quota - total), WHITE);
-	pie_slice_create(m_ui->pie_chart, "Usage", total, LIGHT_BLUE);
+	pie_slice_create(m_ui->pie_chart, "Available", (quota - total), &WHITE);
+	pie_slice_create(m_ui->pie_chart, "Usage", total, &LIGHT_BLUE);
     }
 
     return;

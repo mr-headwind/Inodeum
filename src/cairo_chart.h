@@ -62,5 +62,5 @@ typedef struct _pie_slice
 {
     char *desc;
     double slice_value;
-    GdkRGBA *colour;
+    const GdkRGBA *colour;
 } PieSlice;

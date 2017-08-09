@@ -52,7 +52,7 @@
 /* Prototypes */
 
 PieChart * pie_chart_init(char *, double, int);
-int pie_slice_create(char *, double, GdkRGBA *);
+int pie_slice_create(PieChart *, char *, double, const GdkRGBA *);
 void free_pie_chart(PieChart *);
 void free_slices(gpointer);
 int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
@@ -71,11 +71,11 @@ static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 // . Total value is optional (zero). Code will work it out anyway, but might be a useful error check.
 // . Legend should be TRUE or FALSE.
 
-PieChart * pie_chart_init(char *title, double total_val, int legend);
+PieChart * pie_chart_init(char *title, double total_val, int legend)
 {
     PieChart *pc;
 
-    if (legend < 0) || (legend > 1)
+    if (legend < 0 || legend > 1)
     	return NULL;
 
     pc = (PieChart *) malloc(sizeof(PieChart));
@@ -88,7 +88,7 @@ PieChart * pie_chart_init(char *title, double total_val, int legend);
     }
 
     //pc->cr = cr;
-    pc->total_val = total_val;
+    pc->total_value = total_val;
     pc->legend = legend;
 
     return pc;
@@ -97,7 +97,7 @@ PieChart * pie_chart_init(char *title, double total_val, int legend);
 
 /* Create and initialise a new pie slice */
 
-int pie_slice_create(PieChart *pc, char *desc, double val, GdkRGBA *colour)
+int pie_slice_create(PieChart *pc, char *desc, double val, const GdkRGBA *colour)
 {
     PieSlice *ps;
 
@@ -158,7 +158,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     double angle_from, angle_to;
     GList *l;
     PieSlice *ps;
-    GdkRGBA *rgba;
+    const GdkRGBA *rgba;
 
     /* Initial */
     cairo_move_to (cr, 0, 0);
@@ -188,7 +188,8 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     {
     	ps = (PieSlice *) l->data;
     	rgba = ps->colour;
-    	tmp = (ps->slice_value / total_amt) * 360.0
+    	tmp = (ps->slice_value / total_amt) * 360.0;
+    	//angle_to = (tmp * (M_PI / 180.0));
     	angle_to = angle_from + (tmp * (M_PI / 180.0));
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 2.0);

@@ -50,7 +50,6 @@ const GdkRGBA LIGHT_BLUE = {0.71, 0.71, 0.97, 1.0};
 const GdkRGBA WHITE = {1.0, 1.0, 1.0, 1.0};
 const GdkRGBA LIGHT_RED = {0.91, 0.57, 0.57, 1.0};
 #else
-const GdkRGBA BLUE_GRAY;
 extern const GdkRGBA DARK_BLUE;
 extern const GdkRGBA LIGHT_BLUE;
 extern const GdkRGBA WHITE;

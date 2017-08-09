@@ -317,6 +317,7 @@ cairo_paint (cr);
 
 
 //cairo_move_to (cr, allocation.x, allocation.y);
+/*
 cairo_move_to (cr, 0, 0);
 cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
 cairo_line_to (cr, allocation.width, allocation.height);
@@ -325,6 +326,7 @@ printf("%s OnExpose 2  x %d y %d w %d h %d\n", debug_hdr,
 cairo_set_line_width (cr, 5.0);
 cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
 cairo_stroke (cr);
+*/
 /*
 cairo_move_to (cr, allocation.x, allocation.y);
 cairo_rel_line_to (cr, allocation.width, 0);
@@ -337,11 +339,12 @@ cairo_stroke (cr);
 
     /* Draw arc */
     //const double M_PI = 3.14159265;
+/*
     double xc = 80.0;
     double yc = 55.0;
     double radius = 55.0;
-    double angle1 = 45.0  * (M_PI/180.0);  /* angles are specified */
-    double angle2 = 180.0 * (M_PI/180.0);  /* in radians           */
+    double angle1 = 45.0  * (M_PI/180.0);  /* angles are specified **
+    double angle2 = 180.0 * (M_PI/180.0);  /* in radians           **
 
     cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
     cairo_set_line_width (cr, 2.0);
@@ -364,6 +367,7 @@ debug_hdr, lbl_angle, cos(lbl_angle), sin(lbl_angle)); fflush(stdout);
     cairo_move_to (cr, label_x, label_y);
     cairo_show_text (cr, "90%");
     cairo_fill (cr);
+*/
 
 
     /* draw helping lines */
