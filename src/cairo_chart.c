@@ -189,8 +189,10 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     	ps = (PieSlice *) l->data;
     	rgba = ps->colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
+printf("%s tmp %0.4f total %0.4f val %0.4f\n", debug_hdr, tmp, total_amt, ps->slice_value);fflush(stdout);
     	//angle_to = (tmp * (M_PI / 180.0));
     	angle_to = angle_from + (tmp * (M_PI / 180.0));
+printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);fflush(stdout);
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 2.0);
     	cairo_arc (cr, xc, yc, radius, angle_from, angle_to);
