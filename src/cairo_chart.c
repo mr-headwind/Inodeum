@@ -156,6 +156,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     int r;
     double xc, yc, radius, total_amt, tmp;
     double angle_from, angle_to;
+    double desc_angle, desc_x, desc_y;
     GList *l;
     PieSlice *ps;
     const GdkRGBA *rgba;
@@ -177,11 +178,12 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     	if (pc->total_value != total_amt)
 	    r = -1;
 
-    /* Set pie centre and radius leaving a buffer at sides (25%) */
-    xc = (double) allocation->height / 2;
-    yc = (double) allocation->width / 2;
-    radius = yc * 0.75;
-    angle_from = 0.0;
+    /* Set pie centre and radius leaving a buffer at sides */
+    xc = (double) allocation->width / 2.0;
+    yc = (double) allocation->height / 2.0;
+    radius = xc * 0.7;
+    xc *= 0.8;
+    angle_from = M_PI * 3 / 2;
 
     /* Loop through the slices and draw each */
     for(l = pc->pie_slices; l != NULL; l = l->next)
@@ -190,15 +192,40 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     	rgba = ps->colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
 printf("%s tmp %0.4f total %0.4f val %0.4f\n", debug_hdr, tmp, total_amt, ps->slice_value);fflush(stdout);
-    	//angle_to = (tmp * (M_PI / 180.0));
     	angle_to = angle_from + (tmp * (M_PI / 180.0));
 printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);fflush(stdout);
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 2.0);
+    	cairo_move_to (cr, xc, yc);
     	cairo_arc (cr, xc, yc, radius, angle_from, angle_to);
 	cairo_line_to (cr, xc, yc);
 	cairo_fill (cr);
 	cairo_stroke (cr);
+    	angle_from = angle_to;
+    }
+
+    /* Loop through the slices and set text if present */
+    cairo_set_font_size (cr, 12);
+    angle_from = M_PI * 3 / 2;
+
+    for(l = pc->pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+
+    	if (ps->desc == NULL)
+	    continue;
+
+    	tmp = (ps->slice_value / total_amt) * 360.0;
+    	angle_to = angle_from + (tmp * (M_PI / 180.0));
+    	desc_angle = (angle_from + angle_to) / 2.0;
+    	desc_x = xc * (1 + 0.7 * cos (desc_angle));
+	desc_y = yc * (1 + 0.7 * sin (desc_angle));
+printf("%s desc %s desc_ang %0.4f desc_x %0.4f desc_y %0.4f\n", debug_hdr,
+				ps->desc, desc_angle, desc_x, desc_y);fflush(stdout);
+    	cairo_set_source_rgba (cr, 0, 0, 0, 1);
+    	cairo_move_to (cr, desc_x, desc_y);
+    	cairo_show_text (cr, ps->desc);
+	cairo_fill (cr);
     	angle_from = angle_to;
     }
 

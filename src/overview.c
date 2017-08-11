@@ -334,8 +334,8 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     }
     else
     {
-	pie_slice_create(m_ui->pie_chart, "Available", (quota - total), &WHITE);
 	pie_slice_create(m_ui->pie_chart, "Usage", total, &LIGHT_BLUE);
+	pie_slice_create(m_ui->pie_chart, "Available", (quota - total), &WHITE);
     }
 
     return;
