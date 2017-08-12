@@ -41,6 +41,7 @@
 #include <math.h>
 #include <cairo/cairo.h>
 #include <cairo_chart.h>
+#include <defs.h>
 
 
 /* Defines */
@@ -51,8 +52,8 @@
 
 /* Prototypes */
 
-PieChart * pie_chart_init(char *, double, int);
-int pie_slice_create(PieChart *, char *, double, const GdkRGBA *);
+PieChart * pie_chart_init(char *, double, int, const GdkRGBA *);
+int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *);
 void free_pie_chart(PieChart *);
 void free_slices(gpointer);
 int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
@@ -66,12 +67,13 @@ static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 
 /* Create and initialise a new pie chart */
 
-// Some rules for creation:-
-// . A title is optional (may be NULL). If used, keep as short as possible.
-// . Total value is optional (zero). Code will work it out anyway, but might be a useful error check.
-// . Legend should be TRUE or FALSE.
+// Rules for creation:-
+// . Title is optional (NULL).
+// . Text colour is optional (NULL).
+// . Total value is optional (0) as the code will work it out anyway (may be a useful error check).
+// . Legend is either TRUE or FALSE.
 
-PieChart * pie_chart_init(char *title, double total_val, int legend)
+PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRGBA *txt_colour)
 {
     PieChart *pc;
 
@@ -87,7 +89,11 @@ PieChart * pie_chart_init(char *title, double total_val, int legend)
     	strcpy(pc->chart_title, title);
     }
 
-    //pc->cr = cr;
+    if (txt_colour != NULL)
+	pc->txt_colour = txt_colour;
+    else
+	pc->txt_colour = &BLACK;
+
     pc->total_value = total_val;
     pc->legend = legend;
 
@@ -97,7 +103,11 @@ PieChart * pie_chart_init(char *title, double total_val, int legend)
 
 /* Create and initialise a new pie slice */
 
-int pie_slice_create(PieChart *pc, char *desc, double val, const GdkRGBA *colour)
+// Rules for creation:-
+// . Description is optional (NULL).
+// . Text colour is optional (NULL), but will default to BLACK is a description is present.
+
+int pie_slice_create(PieChart *pc, char *desc, double val, const GdkRGBA *colour, const GdkRGBA *txt_colour)
 {
     PieSlice *ps;
 
@@ -108,6 +118,11 @@ int pie_slice_create(PieChart *pc, char *desc, double val, const GdkRGBA *colour
     {
     	ps->desc = malloc(strlen(desc) + 1);
     	strcpy(ps->desc, desc);
+
+	if (txt_colour != NULL)
+	    ps->txt_colour = txt_colour;
+	else
+	    ps->txt_colour = &BLACK;
     }
 
     ps->slice_value = val;
@@ -156,7 +171,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     int r;
     double xc, yc, radius, total_amt, tmp;
     double angle_from, angle_to;
-    double desc_angle, desc_x, desc_y;
+    double desc_angle, desc_x, desc_y, adj;
     GList *l;
     PieSlice *ps;
     const GdkRGBA *rgba;
@@ -178,22 +193,34 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     	if (pc->total_value != total_amt)
 	    r = -1;
 
+    /* Set Title if present */
+    if (pc->chart_title != NULL)
+    {
+    	cairo_move_to (cr, 0, 0);
+    	rgba = pc->txt_colour;
+    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+	cairo_set_font_size (cr, 10);
+    }
+
     /* Set pie centre and radius leaving a buffer at sides */
-    xc = (double) allocation->width / 2.0;
+    xc = (double) allocation->width / 2.5;
     yc = (double) allocation->height / 2.0;
-    radius = xc * 0.7;
-    xc *= 0.8;
+    radius = (double) (allocation->width / 2.0) * 0.7;
     angle_from = M_PI * 3 / 2;
 
     /* Loop through the slices and draw each */
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
-    	rgba = ps->colour;
+
+    	/* Convert the value to degrees and then degrees to radians */
     	tmp = (ps->slice_value / total_amt) * 360.0;
+    	angle_to = angle_from + (tmp * (M_PI / 180.0));			
 printf("%s tmp %0.4f total %0.4f val %0.4f\n", debug_hdr, tmp, total_amt, ps->slice_value);fflush(stdout);
-    	angle_to = angle_from + (tmp * (M_PI / 180.0));
 printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);fflush(stdout);
+
+    	/* Draw */
+    	rgba = ps->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 2.0);
     	cairo_move_to (cr, xc, yc);
@@ -205,8 +232,9 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     }
 
     /* Loop through the slices and set text if present */
-    cairo_set_font_size (cr, 12);
+    cairo_set_font_size (cr, 10);
     angle_from = M_PI * 3 / 2;
+    adj = 0.95;
 
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
@@ -215,14 +243,15 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     	if (ps->desc == NULL)
 	    continue;
 
+    	rgba = ps->txt_colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
     	angle_to = angle_from + (tmp * (M_PI / 180.0));
     	desc_angle = (angle_from + angle_to) / 2.0;
-    	desc_x = xc * (1 + 0.7 * cos (desc_angle));
-	desc_y = yc * (1 + 0.7 * sin (desc_angle));
+    	desc_x = xc * (adj + 0.4 * cos (desc_angle));
+	desc_y = yc * (adj + 0.4 * sin (desc_angle));
 printf("%s desc %s desc_ang %0.4f desc_x %0.4f desc_y %0.4f\n", debug_hdr,
 				ps->desc, desc_angle, desc_x, desc_y);fflush(stdout);
-    	cairo_set_source_rgba (cr, 0, 0, 0, 1);
+    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_move_to (cr, desc_x, desc_y);
     	cairo_show_text (cr, ps->desc);
 	cairo_fill (cr);

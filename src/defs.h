@@ -48,12 +48,18 @@
 const GdkRGBA DARK_BLUE = {0, 0, 0.5, 1.0};
 const GdkRGBA LIGHT_BLUE = {0.71, 0.71, 0.97, 1.0};
 const GdkRGBA WHITE = {1.0, 1.0, 1.0, 1.0};
+const GdkRGBA BLACK = {0.0, 0.0, 0.0, 1.0};
 const GdkRGBA LIGHT_RED = {0.91, 0.57, 0.57, 1.0};
+const GdkRGBA MID_YELLOW = {0.94, 0.95, 0.61, 1.0};
+const GdkRGBA DARK_MAROON = {0.38, 0.09, 0.09, 1.0};
 #else
 extern const GdkRGBA DARK_BLUE;
 extern const GdkRGBA LIGHT_BLUE;
 extern const GdkRGBA WHITE;
+extern const GdkRGBA BLACK;
 extern const GdkRGBA LIGHT_RED;
+extern const GdkRGBA MID_YELLOW;
+extern const GdkRGBA DARK_MAROON;
 #endif
 #endif
 
