@@ -49,6 +49,7 @@ typedef struct _pie_chart
 {
     char *chart_title;
     const GdkRGBA *txt_colour;
+    int txt_sz;
     double total_value;
     int legend;
     int num_slices;
@@ -64,4 +65,5 @@ typedef struct _pie_slice
     double slice_value;
     const GdkRGBA *colour;
     const GdkRGBA *txt_colour;
+    int txt_sz;
 } PieSlice;

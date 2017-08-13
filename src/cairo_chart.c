@@ -52,11 +52,12 @@
 
 /* Prototypes */
 
-PieChart * pie_chart_init(char *, double, int, const GdkRGBA *);
-int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *);
+PieChart * pie_chart_init(char *, double, int, const GdkRGBA *, int);
+int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *, int);
 void free_pie_chart(PieChart *);
 void free_slices(gpointer);
 int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
+int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
 
 
 /* Globals */
@@ -72,8 +73,9 @@ static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 // . Text colour is optional (NULL).
 // . Total value is optional (0) as the code will work it out anyway (may be a useful error check).
 // . Legend is either TRUE or FALSE.
+// . Text size is optional (0) and will default to 12.
 
-PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRGBA *txt_colour)
+PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRGBA *txt_colour, int txt_sz)
 {
     PieChart *pc;
 
@@ -94,6 +96,11 @@ PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRG
     else
 	pc->txt_colour = &BLACK;
 
+    if (txt_sz > 0)
+	pc->txt_sz = txt_sz;;
+    else
+	pc->txt_sz = 12;;
+
     pc->total_value = total_val;
     pc->legend = legend;
 
@@ -106,8 +113,10 @@ PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRG
 // Rules for creation:-
 // . Description is optional (NULL).
 // . Text colour is optional (NULL), but will default to BLACK is a description is present.
+// . Text size is optional (0) and will default to 12.
 
-int pie_slice_create(PieChart *pc, char *desc, double val, const GdkRGBA *colour, const GdkRGBA *txt_colour)
+int pie_slice_create(PieChart *pc, char *desc, double val, 
+		     const GdkRGBA *colour, const GdkRGBA *txt_colour, int txt_sz)
 {
     PieSlice *ps;
 
@@ -123,6 +132,11 @@ int pie_slice_create(PieChart *pc, char *desc, double val, const GdkRGBA *colour
 	    ps->txt_colour = txt_colour;
 	else
 	    ps->txt_colour = &BLACK;
+
+	if (txt_sz > 0)
+	    pc->txt_sz = txt_sz;;
+	else
+	    pc->txt_sz = 12;;
     }
 
     ps->slice_value = val;
@@ -161,6 +175,56 @@ void free_slices(gpointer data)
     free(ps);
 
     return;
+}
+
+
+/* Write a pie chart title if present */
+
+int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
+{
+    double xc, yc;
+
+    /* Ignore if no title */
+    if (pc->title == NULL)
+    	return FALSE;
+
+    /* Set alignment */
+    switch (h_align)
+    {
+    	case GTK_ALIGN_START:
+	    xc = 0;
+	    break;
+
+    	case GTK_ALIGN_CENTER:
+	    break;
+
+    	case GTK_ALIGN_END:
+	    break;
+
+	default:
+	    xc = 0;
+    }
+
+    switch (v_align)
+    {
+    	case GTK_ALIGN_START:
+	    yc = 0;
+	    break;
+
+    	case GTK_ALIGN_CENTER:
+	    break;
+
+    	case GTK_ALIGN_END:
+	    break;
+
+	default:
+	    yc = 0;
+    }
+
+    cairo_move_to (cr, xc, yc);
+    xc = (double) allocation->width / 2.0;
+
+    return TRUE;
 }
 
 

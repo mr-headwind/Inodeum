@@ -77,6 +77,7 @@ extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
+extern int draw_pie_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign);
 
 
 /* Globals */
@@ -301,6 +302,9 @@ gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 
     GdkWindow *window = gtk_widget_get_window (widget);
     gtk_widget_get_allocation (widget, &allocation);
+
+    /* Do title before alocation is adjusted */
+    pie_chart_title(cr, m_ui->pie_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Some space needs to be set aside for a bar chart */
     allocation.width = (double) allocation.width * 0.7;
