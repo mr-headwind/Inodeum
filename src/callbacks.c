@@ -77,7 +77,7 @@ extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
-extern int draw_pie_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign);
+extern int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
 
 
 /* Globals */

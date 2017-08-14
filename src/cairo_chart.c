@@ -89,17 +89,17 @@ PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRG
     {
     	pc->chart_title = malloc(strlen(title) + 1);
     	strcpy(pc->chart_title, title);
+
+	if (txt_colour != NULL)
+	    pc->txt_colour = txt_colour;
+	else
+	    pc->txt_colour = &BLACK;
+
+	if (txt_sz > 0)
+	    pc->txt_sz = txt_sz;
+	else
+	    pc->txt_sz = 12;
     }
-
-    if (txt_colour != NULL)
-	pc->txt_colour = txt_colour;
-    else
-	pc->txt_colour = &BLACK;
-
-    if (txt_sz > 0)
-	pc->txt_sz = txt_sz;;
-    else
-	pc->txt_sz = 12;;
 
     pc->total_value = total_val;
     pc->legend = legend;
@@ -134,9 +134,9 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
 	    ps->txt_colour = &BLACK;
 
 	if (txt_sz > 0)
-	    pc->txt_sz = txt_sz;;
+	    pc->txt_sz = txt_sz;
 	else
-	    pc->txt_sz = 12;;
+	    pc->txt_sz = 12;
     }
 
     ps->slice_value = val;
@@ -183,9 +183,10 @@ void free_slices(gpointer data)
 int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
     double xc, yc;
+    const GdkRGBA *rgba;
 
     /* Ignore if no title */
-    if (pc->title == NULL)
+    if (pc->chart_title == NULL)
     	return FALSE;
 
     /* Set alignment */
@@ -219,6 +220,15 @@ int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAli
 
 	default:
 	    yc = 0;
+    }
+
+    /* Set Title if present */
+    if (pc->chart_title != NULL)
+    {
+    	cairo_move_to (cr, 0, 0);
+    	rgba = pc->txt_colour;
+    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+	cairo_set_font_size (cr, 10);
     }
 
     cairo_move_to (cr, xc, yc);
@@ -256,15 +266,6 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     if (pc->total_value != 0)
     	if (pc->total_value != total_amt)
 	    r = -1;
-
-    /* Set Title if present */
-    if (pc->chart_title != NULL)
-    {
-    	cairo_move_to (cr, 0, 0);
-    	rgba = pc->txt_colour;
-    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-	cairo_set_font_size (cr, 10);
-    }
 
     /* Set pie centre and radius leaving a buffer at sides */
     xc = (double) allocation->width / 2.5;
