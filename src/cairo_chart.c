@@ -134,9 +134,9 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
 	    ps->txt_colour = &BLACK;
 
 	if (txt_sz > 0)
-	    pc->txt_sz = txt_sz;
+	    ps->txt_sz = txt_sz;
 	else
-	    pc->txt_sz = 12;
+	    ps->txt_sz = 12;
     }
 
     ps->slice_value = val;
@@ -184,10 +184,19 @@ int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAli
 {
     double xc, yc;
     const GdkRGBA *rgba;
+    cairo_text_extents_t ext;
 
     /* Ignore if no title */
     if (pc->chart_title == NULL)
     	return FALSE;
+
+    /* Appearance */
+    rgba = pc->txt_colour;
+    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+    cairo_set_font_size (cr, (double) pc->txt_sz);
+
+    /* Determine space to be consumed by text */
+    cairo_text_extents (cr, pc->chart_title, &ext);
 
     /* Set alignment */
     switch (h_align)
@@ -197,9 +206,11 @@ int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAli
 	    break;
 
     	case GTK_ALIGN_CENTER:
+	    xc = ((double) allocation->width / 2.0) - (ext.width / 2.0);
 	    break;
 
     	case GTK_ALIGN_END:
+	    xc = (double) allocation->width - ext.width;
 	    break;
 
 	default:
@@ -209,30 +220,25 @@ int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAli
     switch (v_align)
     {
     	case GTK_ALIGN_START:
-	    yc = 0;
+	    yc = ext.height;
 	    break;
 
     	case GTK_ALIGN_CENTER:
+	    yc = ((double) allocation->height / 2.0) - (ext.height / 2.0);
 	    break;
 
     	case GTK_ALIGN_END:
+	    yc = (double) allocation->height - ext.height;
 	    break;
 
 	default:
-	    yc = 0;
+	    yc = ext.height;
     }
 
-    /* Set Title if present */
-    if (pc->chart_title != NULL)
-    {
-    	cairo_move_to (cr, 0, 0);
-    	rgba = pc->txt_colour;
-    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-	cairo_set_font_size (cr, 10);
-    }
-
+    /* Set Title */
     cairo_move_to (cr, xc, yc);
-    xc = (double) allocation->width / 2.0;
+    cairo_show_text (cr, pc->chart_title);
+    cairo_fill (cr);
 
     return TRUE;
 }
@@ -297,7 +303,6 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     }
 
     /* Loop through the slices and set text if present */
-    cairo_set_font_size (cr, 10);
     angle_from = M_PI * 3 / 2;
     adj = 0.95;
 
@@ -308,6 +313,7 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     	if (ps->desc == NULL)
 	    continue;
 
+	cairo_set_font_size (cr, (double) ps->txt_sz);
     	rgba = ps->txt_colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
     	angle_to = angle_from + (tmp * (M_PI / 180.0));

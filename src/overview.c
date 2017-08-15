@@ -326,11 +326,12 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     val_str2dbl(srv_usg->quota, &quota, NULL, NULL);
 
     m_ui->pie_chart = pie_chart_init(NULL, 0, FALSE, NULL, 0);
+    //m_ui->pie_chart = pie_chart_init("Usage", 0, FALSE, &DARK_MAROON, 14);
 
     if (total > quota)
     {
-	pie_slice_create(m_ui->pie_chart, "Quota", quota, &LIGHT_BLUE, NULL, 10);
-	pie_slice_create(m_ui->pie_chart, "Overdrawn", (total - quota), &LIGHT_RED, NULL, 10);
+	pie_slice_create(m_ui->pie_chart, "Quota", quota, &LIGHT_BLUE, &DARK_MAROON, 10);
+	pie_slice_create(m_ui->pie_chart, "Overdrawn", (total - quota), &LIGHT_RED, &DARK_MAROON, 10);
     }
     else
     {

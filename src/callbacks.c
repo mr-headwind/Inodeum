@@ -303,7 +303,7 @@ gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     GdkWindow *window = gtk_widget_get_window (widget);
     gtk_widget_get_allocation (widget, &allocation);
 
-    /* Do title before alocation is adjusted */
+    /* Do title before alocation is adjusted (this does nothing if there is no title) */
     pie_chart_title(cr, m_ui->pie_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Some space needs to be set aside for a bar chart */
