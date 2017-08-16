@@ -58,6 +58,7 @@ void free_pie_chart(PieChart *);
 void free_slices(gpointer);
 int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
+void text_coords(double, double, double, double *, double *);
 
 
 /* Globals */
@@ -317,9 +318,12 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     	rgba = ps->txt_colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
     	angle_to = angle_from + (tmp * (M_PI / 180.0));
-    	desc_angle = (angle_from + angle_to) / 2.0;
-    	desc_x = xc * (adj + 0.4 * cos (desc_angle));
-	desc_y = yc * (adj + 0.4 * sin (desc_angle));
+    	//desc_angle = (angle_from + angle_to) / 2.0;
+    	//desc_x = xc * (adj + 0.4 * cos (desc_angle));
+	//desc_y = yc * (adj + 0.4 * sin (desc_angle));
+	text_coords(cr, ps->desc, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
+	//desc_x += xc;
+	//desc_y += yc;
 printf("%s desc %s desc_ang %0.4f desc_x %0.4f desc_y %0.4f\n", debug_hdr,
 				ps->desc, desc_angle, desc_x, desc_y);fflush(stdout);
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
@@ -330,4 +334,24 @@ printf("%s desc %s desc_ang %0.4f desc_x %0.4f desc_y %0.4f\n", debug_hdr,
     }
 
     return r;
+}
+
+
+// Text coordinates for a pie chart
+// Cosine is relationship of 'adjacent' to hypentuse
+// Sine is relationship of 'opposite' to hypentuse
+// Apply an arbitrary 'fudge' factor supplied (use 1.0 if none is desired) 
+
+void text_coords(cairo_t *cr, char *desc, 
+		 double angle_from, double angle to, double xc, double yc,
+		 double hyp, double adj, 
+		 double *coord_x, double *coord_y)
+{
+    double desc_angle;
+
+    desc_angle = (angle_from + angle_to) / 2.0;
+    *coord_x = (cos (angle) * hyp * adj) + xc;
+    *coord_y = (sin (angle) * hyp * adj) + yc;
+
+    return;
 }
