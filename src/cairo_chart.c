@@ -58,7 +58,11 @@ void free_pie_chart(PieChart *);
 void free_slices(gpointer);
 int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
-void text_coords(double, double, double, double *, double *);
+void pc_drawing(cairo_t *, PieChart *, double, double, double, double);
+void ps_labels(cairo_t *, PieChart *, double, double, double, double);
+void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
+int legend_space(GList *, double, double);
+void pc_legend(cairo_t *, PieChart *, double, double, double);
 
 
 /* Globals */
@@ -249,13 +253,10 @@ int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAli
 
 int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
 {
-    int r;
-    double xc, yc, radius, total_amt, tmp;
-    double angle_from, angle_to;
-    double desc_angle, desc_x, desc_y, adj;
+    int r, tf;
+    double xc, yc, radius, total_amt;
     GList *l;
     PieSlice *ps;
-    const GdkRGBA *rgba;
 
     /* Initial */
     cairo_move_to (cr, 0, 0);
@@ -278,9 +279,39 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     xc = (double) allocation->width / 2.5;
     yc = (double) allocation->height / 2.0;
     radius = (double) (allocation->width / 2.0) * 0.7;
+
+    /* Draw the pie chart */
+    pc_drawing(cr, pc, xc, yc, radius, total_amt);
+
+    /* Check if there is sufficient space for a legend */
+    if (pc->legend == TRUE)
+	tf = legend_space(pc->pie_slices, (double) allocation->width, yc - radius);
+    else
+    	tf = FALSE;
+
+    /* Labels or legend */
+    if ( l == FALSE)
+    	ps_labels(cr, pc, xc, yc, radius, total_amt);
+    else
+    	pc_legend(cr, pc, xc, yc, radius);
+
+    return r;
+}
+
+
+/* Loop through the slices and draw each */
+
+void pc_drawing(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, double total_amt)
+{
+    double angle_from, angle_to, tmp;
+    GList *l;
+    PieSlice *ps;
+    const GdkRGBA *rgba;
+
+    /* Start point */
     angle_from = M_PI * 3 / 2;
 
-    /* Loop through the slices and draw each */
+    /* Slices */
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
@@ -303,10 +334,24 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     	angle_from = angle_to;
     }
 
+    return;
+}
+
+
+/* Loop through the slices and draw each */
+
+void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, double total_amt)
+{
+    double angle_from, angle_to, tmp;
+    double desc_x, desc_y;
+    GList *l;
+    PieSlice *ps;
+    const GdkRGBA *rgba;
+
     /* Loop through the slices and set text if present */
     angle_from = M_PI * 3 / 2;
-    adj = 0.95;
 
+    /* Slices and text */
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
@@ -318,14 +363,9 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
     	rgba = ps->txt_colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
     	angle_to = angle_from + (tmp * (M_PI / 180.0));
-    	//desc_angle = (angle_from + angle_to) / 2.0;
-    	//desc_x = xc * (adj + 0.4 * cos (desc_angle));
-	//desc_y = yc * (adj + 0.4 * sin (desc_angle));
+
 	text_coords(cr, ps->desc, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
-	//desc_x += xc;
-	//desc_y += yc;
-printf("%s desc %s desc_ang %0.4f desc_x %0.4f desc_y %0.4f\n", debug_hdr,
-				ps->desc, desc_angle, desc_x, desc_y);fflush(stdout);
+
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_move_to (cr, desc_x, desc_y);
     	cairo_show_text (cr, ps->desc);
@@ -333,25 +373,57 @@ printf("%s desc %s desc_ang %0.4f desc_x %0.4f desc_y %0.4f\n", debug_hdr,
     	angle_from = angle_to;
     }
 
-    return r;
+    return;
 }
 
 
 // Text coordinates for a pie chart
 // Cosine is relationship of 'adjacent' to hypentuse
 // Sine is relationship of 'opposite' to hypentuse
-// Apply an arbitrary 'fudge' factor supplied (use 1.0 if none is desired) 
+// Apply an arbitrary 'fudge' factor for position along the radius (use 1.0 if none is desired) 
 
 void text_coords(cairo_t *cr, char *desc, 
-		 double angle_from, double angle to, double xc, double yc,
+		 double angle_from, double angle_to, double xc, double yc,
 		 double hyp, double adj, 
 		 double *coord_x, double *coord_y)
 {
     double desc_angle;
 
     desc_angle = (angle_from + angle_to) / 2.0;
-    *coord_x = (cos (angle) * hyp * adj) + xc;
-    *coord_y = (sin (angle) * hyp * adj) + yc;
+    *coord_x = (cos (desc_angle) * hyp * adj) + xc;
+    *coord_y = (sin (desc_angle) * hyp * adj) + yc;
+
+    return;
+}
+
+
+/* Check if there is sufficient room for a legend */
+
+int legend_space(GList *pie_slices, double w, double h)
+{
+    int r;
+    GList *l;
+    PieSlice *ps;
+
+    r = FALSE;
+    cairo_set_font_size (cr, 9.0);
+
+    for(l = pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+
+    	if (ps->desc == NULL)
+	    return r;
+    }
+
+    return r;
+}
+
+
+/* Loop through the slices and draw each */
+
+void pc_legend(cairo_t *cr, PieChart *pc, double xc, double yc, double radius)
+{
 
     return;
 }
