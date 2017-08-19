@@ -325,7 +325,8 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);
     val_str2dbl(srv_usg->quota, &quota, NULL, NULL);
 
-    m_ui->pie_chart = pie_chart_init(NULL, 0, FALSE, NULL, 0);
+    //m_ui->pie_chart = pie_chart_init(NULL, 0, FALSE, NULL, 0);
+    m_ui->pie_chart = pie_chart_init(NULL, 0, TRUE, NULL, 0);
     //m_ui->pie_chart = pie_chart_init("Usage", 0, FALSE, &DARK_MAROON, 14);
 
     if (total > quota)

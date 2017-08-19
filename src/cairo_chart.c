@@ -61,8 +61,8 @@ int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
 void pc_drawing(cairo_t *, PieChart *, double, double, double, double);
 void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
-int legend_space(GList *, double, double);
-void pc_legend(cairo_t *, PieChart *, double, double, double);
+int legend_space(cairo_t *, GList *, double, double);
+void pc_legend(cairo_t *, GList *, double, double, double, double);
 
 
 /* Globals */
@@ -283,17 +283,18 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     /* Draw the pie chart */
     pc_drawing(cr, pc, xc, yc, radius, total_amt);
 
+printf("%s draw_pie legend %d\n", debug_hdr, pc->legend); fflush(stdout);
     /* Check if there is sufficient space for a legend */
     if (pc->legend == TRUE)
-	tf = legend_space(pc->pie_slices, (double) allocation->width, yc - radius);
+	tf = legend_space(cr, pc->pie_slices, (double) allocation->width, yc - radius);
     else
     	tf = FALSE;
 
     /* Labels or legend */
-    if ( l == FALSE)
+    if ( tf == FALSE)
     	ps_labels(cr, pc, xc, yc, radius, total_amt);
     else
-    	pc_legend(cr, pc, xc, yc, radius);
+    	pc_legend(cr, pc->pie_slices, yc, radius, (double) allocation->width, yc - radius);
 
     return r;
 }
@@ -397,33 +398,101 @@ void text_coords(cairo_t *cr, char *desc,
 }
 
 
-/* Check if there is sufficient room for a legend */
+// Check if there is sufficient room for a legend.
+//
+// Fairly basic:-
+// If any text missing, legend not possible
+// Each item consists of a coloured line, text and some buffer space
+// Use 1.5 line spacing
+// Items applied across page while they fit
 
-int legend_space(GList *pie_slices, double w, double h)
+int legend_space(cairo_t *cr, GList *pie_slices, double max_w, double max_h)
 {
-    int r;
+    double w, h;
     GList *l;
     PieSlice *ps;
+    cairo_text_extents_t ext;
 
-    r = FALSE;
     cairo_set_font_size (cr, 9.0);
+    w = 0;
+    h = 0;
 
+printf("%s sp 1 max_w %0.4f max_y %0.4f\n", debug_hdr, max_w, max_h); fflush(stdout);
     for(l = pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
 
     	if (ps->desc == NULL)
-	    return r;
+	    return FALSE;
+
+	cairo_text_extents (cr, ps->desc, &ext);
+	w = w + ext.width + 9;
+printf("%s sp 2 w %0.4f ext_w %0.4f\n", debug_hdr, w, ext.width); fflush(stdout);
+
+	if (w > max_w)
+	{
+	    w = 0;
+	    h = h + (ext.height * 1.5);
+printf("%s sp 3 h %0.4f ext_h %0.4f\n", debug_hdr, h, ext.height); fflush(stdout);
+	}
+
+	if (h > max_h)
+	    return FALSE;
     }
 
-    return r;
+printf("%s sp 4 \n", debug_hdr); fflush(stdout);
+    return TRUE;
 }
 
 
-/* Loop through the slices and draw each */
+/* Draw the pie chart legend - see function 'legend_space' for rules */
 
-void pc_legend(cairo_t *cr, PieChart *pc, double xc, double yc, double radius)
+void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double max_w, double max_h)
 {
+    double x, y;
+    GList *l;
+    const GdkRGBA *rgba;
+    PieSlice *ps;
+    cairo_text_extents_t ext;
+
+    /* Initial */
+    cairo_set_font_size (cr, 9.0);
+    x = 1;
+    y = yc + radius + 2;
+
+    /* Loop through slices and draw a legend for each */
+    for(l = pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+
+    	if (ps->desc == NULL)		// Should not happen
+	    return;
+
+    	/* Coloured line */
+    	rgba = ps->colour;
+    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+	cairo_move_to (cr, x, y);
+	cairo_line_to (cr, x + 5, y);
+
+	/* Text description */
+	cairo_text_extents (cr, ps->desc, &ext);
+    	cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 1.0);
+	cairo_move_to (cr, x + 7, y);
+    	cairo_show_text (cr, ps->desc);
+	cairo_fill (cr);
+
+	/* Check position */
+	x = x + 8 + ext.width;
+
+	if (x > max_w)
+	{
+	    x = 1;
+	    y = y + (ext.height * 1.5);
+	}
+
+	if (y > max_h)
+	    return;			// Should not happen
+    }
 
     return;
 }
