@@ -61,13 +61,17 @@ int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
 void pc_drawing(cairo_t *, PieChart *, double, double, double, double);
 void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
-int legend_space(cairo_t *, GList *, double, double);
+int legend_space(cairo_t *, GList *, double, double, double, double);
 void pc_legend(cairo_t *, GList *, double, double, double, double);
 
 
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-cairo_chart.c ";
+static const double buf1_y = 5.0;
+static const double rect_width = 20.0;
+static const double buf1_x = 5.0;
+static const double buf2_x = 10.0;
 
 
 
@@ -124,6 +128,9 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
 		     const GdkRGBA *colour, const GdkRGBA *txt_colour, int txt_sz)
 {
     PieSlice *ps;
+
+    if (val == 0)
+    	return FALSE;
 
     ps = (PieSlice *) malloc(sizeof(PieSlice));
     memset(ps, 0, sizeof(PieSlice));
@@ -286,7 +293,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
 printf("%s draw_pie legend %d\n", debug_hdr, pc->legend); fflush(stdout);
     /* Check if there is sufficient space for a legend */
     if (pc->legend == TRUE)
-	tf = legend_space(cr, pc->pie_slices, (double) allocation->width, yc - radius);
+	tf = legend_space(cr, pc->pie_slices, yc, radius, (double) allocation->width, allocation->height);
     else
     	tf = FALSE;
 
@@ -294,7 +301,7 @@ printf("%s draw_pie legend %d\n", debug_hdr, pc->legend); fflush(stdout);
     if ( tf == FALSE)
     	ps_labels(cr, pc, xc, yc, radius, total_amt);
     else
-    	pc_legend(cr, pc->pie_slices, yc, radius, (double) allocation->width, yc - radius);
+    	pc_legend(cr, pc->pie_slices, yc, radius, (double) allocation->width, allocation->height);
 
     return r;
 }
@@ -319,6 +326,10 @@ void pc_drawing(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, 
 
     	/* Convert the value to degrees and then degrees to radians */
     	tmp = (ps->slice_value / total_amt) * 360.0;
+
+    	if (tmp < 1.0)
+	    continue;
+
     	angle_to = angle_from + (tmp * (M_PI / 180.0));			
 printf("%s tmp %0.4f total %0.4f val %0.4f\n", debug_hdr, tmp, total_amt, ps->slice_value);fflush(stdout);
 printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);fflush(stdout);
@@ -402,22 +413,22 @@ void text_coords(cairo_t *cr, char *desc,
 //
 // Fairly basic:-
 // If any text missing, legend not possible
-// Each item consists of a coloured line, text and some buffer space
+// Each item consists of a coloured rectangle, text and some buffer space
 // Use 1.5 line spacing
 // Items applied across page while they fit
 
-int legend_space(cairo_t *cr, GList *pie_slices, double max_w, double max_h)
+int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, double max_w, double max_h)
 {
-    double w, h;
+    double w, h, buf;
     GList *l;
     PieSlice *ps;
     cairo_text_extents_t ext;
 
     cairo_set_font_size (cr, 9.0);
-    w = 0;
-    h = 0;
+    w = 1;
+    h = yc + radius + buf1_y;
+    buf = rect_width + (buf1_x * 2);			// rect (20), rect:text (5), item:item (10)
 
-printf("%s sp 1 max_w %0.4f max_y %0.4f\n", debug_hdr, max_w, max_h); fflush(stdout);
     for(l = pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
@@ -426,21 +437,25 @@ printf("%s sp 1 max_w %0.4f max_y %0.4f\n", debug_hdr, max_w, max_h); fflush(std
 	    return FALSE;
 
 	cairo_text_extents (cr, ps->desc, &ext);
-	w = w + ext.width + 9;
-printf("%s sp 2 w %0.4f ext_w %0.4f\n", debug_hdr, w, ext.width); fflush(stdout);
+	w = w + ext.width + buf;
 
 	if (w > max_w)
 	{
-	    w = 0;
-	    h = h + (ext.height * 1.5);
-printf("%s sp 3 h %0.4f ext_h %0.4f\n", debug_hdr, h, ext.height); fflush(stdout);
+	    w = 1;
+	    h = h + (ext.height / 2.0);
 	}
 
 	if (h > max_h)
 	    return FALSE;
     }
 
+/* Debug
+printf("%s sp 1 max_w %0.4f max_y %0.4f\n", debug_hdr, max_w, max_h); fflush(stdout);
+printf("%s sp 2 w %0.4f ext_w %0.4f\n", debug_hdr, w, ext.width); fflush(stdout);
+printf("%s sp 3 h %0.4f ext_h %0.4f\n", debug_hdr, h, ext.height); fflush(stdout);
 printf("%s sp 4 \n", debug_hdr); fflush(stdout);
+*/
+
     return TRUE;
 }
 
@@ -458,7 +473,7 @@ void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double 
     /* Initial */
     cairo_set_font_size (cr, 9.0);
     x = 1;
-    y = yc + radius + 2;
+    y = yc + radius + buf1_y;
 
     /* Loop through slices and draw a legend for each */
     for(l = pie_slices; l != NULL; l = l->next)
@@ -468,31 +483,43 @@ void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double 
     	if (ps->desc == NULL)		// Should not happen
 	    return;
 
-    	/* Coloured line */
+    	/* Coloured rectangle */
     	rgba = ps->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-	cairo_move_to (cr, x, y);
-	cairo_line_to (cr, x + 5, y);
+    	cairo_set_line_width (cr, 1.0);
+    	cairo_rectangle (cr, x, y, rect_width, ext.height);
+	cairo_fill (cr);
+
+    	/* Bit fiddly, but this puts a border on the rectangle */
+    	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+    	cairo_rectangle (cr, x, y, rect_width, ext.height);
+	cairo_stroke (cr);
 
 	/* Text description */
 	cairo_text_extents (cr, ps->desc, &ext);
-    	cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 1.0);
-	cairo_move_to (cr, x + 7, y);
+    	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+	cairo_move_to (cr, x + rect_width + buf1_x, y + ext.height);
     	cairo_show_text (cr, ps->desc);
 	cairo_fill (cr);
 
 	/* Check position */
-	x = x + 8 + ext.width;
+	x = x + rect_width + buf2_x + ext.width;
 
 	if (x > max_w)
 	{
 	    x = 1;
-	    y = y + (ext.height * 1.5);
+	    y = y + (ext.height / 2.0);
 	}
 
 	if (y > max_h)
 	    return;			// Should not happen
     }
+
+/* Debug
+printf("%s leg 1  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, max_w, max_h); fflush(stdout);
+printf("%s leg 2\n", debug_hdr); fflush(stdout);
+printf("%s leg 3  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, max_w, max_h); fflush(stdout);
+*/
 
     return;
 }
