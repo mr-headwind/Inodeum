@@ -50,7 +50,7 @@
 /* Prototypes */
 
 void initialise(IspData *, MainUi *);
-void final(IspData *);
+void final(IspData *, MainUi *);
 
 extern void main_ui(IspData *, MainUi *);
 extern int check_app_dir();
@@ -58,6 +58,8 @@ extern int reset_log();
 extern void close_log();
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void clean_up(IspData *);
+extern void free_pie_chart(PieChart *);
+extern void free_bar_chart(BarChart *);
 
 
 /* Globals */
@@ -82,7 +84,7 @@ int main(int argc, char *argv[])
 
     gtk_main();  
 
-    final(&isp_data);
+    final(&isp_data, &m_ui);
 
     exit(0);
 }  
@@ -113,7 +115,7 @@ void initialise(IspData *isp_data, MainUi *m_ui)
 
 /* Final work */
 
-void final(IspData *isp_data)
+void final(IspData *isp_data, MainUi *m_ui)
 {
     /* Close log file */
     log_msg("MSG0002", NULL, NULL, NULL);
@@ -146,6 +148,12 @@ void final(IspData *isp_data)
     if (isp_data->ssl != NULL)
 	SSL_free(isp_data->ssl);
 	*/
+
+    if (m_ui->pie_chart != NULL)
+	free_pie_chart(m_ui->pie_chart);
+
+    if (m_ui->bar_chart != NULL)
+	free_bar_chart(m_ui->bar_chart);
 
     clean_up(isp_data);
 

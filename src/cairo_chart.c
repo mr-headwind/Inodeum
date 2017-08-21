@@ -52,7 +52,7 @@
 
 /* Prototypes */
 
-PieChart * pie_chart_init(char *, double, int, const GdkRGBA *, int);
+PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int);
 int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *, int);
 void free_pie_chart(PieChart *);
 void free_slices(gpointer);
@@ -63,6 +63,13 @@ void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
 int legend_space(cairo_t *, GList *, double, double, double, double);
 void pc_legend(cairo_t *, GList *, double, double, double, double);
+Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
+void free_axis(Axis *);
+BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
+int bar_segment_create(Bar *, char *, const GdkRGBA *, double);
+void free_bar_chart(BarChart *);
+void free_bars(gpointer);
+void free_bar_segment(gpointer);
 
 
 /* Globals */
@@ -84,7 +91,7 @@ static const double buf2_x = 10.0;
 // . Legend is either TRUE or FALSE.
 // . Text size is optional (0) and will default to 12.
 
-PieChart * pie_chart_init(char *title, double total_val, int legend, const GdkRGBA *txt_colour, int txt_sz)
+PieChart * pie_chart_create(char *title, double total_val, int legend, const GdkRGBA *txt_colour, int txt_sz)
 {
     PieChart *pc;
 
@@ -290,7 +297,6 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     /* Draw the pie chart */
     pc_drawing(cr, pc, xc, yc, radius, total_amt);
 
-printf("%s draw_pie legend %d\n", debug_hdr, pc->legend); fflush(stdout);
     /* Check if there is sufficient space for a legend */
     if (pc->legend == TRUE)
 	tf = legend_space(cr, pc->pie_slices, yc, radius, (double) allocation->width, allocation->height);
@@ -331,8 +337,6 @@ void pc_drawing(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, 
 	    continue;
 
     	angle_to = angle_from + (tmp * (M_PI / 180.0));			
-printf("%s tmp %0.4f total %0.4f val %0.4f\n", debug_hdr, tmp, total_amt, ps->slice_value);fflush(stdout);
-printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);fflush(stdout);
 
     	/* Draw */
     	rgba = ps->colour;
@@ -345,6 +349,11 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
 	cairo_stroke (cr);
     	angle_from = angle_to;
     }
+
+/* Debug
+printf("%s tmp %0.4f total %0.4f val %0.4f\n", debug_hdr, tmp, total_amt, ps->slice_value);fflush(stdout);
+printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);fflush(stdout);
+*/
 
     return;
 }
@@ -409,13 +418,13 @@ void text_coords(cairo_t *cr, char *desc,
 }
 
 
-// Check if there is sufficient room for a legend.
-//
-// Fairly basic:-
-// If any text missing, legend not possible
-// Each item consists of a coloured rectangle, text and some buffer space
-// Use 1.5 line spacing
-// Items applied across page while they fit
+/* Check if there is sufficient room for a legend */
+
+// Fairly basic rules:-
+// . If any text missing, legend not possible
+// . Each item consists of a coloured rectangle, text and some buffer space
+// . Use 1.5 line spacing
+// . Items applied across page while they fit then down, etc. while there is space
 
 int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, double max_w, double max_h)
 {
@@ -520,6 +529,208 @@ printf("%s leg 1  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, m
 printf("%s leg 2\n", debug_hdr); fflush(stdout);
 printf("%s leg 3  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, max_w, max_h); fflush(stdout);
 */
+
+    return;
+}
+
+
+/* Create an Axis */
+
+Axis * create_axis(char *unit, double start_val, double end_val, double step, 
+		   const GdkRGBA *txt_colour, int txt_sz)
+{
+    Axix *axis;
+
+    if (end_val <= start_val)
+    	return NULL;
+
+    axis = (Axis *) malloc(sozeof(Axix));
+    memset(axis, 0, sizeof(Axis));
+
+    if (unit != NULL)
+    {
+    	axis->unit = malloc(strlen(unit) + 1);
+    	strcpy(axis->unit, unit);
+
+	if (txt_colour != NULL)
+	    axis->txt_colour = txt_colour;
+	else
+	    axis->txt_colour = &BLACK;
+
+	if (txt_sz > 0)
+	    axis->txt_sz = txt_sz;
+	else
+	    axis->txt_sz = 10;
+    }
+
+    axis->start_val = start_val;
+    axis->end_val = end_val;
+    axis->step = step;
+
+    return *axis;
+}
+
+
+/* Free all axis resources */
+
+void free_axis(Axis *axis)
+{
+    if (axis->unit)
+    	free(axis->unit);
+
+    free(axis);
+
+    return;
+}
+
+
+/* Create and initialise a new bar chart */
+
+// Rules for creation:-
+// . Everything is optional (NULL).
+// . The only thing that is ulimately essential is that at least one bar must be created
+//   separately and added to the GList of bars.
+// . Text size defaults to 12 and text colour defaults to BLACK if a title is present.
+
+BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
+			    int legend, Axis *x_axis, Axis *y_axis)
+{
+    BarChart *bc;
+
+    if (legend < 0 || legend > 1)
+    	return NULL;
+
+    bc = (BarChart *) malloc(sizeof(BarChart));
+    memset(bc, 0, sizeof(BarChart));
+
+    if (title != NULL)
+    {
+    	bc->chart_title = malloc(strlen(title) + 1);
+    	strcpy(bc->chart_title, title);
+
+	if (txt_colour != NULL)
+	    bc->txt_colour = txt_colour;
+	else
+	    bc->txt_colour = &BLACK;
+
+	if (txt_sz > 0)
+	    bc->txt_sz = txt_sz;
+	else
+	    bc->txt_sz = 12;
+    }
+
+    bc->x_axis = x_axis;
+    bc->y_axis = y_axis;
+
+    return bc;
+}
+
+
+/* Create and initialise a new bar chart bar */
+
+// Rules for creation:-
+// . Everything is optional (NULL).
+// . The only thing that is ulimately essential is that at least one bar segment must be created
+//   separately and added to the GList of bar segments.
+// . Text size defaults to 10 and text colour defaults to BLACK if a description is present.
+
+int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
+{
+    Bar *bar;
+
+    bar = (Bar *) malloc(sizeof(Bar));
+    memset(bar, 0, sizeof(Bar));
+
+    if (txt_colour != NULL)
+	bar->txt_colour = txt_colour;
+    else
+	bar->txt_colour = &BLACK;
+
+    if (txt_sz > 0)
+	bar->txt_sz = txt_sz;
+    else
+	bar->txt_sz = 10;
+    }
+
+    bc->bars = g_list_append (bc->bars, bar);
+
+    return TRUE;
+}
+
+
+/* Create and initialise a new bar segment */
+
+// Rules for creation:-
+// . Description is optional (NULL).
+
+int bar_segment_create(Bar *bar, char *desc, const GdkRGBA *colour, double val)
+{
+    BarSegment *seg;
+
+    if (val == 0)
+    	return FALSE;
+
+    if (colour != NULL)
+    	return FALSE;
+
+    seg = (BarSegment *) malloc(sizeof(BarSegment));
+    memset(seg, 0, sizeof(BarSegment));
+
+    if (desc != NULL)
+    {
+    	seg->desc = malloc(strlen(desc) + 1);
+    	strcpy(seg->desc, desc);
+    }
+
+    seg->segment_value = val;
+    seg->colour = colour;
+    bar->bar_segments = g_list_append (bar->bar_segments, seg);
+
+    return TRUE;
+}
+
+
+/* Free all bar chart resources */
+
+void free_bar_chart(BarChart *bc)
+{
+    if (bc->chart_title)
+    	free(bc->chart_title);
+
+    g_list_free_full (bc->bars, (GDestroyNotify) free_bars);
+    free(bc);
+
+    return;
+}
+
+
+/* Free a bar chart bar */
+
+void free_bars(gpointer data)
+{  
+    Bar *bar;
+
+    bar = (Bar *) data;
+    
+    g_list_free_full (bar->bar_segments (GDestroyNotify) free_bar_segment);
+    free(bar);
+
+    return;
+}
+
+
+/* Free a bar chart bar segment */
+
+void free_bars(gpointer data)
+{  
+    BarSegment *bar_seg;
+
+    bar_seg = (BarSegment *) data;
+    
+    if (bar_seg->desc)
+	free(bar_seg->desc);
+
+    free(bar_seg);
 
     return;
 }

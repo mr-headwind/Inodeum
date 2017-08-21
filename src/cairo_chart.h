@@ -43,7 +43,7 @@
 #endif
 
 
-/* Chart control details */
+/* Pie Chart control details */
 
 typedef struct _pie_chart
 {
@@ -52,7 +52,6 @@ typedef struct _pie_chart
     int txt_sz;
     double total_value;
     int legend;
-    int num_slices;
     GList *pie_slices;
 } PieChart;
 
@@ -67,3 +66,50 @@ typedef struct _pie_slice
     const GdkRGBA *txt_colour;
     int txt_sz;
 } PieSlice;
+
+
+/* Axis */
+
+typedef struct _axis
+{
+    char *unit;
+    const GdkRGBA *txt_colour;
+    int txt_sz;
+    double start_val;
+    double end_val;
+    double step;
+} Axis;
+
+
+/* Bar Chart control details */
+
+typedef struct _bar_chart
+{
+    char *chart_title;
+    const GdkRGBA *txt_colour;
+    int txt_sz;
+    int legend;
+    Axis x_axis;
+    Axis y_axis;
+    GList *bars;
+} BarChart;
+
+
+/* Individual Bar details */
+
+typedef struct _bar
+{
+    const GdkRGBA *txt_colour;
+    int txt_sz;
+    GList *bar_segments;
+} Bar;
+
+
+/* Bar Chart segment details */
+
+typedef struct _bar_segment
+{
+    char *desc;
+    const GdkRGBA *colour;
+    double segment_value;
+} BarSegment;

@@ -88,6 +88,7 @@ typedef struct _main_ui
     GtkWidget *quota, *rollover_dt, *rem_days, *usage;
     GtkWidget *sum_cntr, *graph_area;
     PieChart *pie_chart;
+    BarChart *bar_chart;
 
     /* Widgets - about */
     GtkWidget *hdr_box, *misc_box, *tab_nb;

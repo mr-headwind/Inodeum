@@ -65,7 +65,7 @@ extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
-extern PieChart * pie_chart_init(char *, double, int, const GdkRGBA *, int);
+extern PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int);
 extern int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *, int);
 
 
@@ -325,9 +325,9 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);
     val_str2dbl(srv_usg->quota, &quota, NULL, NULL);
 
-    m_ui->pie_chart = pie_chart_init(NULL, 0, FALSE, NULL, 0);
-    //m_ui->pie_chart = pie_chart_init(NULL, 0, TRUE, NULL, 0);
-    //m_ui->pie_chart = pie_chart_init("Usage", 0, FALSE, &DARK_MAROON, 14);
+    m_ui->pie_chart = pie_chart_create(NULL, 0, FALSE, NULL, 0);
+    //m_ui->pie_chart = pie_chart_create(NULL, 0, TRUE, NULL, 0);
+    //m_ui->pie_chart = pie_chart_create("Usage", 0, FALSE, &DARK_MAROON, 14);
 
     if (total > quota)
     {
