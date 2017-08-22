@@ -65,6 +65,7 @@ int legend_space(cairo_t *, GList *, double, double, double, double);
 void pc_legend(cairo_t *, GList *, double, double, double, double);
 Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
 void free_axis(Axis *);
+void draw_axis(cairo_t *, Axis *, double, double, double, double);
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 int bar_segment_create(Bar *, char *, const GdkRGBA *, double);
 void free_bar_chart(BarChart *);
@@ -539,12 +540,12 @@ printf("%s leg 3  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, m
 Axis * create_axis(char *unit, double start_val, double end_val, double step, 
 		   const GdkRGBA *txt_colour, int txt_sz)
 {
-    Axix *axis;
+    Axis *axis;
 
     if (end_val <= start_val)
     	return NULL;
 
-    axis = (Axis *) malloc(sozeof(Axix));
+    axis = (Axis *) malloc(sizeof(Axis));
     memset(axis, 0, sizeof(Axis));
 
     if (unit != NULL)
@@ -567,7 +568,7 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step,
     axis->end_val = end_val;
     axis->step = step;
 
-    return *axis;
+    return axis;
 }
 
 
@@ -584,6 +585,19 @@ void free_axis(Axis *axis)
 }
 
 
+/* Draw an axis */
+
+void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double y2)
+{
+    /* Draw line */
+    cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+    cairo_move_to (cr, x1, y1);
+    cairo_line_to (cr, x2, y2);
+
+    return;
+}
+
+
 /* Create and initialise a new bar chart */
 
 // Rules for creation:-
@@ -591,6 +605,10 @@ void free_axis(Axis *axis)
 // . The only thing that is ulimately essential is that at least one bar must be created
 //   separately and added to the GList of bars.
 // . Text size defaults to 12 and text colour defaults to BLACK if a title is present.
+// . The axes are convenience items only. It isn't necessary to have any axes at all and
+//   they can separate items in their own right if desired. If present they, ( or even it)
+//   will drawn and destroyed as part of the bar chart functions. Just saves having to keep
+//   track and code manually.
 
 BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 			    int legend, Axis *x_axis, Axis *y_axis)
@@ -650,7 +668,6 @@ int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
 	bar->txt_sz = txt_sz;
     else
 	bar->txt_sz = 10;
-    }
 
     bc->bars = g_list_append (bc->bars, bar);
 
@@ -697,6 +714,12 @@ void free_bar_chart(BarChart *bc)
     if (bc->chart_title)
     	free(bc->chart_title);
 
+    if (bc->x_axis != NULL)
+    	free(bc->x_axis);
+
+    if (bc->y_axis != NULL)
+    	free(bc->y_axis);
+
     g_list_free_full (bc->bars, (GDestroyNotify) free_bars);
     free(bc);
 
@@ -712,7 +735,7 @@ void free_bars(gpointer data)
 
     bar = (Bar *) data;
     
-    g_list_free_full (bar->bar_segments (GDestroyNotify) free_bar_segment);
+    g_list_free_full (bar->bar_segments, (GDestroyNotify) free_bar_segment);
     free(bar);
 
     return;
@@ -721,7 +744,7 @@ void free_bars(gpointer data)
 
 /* Free a bar chart bar segment */
 
-void free_bars(gpointer data)
+void free_bar_segment(gpointer data)
 {  
     BarSegment *bar_seg;
 

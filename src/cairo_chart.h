@@ -89,8 +89,8 @@ typedef struct _bar_chart
     const GdkRGBA *txt_colour;
     int txt_sz;
     int legend;
-    Axis x_axis;
-    Axis y_axis;
+    Axis *x_axis;
+    Axis *y_axis;
     GList *bars;
 } BarChart;
 
