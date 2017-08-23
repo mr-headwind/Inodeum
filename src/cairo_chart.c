@@ -545,6 +545,9 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step,
     if (end_val <= start_val)
     	return NULL;
 
+    if (step > (end_val - start_val))
+    	return NULL;
+
     axis = (Axis *) malloc(sizeof(Axis));
     memset(axis, 0, sizeof(Axis));
 
@@ -589,10 +592,78 @@ void free_axis(Axis *axis)
 
 void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double y2)
 {
-    /* Draw line */
+    int i, n_steps;
+    double step_x, step_y, tmpx, tmpy, offset;
+    char s[10];
+    const int mark_width = 5;
+    const int txt_buf = 3;
+    cairo_text_extents_t ext;
+    const GdkRGBA *rgba;
+
+    /* Steps */
+    n_steps = (int) (axis->end_val - axis->start_val) / axis->step;
+    step_x = (x2 - x1) / n_steps;
+    step_y = (y2 - y1) / n_steps;
+
+    /* Draw axis line */
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
     cairo_move_to (cr, x1, y1);
     cairo_line_to (cr, x2, y2);
+
+    /* Draw step marks and text */
+    cairo_set_font_size (cr, 8);
+    cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+
+    for(i = 0; i < n_steps; i++)
+    {
+	cairo_move_to (cr, x1 + (step_x * i), y1 + (step_y * i));
+	sprintf(s, "%0.5f", (double) n_steps * axis->step);
+	cairo_text_extents (cr, s, &ext);
+
+	if (step_x == 0)					// Vertical
+	{
+	    cairo_line_to (cr, tmpx - mark_width, tmpy);
+	    cairo_get_current_point (cr, &tmpx, &tmpy);
+	    cairo_move_to (cr, tmpx - ext.width - txt_buf, tmpy - (ext.height / 2));
+	}
+	else							// Horizontal
+	{
+	    cairo_line_to (cr, tmpx, tmpy + mark_width);
+	    cairo_get_current_point (cr, &tmpx, &tmpy);
+	    cairo_move_to (cr, tmpx - (ext.width / 2), tmpy + ext.height + txt_buf);
+	}
+
+    	cairo_show_text (cr, s);
+	cairo_fill (cr);
+    }
+
+    /* Draw axis unit label text */
+    if (axis->unit != NULL)
+    {
+	rgba = axis->txt_colour;
+	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+	cairo_set_font_size (cr, axis->txt_sz);
+
+	if (step_x == 0)
+	{
+	    offset = ext.width + txt_buf;
+	    cairo_move_to (cr, x1, (y1 - y2) / 2);
+	    cairo_text_extents (cr, axis->unit, &ext);
+	    cairo_get_current_point (cr, &tmpx, &tmpy);
+	    cairo_move_to (cr, tmpx - offset - ext.width, tmpy);
+	}
+	else
+	{
+	    offset = ext.height + txt_buf;
+	    cairo_move_to (cr, (x1 - x2) / 2, y1);
+	    cairo_text_extents (cr, axis->unit, &ext);
+	    cairo_get_current_point (cr, &tmpx, &tmpy);
+	    cairo_move_to (cr, tmpx, tmpy + offset + ext.height);
+	}
+
+	cairo_show_text (cr, axis->unit);
+	cairo_fill (cr);
+    }
 
     return;
 }
