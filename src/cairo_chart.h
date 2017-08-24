@@ -88,7 +88,7 @@ typedef struct _bar_chart
     char *chart_title;
     const GdkRGBA *txt_colour;
     int txt_sz;
-    int legend;
+    int percent;	// ????
     Axis *x_axis;
     Axis *y_axis;
     GList *bars;
@@ -101,6 +101,7 @@ typedef struct _bar
 {
     const GdkRGBA *txt_colour;
     int txt_sz;
+    double bar_total;
     GList *bar_segments;
 } Bar;
 
