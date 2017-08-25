@@ -74,6 +74,7 @@ void free_bar_segment(gpointer);
 void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 void chart_title(cairo_t *, char *, GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
+void show_surface_info(cairo_t *, GtkAllocation *);
 
 
 /* Globals */
@@ -628,14 +629,17 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 //   separately and added to the GList of bars.
 // . Text size defaults to 12 and text colour defaults to BLACK if a title is present.
 // . The axes are convenience items only. It isn't necessary to have any axes at all and
-//   they can separate items in their own right if desired. If present they, ( or even it)
+//   they can be separate items in their own right if desired. If present they, ( or even it)
 //   will drawn and destroyed as part of the bar chart functions. Just saves having to keep
 //   track and code manually.
 
-BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
+BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, int show_perc, 
 			    Axis *x_axis, Axis *y_axis)
 {
     BarChart *bc;
+
+    if (show_perc < 0 || show_perc > 1)
+    	return NULL;
 
     bc = (BarChart *) malloc(sizeof(BarChart));
     memset(bc, 0, sizeof(BarChart));
@@ -656,6 +660,7 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz,
 	    bc->txt_sz = 12;
     }
 
+    bc->show_perc = show_perc;
     bc->x_axis = x_axis;
     bc->y_axis = y_axis;
 
@@ -799,11 +804,18 @@ int bar_chart_title(cairo_t *cr, BarChart *bc, GtkAllocation *allocation, GtkAli
 
 void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
 {
+    double x1, y1, x2, y2;
     GList *l;
     Bar *bar;
 
     /* Initial */
-    cairo_move_to (cr, 0, 0);
+    cairo_move_to (cr, x, 0);
+
+    /* Draw axes if present */
+    if (x_axis != NULL)
+    {
+    	draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
+    }
 
     /* Loop thru the bars */
     for(l = bc->bars; l != NULL; l = l->next)
@@ -892,6 +904,32 @@ void chart_title(cairo_t *cr, char *title, GdkRGBA *rgba, double sz,
     cairo_move_to (cr, xc, yc);
     cairo_show_text (cr, title);
     cairo_fill (cr);
+
+    return;
+}
+
+
+/* Cairo surface & allocation info */
+
+void show_surface_info(cairo_t *cr, GtkAllocation *allocation)
+{
+    int w, h;
+    double x, y;
+    cairo_surface_t *surface;
+
+    if (allocation != NULL)
+    {
+	printf("%s Allocation  x %d y %d w %d h %d\n", debug_hdr,
+						       allocation.x, allocation.y, 
+						       allocation.width, allocation.height); fflush(stdout);
+    }
+
+    surface = cairo_get_target (cr);
+    w = cairo_image_surface_get_width (surface);
+    h = cairo_image_surface_get_height (surface);
+    cairo_get_current_point (cr, &x, &y);
+
+    printf("%s Context  x %0.4f y %0.4f w %d h %d\n", debug_hdr, x, y, w, h); fflush(stdout);
 
     return;
 }
