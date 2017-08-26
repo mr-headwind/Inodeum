@@ -78,6 +78,7 @@ typedef struct _axis
     double start_val;
     double end_val;
     double step;
+    double x1, y1, x2, y2;
 } Axis;
 
 
@@ -89,6 +90,8 @@ typedef struct _bar_chart
     const GdkRGBA *txt_colour;
     int txt_sz;
     int show_perc;
+    double chart_min_val;
+    double chart_max_val;
     Axis *x_axis;
     Axis *y_axis;
     GList *bars;
@@ -101,7 +104,9 @@ typedef struct _bar
 {
     const GdkRGBA *txt_colour;
     int txt_sz;
-    double bar_total;
+    double bar_abs_val;
+    double bar_min_val;
+    double bar_max_val;
     GList *bar_segments;
 } Bar;
 

@@ -67,13 +67,14 @@ Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
 void free_axis(Axis *);
 void draw_axis(cairo_t *, Axis *, double, double, double, double);
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
-int bar_segment_create(Bar *, char *, const GdkRGBA *, double);
+int bar_create(BarChart *, const GdkRGBA *, int);
+int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, double);
 void free_bar_chart(BarChart *);
 void free_bars(gpointer);
 void free_bar_segment(gpointer);
 void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
-void chart_title(cairo_t *, char *, GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
+void chart_title(cairo_t *, char *, const GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -490,35 +491,41 @@ printf("%s leg 3  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, m
 
 /* Create an Axis */
 
+// Rules for creation:-
+// . The only items not optional (NULL or zero) are the Unit (axis label) anf the Step.
+//   The others may be added as required or will be derived as part of a chart.
+
 Axis * create_axis(char *unit, double start_val, double end_val, double step, 
 		   const GdkRGBA *txt_colour, int txt_sz)
 {
     Axis *axis;
 
-    if (end_val <= start_val)
+    if (end_val < start_val)
     	return NULL;
 
-    if (step > (end_val - start_val))
+    if (step == 0)
     	return NULL;
 
     axis = (Axis *) malloc(sizeof(Axis));
     memset(axis, 0, sizeof(Axis));
 
-    if (unit != NULL)
-    {
-    	axis->unit = malloc(strlen(unit) + 1);
-    	strcpy(axis->unit, unit);
+    axis->x1 = -1;
+    axis->y1 = -1;
+    axis->x2 = -1;
+    axis->y2 = -1;
 
-	if (txt_colour != NULL)
-	    axis->txt_colour = txt_colour;
-	else
-	    axis->txt_colour = &BLACK;
+    axis->unit = malloc(strlen(unit) + 1);
+    strcpy(axis->unit, unit);
 
-	if (txt_sz > 0)
-	    axis->txt_sz = txt_sz;
-	else
-	    axis->txt_sz = 10;
-    }
+    if (txt_colour != NULL)
+	axis->txt_colour = txt_colour;
+    else
+	axis->txt_colour = &BLACK;
+
+    if (txt_sz > 0)
+	axis->txt_sz = txt_sz;
+    else
+	axis->txt_sz = 10;
 
     axis->start_val = start_val;
     axis->end_val = end_val;
@@ -553,6 +560,12 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
     cairo_text_extents_t ext;
     const GdkRGBA *rgba;
 
+    /* Save the latest coordinates */
+    axis->x1 = x1;
+    axis->y1 = y1;
+    axis->x2 = x2;
+    axis->y2 = y2;
+
     /* Steps */
     n_steps = (int) (axis->end_val - axis->start_val) / axis->step;
     step_x = (x2 - x1) / n_steps;
@@ -571,17 +584,16 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 	cairo_move_to (cr, x1 + (step_x * i), y1 + (step_y * i));
 	sprintf(s, "%0.5f", (double) n_steps * axis->step);
 	cairo_text_extents (cr, s, &ext);
+	cairo_get_current_point (cr, &tmpx, &tmpy);
 
 	if (step_x == 0)					// Vertical
 	{
 	    cairo_line_to (cr, tmpx - mark_width, tmpy);
-	    cairo_get_current_point (cr, &tmpx, &tmpy);
 	    cairo_move_to (cr, tmpx - ext.width - txt_buf, tmpy - (ext.height / 2));
 	}
 	else							// Horizontal
 	{
 	    cairo_line_to (cr, tmpx, tmpy + mark_width);
-	    cairo_get_current_point (cr, &tmpx, &tmpy);
 	    cairo_move_to (cr, tmpx - (ext.width / 2), tmpy + ext.height + txt_buf);
 	}
 
@@ -625,8 +637,8 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 
 // Rules for creation:-
 // . Everything is optional (NULL).
-// . The only thing that is ulimately essential is that at least one bar must be created
-//   separately and added to the GList of bars.
+// . The only thing that is ulimately essential is that at least one Bar must be created
+//   separately with the 'bar_create' function which adds it to the GList of bars.
 // . Text size defaults to 12 and text colour defaults to BLACK if a title is present.
 // . The axes are convenience items only. It isn't necessary to have any axes at all and
 //   they can be separate items in their own right if desired. If present they, ( or even it)
@@ -672,8 +684,8 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 
 // Rules for creation:-
 // . Everything is optional (NULL).
-// . The only thing that is ulimately essential is that at least one bar segment must be created
-//   separately and added to the GList of bar segments.
+// . The only thing that is ulimately essential is that at least one Bar Segment must be created
+//   separately with the 'bar_segment_create' function which adds it to the GList of bar segments.
 // . Text size defaults to 10 and text colour defaults to BLACK if a description is present.
 
 int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
@@ -693,7 +705,6 @@ int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
     else
 	bar->txt_sz = 10;
 
-    bar->bar_total = 0;
     bc->bars = g_list_append (bc->bars, bar);
 
     return TRUE;
@@ -705,7 +716,7 @@ int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
 // Rules for creation:-
 // . Description is optional (NULL).
 
-int bar_segment_create(Bar *bar, char *desc, const GdkRGBA *colour, double val)
+int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour, double val)
 {
     BarSegment *seg;
 
@@ -724,8 +735,20 @@ int bar_segment_create(Bar *bar, char *desc, const GdkRGBA *colour, double val)
     	strcpy(seg->desc, desc);
     }
 
+    if (val < bar->bar_min_val)
+    	bar->bar_min_val = val;
+
+    if (val > bar->bar_max_val)
+    	bar->bar_max_val = val;
+
+    if (val < bc->chart_min_val)
+    	bc->chart_min_val = val;
+
+    if (val > bc->chart_max_val)
+    	bc->chart_max_val = val;
+
+    bar->bar_abs_val += abs(val);
     seg->segment_value = val;
-    bar->bar_total += val;
     seg->colour = colour;
     bar->bar_segments = g_list_append (bar->bar_segments, seg);
 
@@ -809,19 +832,21 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     Bar *bar;
 
     /* Initial */
-    cairo_move_to (cr, x, 0);
+    //cairo_move_to (cr, x, 0);
 
-    /* Draw axes if present */
-    if (x_axis != NULL)
-    {
-    	draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
-    }
+    /* Draw axes if required */
+    if (bc->x_axis != NULL)
+    	if (bc->x_axis->x1 == -1)
+	{
+	    axis_coords(cr, bc->x_axis, &x1, &y1, &x2, &y2);
+	    draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
+	}
 
     /* Loop thru the bars */
     for(l = bc->bars; l != NULL; l = l->next)
     {
     	bar = (Bar *) l->data;
-    	draw_bar(cr, bar, allocation);
+    	//draw_bar(cr, bar, allocation);
     }
 
     return;
@@ -833,7 +858,7 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
 void draw_bar(cairo_t *cr, Bar *bar, GtkAllocation *allocation)
 {
     GList *l;
-    Barsegment *bar_seg;
+    BarSegment *bar_seg;
 
     /* Initial */
     cairo_move_to (cr, 0, 0);
@@ -841,7 +866,7 @@ void draw_bar(cairo_t *cr, Bar *bar, GtkAllocation *allocation)
     /* Loop thru the bar segments and draw */
     for(l = bar->bar_segments; l != NULL; l = l->next)
     {
-    	bar_seg = (Bar *) l->data;
+    	bar_seg = (BarSegment *) l->data;
     }
 
     return;
@@ -850,7 +875,7 @@ void draw_bar(cairo_t *cr, Bar *bar, GtkAllocation *allocation)
 
 /* Write a chart title */
 
-void chart_title(cairo_t *cr, char *title, GdkRGBA *rgba, double sz,
+void chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
 		GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
     double xc, yc;
@@ -920,8 +945,8 @@ void show_surface_info(cairo_t *cr, GtkAllocation *allocation)
     if (allocation != NULL)
     {
 	printf("%s Allocation  x %d y %d w %d h %d\n", debug_hdr,
-						       allocation.x, allocation.y, 
-						       allocation.width, allocation.height); fflush(stdout);
+						       allocation->x, allocation->y, 
+						       allocation->width, allocation->height); fflush(stdout);
     }
 
     surface = cairo_get_target (cr);
