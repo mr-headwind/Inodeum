@@ -104,9 +104,9 @@ typedef struct _bar
 {
     const GdkRGBA *txt_colour;
     int txt_sz;
-    double bar_abs_val;
-    double bar_min_val;
-    double bar_max_val;
+    double abs_val;
+    double min_val;
+    double max_val;
     GList *bar_segments;
 } Bar;
 

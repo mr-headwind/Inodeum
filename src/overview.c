@@ -67,6 +67,9 @@ extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
 extern PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int);
 extern int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *, int);
+extern BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
+extern Bar * bar_create(BarChart *, const GdkRGBA *, int);
+extern int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, double);
 
 
 
@@ -320,6 +323,7 @@ char * format_remdays(time_t time_rovr)
 void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 {  
     double total, quota;
+    Bar *bar;
 
     /* Pie Chart and slices (quota still available or excess) */
     val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);
@@ -339,6 +343,12 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 	pie_slice_create(m_ui->pie_chart, "Usage", total, &MID_YELLOW, &DARK_MAROON, 10);
 	pie_slice_create(m_ui->pie_chart, "Remaining", (quota - total), &LIGHT_BLUE, &DARK_MAROON, 10);
     }
+
+    /* Quota interval bar chart */
+    m_ui->bar_chart = bar_chart_create(NULL, NULL, 0, TRUE, NULL, NULL);
+    bar = bar_create(m_ui->bar_chart, NULL, 0);
+    bar_segment_create(m_ui->bar_chart, bar, xxx, &LIGHT_RED, nnn);
+    bar_segment_create(m_ui->bar_chart, bar, xxx, &LIGHT_BLUE, nnn);
 
     return;
 }

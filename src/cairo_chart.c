@@ -67,14 +67,16 @@ Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
 void free_axis(Axis *);
 void draw_axis(cairo_t *, Axis *, double, double, double, double);
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
-int bar_create(BarChart *, const GdkRGBA *, int);
+Bar * bar_create(BarChart *, const GdkRGBA *, int);
 int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, double);
 void free_bar_chart(BarChart *);
 void free_bars(gpointer);
 void free_bar_segment(gpointer);
 void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
+void draw_bar(cairo_t *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 void chart_title(cairo_t *, char *, const GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
+void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -688,7 +690,7 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 //   separately with the 'bar_segment_create' function which adds it to the GList of bar segments.
 // . Text size defaults to 10 and text colour defaults to BLACK if a description is present.
 
-int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
+Bar * bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
 {
     Bar *bar;
 
@@ -707,7 +709,7 @@ int bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
 
     bc->bars = g_list_append (bc->bars, bar);
 
-    return TRUE;
+    return bar;
 }
 
 
@@ -735,11 +737,11 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
     	strcpy(seg->desc, desc);
     }
 
-    if (val < bar->bar_min_val)
-    	bar->bar_min_val = val;
+    if (val < bar->min_val)
+    	bar->min_val = val;
 
-    if (val > bar->bar_max_val)
-    	bar->bar_max_val = val;
+    if (val > bar->max_val)
+    	bar->max_val = val;
 
     if (val < bc->chart_min_val)
     	bc->chart_min_val = val;
@@ -747,7 +749,7 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
     if (val > bc->chart_max_val)
     	bc->chart_max_val = val;
 
-    bar->bar_abs_val += abs(val);
+    bar->abs_val += abs(val);
     seg->segment_value = val;
     seg->colour = colour;
     bar->bar_segments = g_list_append (bar->bar_segments, seg);
@@ -827,26 +829,53 @@ int bar_chart_title(cairo_t *cr, BarChart *bc, GtkAllocation *allocation, GtkAli
 
 void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
 {
+    int i, n, x, y, bar_width;
+    double xc, yc;
     double x1, y1, x2, y2;
     GList *l;
     Bar *bar;
-
-    /* Initial */
-    //cairo_move_to (cr, x, 0);
+    const int max_bar_width = 10;
 
     /* Draw axes if required */
     if (bc->x_axis != NULL)
+    {
     	if (bc->x_axis->x1 == -1)
 	{
-	    axis_coords(cr, bc->x_axis, &x1, &y1, &x2, &y2);
+	    bc_axis_coords(cr, bc, bc->x_axis, &x1, &y1, &x2, &y2);
 	    draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
 	}
+    }
+
+    if (bc->y_axis != NULL)
+    {
+    	if (bc->x_axis->x1 == -1)
+	{
+	    bc_axis_coords(cr, bc, bc->y_axis, &x1, &y1, &x2, &y2);
+	    draw_axis(cr, bc->y_axis, x1, y1, x2, y2);
+	}
+    }
+
+    /* Set the bar width allowing for a small buffer between bars and maximum width */
+    n = g_list_length (bc->bars);
+    bar_width = allocation->width / n;
+
+    if (bar_width > max_bar_width)
+    	bar_width = max_bar_width;
+    else
+    	bar_width -= 1;
+
+    /* Initial position */
+    xc = allocation->x;
+    yc = allocation->height - 10;
+    i = 0;
 
     /* Loop thru the bars */
     for(l = bc->bars; l != NULL; l = l->next)
     {
     	bar = (Bar *) l->data;
-    	//draw_bar(cr, bar, allocation);
+	xc = xc + bar_width * i;
+	//cairo_move_to (cr, xc, yc);
+    	draw_bar(cr, bar, bar_width, allocation->height - 20, xc, yc);
     }
 
     return;
@@ -855,18 +884,26 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
 
 /* Draw a bar of a chart */
 
-void draw_bar(cairo_t *cr, Bar *bar, GtkAllocation *allocation)
+void draw_bar(cairo_t *cr, Bar *bar, int bar_w, int bar_h, double xc, double yc)
 {
+    double seg_h;
     GList *l;
+    const GdkRGBA *rgba;
     BarSegment *bar_seg;
 
     /* Initial */
-    cairo_move_to (cr, 0, 0);
+    //cairo_move_to (cr, 0, 0);
+    cairo_set_line_width (cr, 1.0);
 
     /* Loop thru the bar segments and draw */
     for(l = bar->bar_segments; l != NULL; l = l->next)
     {
     	bar_seg = (BarSegment *) l->data;
+    	seg_h = (bar_seg->segment_value / (bar->max_val - bar->min_val)) * bar_h;
+    	rgba = bar_seg->colour;
+    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+    	cairo_rectangle (cr, xc, yc, bar_w, seg_h);
+	cairo_fill (cr);
     }
 
     return;
@@ -929,6 +966,15 @@ void chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
     cairo_move_to (cr, xc, yc);
     cairo_show_text (cr, title);
     cairo_fill (cr);
+
+    return;
+}
+
+
+/* Determine the best coordinates for axes, overriding existing attributes if necessary */
+
+void bc_axis_coords(cairo_t *cr, BarChart *bc, Axis *axis, double *x1, double *y1, double *x2, double *y2)
+{
 
     return;
 }
