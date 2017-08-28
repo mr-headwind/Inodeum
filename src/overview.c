@@ -291,7 +291,7 @@ char * format_dt(char *dt, time_t *time_rovr)
     dd[1] = *(dt + 9);
     dd[2] = '\0';
 
-    tm_t = strdt2tmt(yyyy, mm, dd, "0", "0", "0");
+    tm_t = strdt2tmt(yyyy, mm, dd, "1", "0", "0");
     dtm = localtime(&tm_t);
 
     /* Set the new date */
@@ -345,10 +345,12 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     }
 
     /* Quota interval bar chart */
+    /*
     m_ui->bar_chart = bar_chart_create(NULL, NULL, 0, TRUE, NULL, NULL);
     bar = bar_create(m_ui->bar_chart, NULL, 0);
     bar_segment_create(m_ui->bar_chart, bar, xxx, &LIGHT_RED, nnn);
     bar_segment_create(m_ui->bar_chart, bar, xxx, &LIGHT_BLUE, nnn);
+    */
 
     return;
 }
