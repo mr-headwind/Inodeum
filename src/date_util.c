@@ -52,7 +52,7 @@
 
 int64_t msec_time();
 void cur_date_str(char *, int, char *);
-void date_tm_add(struct tm *, char *, int);
+time_t date_tm_add(struct tm *, char *, int);
 time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 double difftime_days(time_t, time_t);
 
@@ -97,11 +97,12 @@ void cur_date_str(char *date_str, int s_sz, char *fmt)
 
 /* Pathetic attempt at date part (eg. Month) addition (use negative amount for subtraction) */
 
-void date_tm_add(struct tm *p_tm, char *dt_part, int amt)
+time_t date_tm_add(struct tm *p_tm, char *dt_part, int amt)
 {
     int yr, i, j, len;
     const char *dt_parts[] = {"day", "month", "year", "hour", "minute", "second", "week"};
     int max_type = 7;
+    time_t tm_t; 
 
     /* Determine the date part */
     for(i = 0; i < max_type; i++)
@@ -150,10 +151,10 @@ void date_tm_add(struct tm *p_tm, char *dt_part, int amt)
     }
 
     /* Normalize new time */
-    mktime(p_tm);      
+    tm_t = mktime(p_tm);      
     //printf("%s date_tm_add: %s\n", debug_hdr, asctime(p_tm)); fflush(stdout);
 
-    return;
+    return tm_t;
 }
 
 

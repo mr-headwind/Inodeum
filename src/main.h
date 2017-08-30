@@ -106,5 +106,7 @@ typedef struct _main_ui
     /* Callback Handlers */
     int close_hndlr_id;
 
+    /* Misc */
     int duration;
+    double days_rem, days_quota;
 } MainUi;

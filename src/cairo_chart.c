@@ -685,7 +685,7 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 /* Create and initialise a new bar chart bar */
 
 // Rules for creation:-
-// . Everything is optional (NULL).
+// . Everything is optional (NULL or 0).
 // . The only thing that is ulimately essential is that at least one Bar Segment must be created
 //   separately with the 'bar_segment_create' function which adds it to the GList of bar segments.
 // . Text size defaults to 10 and text colour defaults to BLACK if a description is present.
@@ -716,7 +716,7 @@ Bar * bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
 /* Create and initialise a new bar segment */
 
 // Rules for creation:-
-// . Description is optional (NULL).
+// . Description is optional (NULL or 0).
 
 int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour, double val)
 {

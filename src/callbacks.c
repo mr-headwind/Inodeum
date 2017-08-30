@@ -77,7 +77,9 @@ extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
+extern void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 extern int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
+extern int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 extern void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -295,6 +297,7 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
 gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {  
+    int alloc_w;
     MainUi *m_ui;
     GtkAllocation allocation;
 
@@ -314,6 +317,13 @@ show_surface_info(cr, &allocation);
 
     /* Draw the pie chart */
     draw_pie_chart(cr, m_ui->pie_chart, &allocation);
+
+    /* Do title (this does nothing if there is no title) */
+    allocation.width = alloc_w - allocation.width;
+    bar_chart_title(cr, m_ui->bar_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
+
+    /* Draw the bar chart */
+    draw_bar_chart(cr, m_ui->bar_chart, &allocation);
 
 /*
 cairo_set_source_rgba (cr, 0.57, 0.24, 0.24, 0.7);

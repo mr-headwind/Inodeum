@@ -55,8 +55,8 @@
 void overview_panel(MainUi *m_ui);
 void display_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
-char * format_dt(char *, time_t *);
-char * format_remdays(time_t);
+char * format_dt(char *, time_t *, struct tm **);
+char * format_remdays(time_t, double *);
 void create_charts(ServUsage *, IspData *, MainUi *);
 
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
@@ -70,6 +70,7 @@ extern int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const G
 extern BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 extern Bar * bar_create(BarChart *, const GdkRGBA *, int);
 extern int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, double);
+extern time_t date_tm_add(struct tm *, char *, int);
 
 
 
@@ -167,6 +168,8 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     int ov_set;
     char *s;
     time_t time_rovr;
+    struct tm *dtm;
+    time_t tm_t;
     ServUsage *srv_usg;
 
     /* Show summary details in text */
@@ -182,14 +185,17 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     free(s);
 
     gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
-    s = format_dt(srv_usg->rollover_dt, &time_rovr);
+    s = format_dt(srv_usg->rollover_dt, &time_rovr, &dtm);
     gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), s);
     free(s);
 
     gtk_label_set_text (GTK_LABEL (m_ui->rem_days_lbl), "Days remaining:");
-    s = format_remdays(time_rovr);
+    s = format_remdays(time_rovr, &(m_ui->days_rem));
     gtk_label_set_text (GTK_LABEL (m_ui->rem_days), s);
     free(s);
+
+    tm_t = date_tm_add(dtm, "month", -1);
+    m_ui->days_quota = difftime_days(time_rovr, tm_t);
 
     gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
     s = format_usg(srv_usg->total_bytes, srv_usg->unit);
@@ -268,16 +274,15 @@ char * format_usg(char *amt, char *unit)
 }
 
 
-/* Return a date in yyyy-mm-dd as dd-mmm-yyyy along with its actual time */
+/* Return a date in yyyy-mm-dd as dd-mmm-yyyy format along with its actual time and time components */
 
-char * format_dt(char *dt, time_t *time_rovr)
+char * format_dt(char *dt, time_t *time_rovr, struct tm **dtm)
 {  
     char yyyy[5];
     char mm[3];
     char dd[3];
     char *s;
     time_t tm_t;
-    struct tm *dtm;
 
     /* Get a numeric time */
     strncpy(yyyy, dt, 4);
@@ -292,11 +297,11 @@ char * format_dt(char *dt, time_t *time_rovr)
     dd[2] = '\0';
 
     tm_t = strdt2tmt(yyyy, mm, dd, "1", "0", "0");
-    dtm = localtime(&tm_t);
+    *dtm = localtime(&tm_t);
 
     /* Set the new date */
     s = (char *) malloc(12);
-    strftime(s, 12, "%d-%b-%Y", dtm);
+    strftime(s, 12, "%d-%b-%Y", *dtm);
     *time_rovr = tm_t;
 
     return s;
@@ -305,14 +310,13 @@ char * format_dt(char *dt, time_t *time_rovr)
 
 /* Return days remaining this period */
 
-char * format_remdays(time_t time_rovr)
+char * format_remdays(time_t time_rovr, double *ndays)
 {  
-    double ndays;
     char *s;
 
     s = (char *) malloc(5);
-    ndays = difftime_days(time_rovr, time(NULL));
-    sprintf(s, "%0.0f", ndays);
+    *ndays = difftime_days(time_rovr, time(NULL));
+    sprintf(s, "%0.0f", *ndays);
 
     return s;
 }
@@ -346,11 +350,12 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 
     /* Quota interval bar chart */
     /*
-    m_ui->bar_chart = bar_chart_create(NULL, NULL, 0, TRUE, NULL, NULL);
-    bar = bar_create(m_ui->bar_chart, NULL, 0);
-    bar_segment_create(m_ui->bar_chart, bar, xxx, &LIGHT_RED, nnn);
-    bar_segment_create(m_ui->bar_chart, bar, xxx, &LIGHT_BLUE, nnn);
     */
+printf("%s quota %0.4f  rem %0.4f\n", debug_hdr, m_ui->days_quota, m_ui->days_rem); fflush(stdout);
+    m_ui->bar_chart = bar_chart_create("Quota Interval", NULL, 0, TRUE, NULL, NULL);
+    bar = bar_create(m_ui->bar_chart, NULL, 0);
+    bar_segment_create(m_ui->bar_chart, bar, NULL, &LIGHT_RED, m_ui->days_quota - m_ui->days_rem);
+    bar_segment_create(m_ui->bar_chart, bar, NULL, &LIGHT_BLUE, m_ui->days_rem);
 
     return;
 }
