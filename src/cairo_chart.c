@@ -814,10 +814,12 @@ void free_bar_segment(gpointer data)
 
 int bar_chart_title(cairo_t *cr, BarChart *bc, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
+printf("%s bar chart title 1\n", debug_hdr);fflush(stdout);
     /* Ignore if no title */
     if (bc->chart_title == NULL)
     	return FALSE;
 
+printf("%s bar chart title 2\n", debug_hdr);fflush(stdout);
     /* Generic title function */
     chart_title(cr, bc->chart_title, bc->txt_colour, (double) bc->txt_sz, allocation, h_align, v_align);
 
@@ -962,6 +964,7 @@ void chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
 	    yc = ext.height;
     }
 
+printf("%s chart title xc %0.4f yc %0.4f\n", debug_hdr, xc, yc);fflush(stdout);
     /* Set Title */
     cairo_move_to (cr, xc, yc);
     cairo_show_text (cr, title);

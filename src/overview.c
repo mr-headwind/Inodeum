@@ -352,7 +352,7 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     /*
     */
 printf("%s quota %0.4f  rem %0.4f\n", debug_hdr, m_ui->days_quota, m_ui->days_rem); fflush(stdout);
-    m_ui->bar_chart = bar_chart_create("Quota Interval", NULL, 0, TRUE, NULL, NULL);
+    m_ui->bar_chart = bar_chart_create("Quota Interval", NULL, 9, TRUE, NULL, NULL);
     bar = bar_create(m_ui->bar_chart, NULL, 0);
     bar_segment_create(m_ui->bar_chart, bar, NULL, &LIGHT_RED, m_ui->days_quota - m_ui->days_rem);
     bar_segment_create(m_ui->bar_chart, bar, NULL, &LIGHT_BLUE, m_ui->days_rem);

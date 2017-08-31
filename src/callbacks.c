@@ -306,6 +306,7 @@ gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 
     GdkWindow *window = gtk_widget_get_window (widget);
     gtk_widget_get_allocation (widget, &allocation);
+    alloc_w = allocation.width;
 
 show_surface_info(cr, &allocation);
 
