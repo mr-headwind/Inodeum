@@ -297,16 +297,15 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
 gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {  
-    int alloc_w;
     MainUi *m_ui;
-    GtkAllocation allocation;
+    GtkAllocation allocation, pseudo_alloc;
 
     /* Get user data, the drawing area and adjust if necessary */
     m_ui = (MainUi *) user_data;
 
     GdkWindow *window = gtk_widget_get_window (widget);
     gtk_widget_get_allocation (widget, &allocation);
-    alloc_w = allocation.width;
+    memcpy(&pseudo_alloc, &allocation, sizeof(allocation));
 
 show_surface_info(cr, &allocation);
 
@@ -314,17 +313,22 @@ show_surface_info(cr, &allocation);
     pie_chart_title(cr, m_ui->pie_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Some space needs to be set aside for a bar chart */
-    allocation.width = (double) allocation.width * 0.7;
+    pseudo_alloc.width = (double) pseudo_alloc.width * 0.7;
+    pseudo_alloc.x = 0;
+    pseudo_alloc.y = 0;
 
     /* Draw the pie chart */
-    draw_pie_chart(cr, m_ui->pie_chart, &allocation);
+    draw_pie_chart(cr, m_ui->pie_chart, &pseudo_alloc);
 
     /* Do title (this does nothing if there is no title) */
-    allocation.width = alloc_w - allocation.width;
-    bar_chart_title(cr, m_ui->bar_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
+    pseudo_alloc.x = pseudo_alloc.width;
+    pseudo_alloc.y = 0;
+    pseudo_alloc.width = allocation.width - pseudo_alloc.x;
+
+    bar_chart_title(cr, m_ui->bar_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Draw the bar chart */
-    draw_bar_chart(cr, m_ui->bar_chart, &allocation);
+    draw_bar_chart(cr, m_ui->bar_chart, &pseudo_alloc);
 
 /*
 cairo_set_source_rgba (cr, 0.57, 0.24, 0.24, 0.7);
