@@ -41,6 +41,7 @@
 #include <math.h>
 #include <cairo/cairo.h>
 #include <cairo_chart.h>
+#include <cairo-xlib.h>
 #include <defs.h>
 
 
@@ -75,7 +76,7 @@ void free_bar_segment(gpointer);
 void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 void draw_bar(cairo_t *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
-void chart_title(cairo_t *, char *, const GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
+int chart_title(cairo_t *, char *, const GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
@@ -206,18 +207,16 @@ void free_slices(gpointer data)
 }
 
 
-/* Write a pie chart title if present */
+/* Write a pie chart title if present (convenience if somewhat dubious function) */
 
 int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
-    /* Ignore if no title */
-    if (pc->chart_title == NULL)
-    	return FALSE;
+    int r;
 
     /* Generic title function */
-    chart_title(cr, pc->chart_title, pc->txt_colour, (double) pc->txt_sz, allocation, h_align, v_align);
+    r = chart_title(cr, pc->chart_title, pc->txt_colour, (double) pc->txt_sz, allocation, h_align, v_align);
 
-    return TRUE;
+    return r;
 }
 
 
@@ -738,19 +737,19 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
     	strcpy(seg->desc, desc);
     }
 
-    if (val < bar->min_val)
+    if (val < bar->min_val || bar->min_val == 0)
     	bar->min_val = val;
 
-    if (val > bar->max_val)
+    if (val > bar->max_val || bar->max_val == 0)
     	bar->max_val = val;
 
-    if (val < bc->chart_min_val)
+    if (val < bc->chart_min_val || bc->chart_min_val == 0)
     	bc->chart_min_val = val;
 
-    if (val > bc->chart_max_val)
+    if (val > bc->chart_max_val || bc->chart_max_val == 0)
     	bc->chart_max_val = val;
 
-    bar->abs_val += abs(val);
+    bar->abs_val += abs(val);		// ***NB may not be needed converts to int - problem
     seg->segment_value = val;
     seg->colour = colour;
     bar->bar_segments = g_list_append (bar->bar_segments, seg);
@@ -811,18 +810,16 @@ void free_bar_segment(gpointer data)
 }
 
 
-/* Write a bar chart title if present */
+/* Write a bar chart title if present (convenience if somewhat dubious function) */
 
 int bar_chart_title(cairo_t *cr, BarChart *bc, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
-    /* Ignore if no title */
-    if (bc->chart_title == NULL)
-    	return FALSE;
+    int r;
 
     /* Generic title function */
-    chart_title(cr, bc->chart_title, bc->txt_colour, (double) bc->txt_sz, allocation, h_align, v_align);
+    r = chart_title(cr, bc->chart_title, bc->txt_colour, (double) bc->txt_sz, allocation, h_align, v_align);
 
-    return TRUE;
+    return r;
 }
 
 
@@ -835,7 +832,7 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     double x1, y1, x2, y2;
     GList *l;
     Bar *bar;
-    const int max_bar_width = 10;
+    const int max_bar_width = 25;
 
     /* Draw axes if required */
     if (bc->x_axis != NULL)
@@ -859,6 +856,9 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     /* Set the bar width allowing for a small buffer between bars and maximum width */
     n = g_list_length (bc->bars);
     bar_width = allocation->width / n;
+printf("%s draw bc 1 alloc x %d y %d w %d h %d\n", debug_hdr, allocation->x, allocation->x,
+							      allocation->width, allocation->height); fflush(stdout);
+printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
 
     if (bar_width > max_bar_width)
     	bar_width = max_bar_width;
@@ -874,9 +874,12 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     for(l = bc->bars; l != NULL; l = l->next)
     {
     	bar = (Bar *) l->data;
+printf("%s draw bc 3 xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 	xc = xc + bar_width * i;
 	cairo_move_to (cr, xc, yc);
-printf("%s draw bar  1\n", debug_hdr);fflush(stdout);
+printf("%s draw bc 3a xc %0.4f\n", debug_hdr, xc);fflush(stdout);
+printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->max_val, 
+								      bar->min_val, bar->abs_val);fflush(stdout);
     	draw_bar(cr, bar, bar_width, allocation->height - 20, xc, yc);
     }
 
@@ -899,12 +902,14 @@ void draw_bar(cairo_t *cr, Bar *bar, int bar_w, int bar_h, double xc, double yc)
     /* Loop thru the bar segments and draw */
     for(l = bar->bar_segments; l != NULL; l = l->next)
     {
-printf("%s draw seg 2\n", debug_hdr);fflush(stdout);
     	bar_seg = (BarSegment *) l->data;
-    	seg_h = (bar_seg->segment_value / (bar->max_val - bar->min_val)) * bar_h;
+printf("\n%s draw bar 1  seg val %0.4f\n", debug_hdr, bar_seg->segment_value);fflush(stdout);
+    	seg_h = (bar_seg->segment_value / (bar->max_val - bar->min_val)) * (double) bar_h;
+    	yc -= seg_h;
     	rgba = bar_seg->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-    	cairo_rectangle (cr, xc, yc, bar_w, seg_h);
+printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, yc, bar_w, seg_h);fflush(stdout);
+    	cairo_rectangle (cr, xc, yc, (double) bar_w, seg_h);
 	cairo_fill (cr);
     }
 
@@ -921,17 +926,21 @@ printf("%s draw seg 2\n", debug_hdr);fflush(stdout);
 // chart. Equally, however, an individual chart title may be used as an overall
 // title if desired. It all depends on what the passed allocation contains.
 
-void chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
+int chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
 		GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
     double xc, yc, fsz;
     cairo_text_extents_t ext;
 
+    /* Ignore if no title */
+    if (title == NULL)
+    	return FALSE;
+
     /* Appearance */
     cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 
     if ((fsz = confirm_font_size(cr, title, allocation->width, sz)) == FALSE)
-    	return;
+    	return FALSE;
 
     cairo_set_font_size (cr, fsz);
 
@@ -981,7 +990,7 @@ printf("%s chart title xc %0.4f yc %0.4f\n", debug_hdr, xc, yc);fflush(stdout);
     cairo_show_text (cr, title);
     cairo_fill (cr);
 
-    return;
+    return TRUE;
 }
 
 
@@ -1032,7 +1041,10 @@ void show_surface_info(cairo_t *cr, GtkAllocation *allocation)
 {
     int w, h;
     double x, y;
+    char typ[20];
     cairo_surface_t *surface;
+    cairo_surface_type_t st;
+    cairo_rectangle_t rect;
 
     if (allocation != NULL)
     {
@@ -1042,11 +1054,47 @@ void show_surface_info(cairo_t *cr, GtkAllocation *allocation)
     }
 
     surface = cairo_get_target (cr);
-    w = cairo_image_surface_get_width (surface);
-    h = cairo_image_surface_get_height (surface);
-    cairo_get_current_point (cr, &x, &y);
+    st = cairo_surface_get_type (surface);
 
-    printf("%s Context  x %0.4f y %0.4f w %d h %d\n", debug_hdr, x, y, w, h); fflush(stdout);
+    switch (st)
+    {
+    	case CAIRO_SURFACE_TYPE_IMAGE:
+	    strcpy(typ, "IMAGE");
+	    w = cairo_image_surface_get_width (surface);
+	    h = cairo_image_surface_get_height (surface);
+	    cairo_get_current_point (cr, &x, &y);
+	    break;
+
+    	case CAIRO_SURFACE_TYPE_XLIB:
+	    strcpy(typ, "XLIB");
+	    w = cairo_xlib_surface_get_width (surface);
+	    h = cairo_xlib_surface_get_height (surface);
+	    cairo_get_current_point (cr, &x, &y);
+	    break;
+
+    	case CAIRO_SURFACE_TYPE_RECORDING:
+	    strcpy(typ, "RECORDING");
+
+	    if (cairo_recording_surface_get_extents (surface, &rect) == TRUE)
+	    {
+		x = rect.x;
+		y = rect.y;
+		w = rect.width;
+		h = rect.height;
+	    }
+
+	    cairo_get_current_point (cr, &x, &y);
+	    break;
+
+	default:
+	    sprintf(typ, "Other (%d)", st);
+	    w = 0;
+	    h = 0;
+	    cairo_get_current_point (cr, &x, &y);
+	    break;
+    }
+
+    printf("%s Surface: %s  x %0.4f y %0.4f w %d h %d\n", debug_hdr, typ, x, y, w, h); fflush(stdout);
 
     return;
 }

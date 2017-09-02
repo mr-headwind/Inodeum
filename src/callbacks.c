@@ -307,7 +307,7 @@ gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     gtk_widget_get_allocation (widget, &allocation);
     memcpy(&pseudo_alloc, &allocation, sizeof(allocation));
 
-show_surface_info(cr, &allocation);
+show_surface_info(cr, &allocation);	// Info or Debug
 
     /* Do title before alocation is adjusted (this does nothing if there is no title) */
     pie_chart_title(cr, m_ui->pie_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
@@ -324,7 +324,6 @@ show_surface_info(cr, &allocation);
     pseudo_alloc.x = pseudo_alloc.width;
     pseudo_alloc.y = 0;
     pseudo_alloc.width = allocation.width - pseudo_alloc.x;
-
     bar_chart_title(cr, m_ui->bar_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Draw the bar chart */
