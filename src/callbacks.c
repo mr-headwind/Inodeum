@@ -324,7 +324,7 @@ show_surface_info(cr, &allocation);	// Info or Debug
     pseudo_alloc.x = pseudo_alloc.width;
     pseudo_alloc.y = 0;
     pseudo_alloc.width = allocation.width - pseudo_alloc.x;
-    bar_chart_title(cr, m_ui->bar_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
+    bar_chart_title(cr, m_ui->bar_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_END);
 
     /* Draw the bar chart */
     draw_bar_chart(cr, m_ui->bar_chart, &pseudo_alloc);

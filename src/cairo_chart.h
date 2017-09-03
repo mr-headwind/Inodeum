@@ -43,6 +43,16 @@
 #endif
 
 
+/* Chart Text */
+
+typedef struct _chart_text
+{
+    char *txt;
+    const GdkRGBA *color;
+    int sz;
+    cairo_text_extents_t ext;
+} ChartText;
+
 /* Pie Chart control details */
 
 typedef struct _pie_chart
@@ -86,9 +96,12 @@ typedef struct _axis
 
 typedef struct _bar_chart
 {
+    /*
     char *chart_title;
     const GdkRGBA *txt_colour;
     int txt_sz;
+    */
+    ChartText *chart_title;
     int show_perc;
     double chart_min_val;
     double chart_max_val;

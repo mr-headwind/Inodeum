@@ -78,6 +78,8 @@ void draw_bar(cairo_t *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 int chart_title(cairo_t *, char *, const GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
+ChartText * new_chart_text(char *, const GdkRGBA *, int);
+void free_chart_text(ChartText *);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
@@ -658,6 +660,7 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
     bc = (BarChart *) malloc(sizeof(BarChart));
     memset(bc, 0, sizeof(BarChart));
 
+    /*
     if (title != NULL)
     {
     	bc->chart_title = malloc(strlen(title) + 1);
@@ -673,6 +676,8 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 	else
 	    bc->txt_sz = 12;
     }
+    */
+    bc->chart_title = new_chart_text(title, txt_color, txt_sz);
 
     bc->show_perc = show_perc;
     bc->x_axis = x_axis;
@@ -749,7 +754,7 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
     if (val > bc->chart_max_val || bc->chart_max_val == 0)
     	bc->chart_max_val = val;
 
-    bar->abs_val += abs(val);		// ***NB may not be needed converts to int - problem
+    bar->abs_val += fabs(val);
     seg->segment_value = val;
     seg->colour = colour;
     bar->bar_segments = g_list_append (bar->bar_segments, seg);
@@ -762,8 +767,12 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
 
 void free_bar_chart(BarChart *bc)
 {
+    /*
     if (bc->chart_title)
     	free(bc->chart_title);
+    */
+    if (bc->chart_title != NULL)
+    	free_chart_text(bc->chart_title);
 
     if (bc->x_axis != NULL)
     	free(bc->x_axis);
@@ -833,6 +842,7 @@ void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     GList *l;
     Bar *bar;
     const int max_bar_width = 25;
+    const int buf1 = 15;
 
     /* Draw axes if required */
     if (bc->x_axis != NULL)
@@ -865,9 +875,9 @@ printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
     else
     	bar_width -= 1;
 
-    /* Initial position */
-    xc = allocation->x;
-    yc = allocation->height - 10;
+    /* Initial position, starting at the x-axis centre */
+    xc = (double) (allocation->x + ((allocation->width / 2) - ((bar_width * n) / 2)));
+    yc = allocation->height - buf1;
     i = 0;
 
     /* Loop thru the bars */
@@ -879,8 +889,8 @@ printf("%s draw bc 3 xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 	cairo_move_to (cr, xc, yc);
 printf("%s draw bc 3a xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->max_val, 
-								      bar->min_val, bar->abs_val);fflush(stdout);
-    	draw_bar(cr, bar, bar_width, allocation->height - 20, xc, yc);
+							       bar->min_val, bar->abs_val);fflush(stdout);
+    	draw_bar(cr, bar, bar_width, (allocation->height - (buf1 * 2)), xc, yc);
     }
 
     return;
@@ -904,7 +914,7 @@ void draw_bar(cairo_t *cr, Bar *bar, int bar_w, int bar_h, double xc, double yc)
     {
     	bar_seg = (BarSegment *) l->data;
 printf("\n%s draw bar 1  seg val %0.4f\n", debug_hdr, bar_seg->segment_value);fflush(stdout);
-    	seg_h = (bar_seg->segment_value / (bar->max_val - bar->min_val)) * (double) bar_h;
+    	seg_h = (bar_seg->segment_value / bar->abs_val) * (double) bar_h;
     	yc -= seg_h;
     	rgba = bar_seg->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
@@ -973,11 +983,11 @@ int chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
 	    break;
 
     	case GTK_ALIGN_CENTER:
-	    yc = (((double) allocation->height / 2.0) - (ext.height / 2.0)) + allocation->x;
+	    yc = (((double) allocation->height / 2.0) - (ext.height / 2.0)) + allocation->y;
 	    break;
 
     	case GTK_ALIGN_END:
-	    yc = ((double) allocation->height - ext.height) + allocation->x;
+	    yc = ((double) allocation->height - ext.height) + allocation->y;
 	    break;
 
 	default:
@@ -998,6 +1008,48 @@ printf("%s chart title xc %0.4f yc %0.4f\n", debug_hdr, xc, yc);fflush(stdout);
 
 void bc_axis_coords(cairo_t *cr, BarChart *bc, Axis *axis, double *x1, double *y1, double *x2, double *y2)
 {
+
+    return;
+}
+
+
+/* New chart text class */
+
+ChartText * new_chart_text(char *txt, const GdkRGBA *color, int sz)
+{
+    ChartText *ctext;
+
+    if (txt == NULL)
+    	return NULL;
+
+    ctext = (ChartText *) malloc(sizeof(ChartText);
+    memset(ctext, 0, sizeof(ChartText));
+
+    ctext->txt = malloc(strlen(txt) + 1);
+    strcpy(ctext->txt, txt);
+    
+    if (colour != NULL)
+	ctext->colour = colour;
+    else
+	ctext->colour = &BLACK;
+
+    if (sz > 0)
+	ctext->sz = sz;
+    else
+	ctext->sz = 12;
+
+    return ctext;
+}
+
+
+/* Free chart text resources */
+
+void free_chart_text(ChartText *ctext)
+{
+    if (ctext->txt)
+    	free(ctext->txt);
+
+    free(ctext);
 
     return;
 }
