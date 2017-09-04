@@ -48,18 +48,16 @@
 typedef struct _chart_text
 {
     char *txt;
-    const GdkRGBA *color;
+    const GdkRGBA *colour;
     int sz;
     cairo_text_extents_t ext;
-} ChartText;
+} CText;
 
 /* Pie Chart control details */
 
 typedef struct _pie_chart
 {
-    char *chart_title;
-    const GdkRGBA *txt_colour;
-    int txt_sz;
+    CText *title;
     double total_value;
     int legend;
     GList *pie_slices;
@@ -96,12 +94,7 @@ typedef struct _axis
 
 typedef struct _bar_chart
 {
-    /*
-    char *chart_title;
-    const GdkRGBA *txt_colour;
-    int txt_sz;
-    */
-    ChartText *chart_title;
+    CText *title;
     int show_perc;
     double chart_min_val;
     double chart_max_val;

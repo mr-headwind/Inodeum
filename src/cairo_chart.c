@@ -74,12 +74,12 @@ void free_bar_chart(BarChart *);
 void free_bars(gpointer);
 void free_bar_segment(gpointer);
 void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
-void draw_bar(cairo_t *, Bar *, int, int, double, double);
+void draw_bar(cairo_t *, BarChart *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
-int chart_title(cairo_t *, char *, const GdkRGBA *, double, GtkAllocation *, GtkAlign, GtkAlign);
+int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
-ChartText * new_chart_text(char *, const GdkRGBA *, int);
-void free_chart_text(ChartText *);
+CText * new_chart_text(char *, const GdkRGBA *, int);
+void free_chart_text(CText *);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
@@ -113,21 +113,7 @@ PieChart * pie_chart_create(char *title, double total_val, int legend, const Gdk
     pc = (PieChart *) malloc(sizeof(PieChart));
     memset(pc, 0, sizeof(PieChart));
 
-    if (title != NULL)
-    {
-    	pc->chart_title = malloc(strlen(title) + 1);
-    	strcpy(pc->chart_title, title);
-
-	if (txt_colour != NULL)
-	    pc->txt_colour = txt_colour;
-	else
-	    pc->txt_colour = &BLACK;
-
-	if (txt_sz > 0)
-	    pc->txt_sz = txt_sz;
-	else
-	    pc->txt_sz = 12;
-    }
+    pc->title = new_chart_text(title, txt_colour, txt_sz);
 
     pc->total_value = total_val;
     pc->legend = legend;
@@ -182,8 +168,8 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
 
 void free_pie_chart(PieChart *pc)
 {
-    if (pc->chart_title)
-    	free(pc->chart_title);
+    if (pc->title != NULL)
+    	free_chart_text(pc->title);
 
     g_list_free_full (pc->pie_slices, (GDestroyNotify) free_slices);
     free(pc);
@@ -216,7 +202,7 @@ int pie_chart_title(cairo_t *cr, PieChart *pc, GtkAllocation *allocation, GtkAli
     int r;
 
     /* Generic title function */
-    r = chart_title(cr, pc->chart_title, pc->txt_colour, (double) pc->txt_sz, allocation, h_align, v_align);
+    r = chart_title(cr, pc->title, allocation, h_align, v_align);
 
     return r;
 }
@@ -660,24 +646,7 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
     bc = (BarChart *) malloc(sizeof(BarChart));
     memset(bc, 0, sizeof(BarChart));
 
-    /*
-    if (title != NULL)
-    {
-    	bc->chart_title = malloc(strlen(title) + 1);
-    	strcpy(bc->chart_title, title);
-
-	if (txt_colour != NULL)
-	    bc->txt_colour = txt_colour;
-	else
-	    bc->txt_colour = &BLACK;
-
-	if (txt_sz > 0)
-	    bc->txt_sz = txt_sz;
-	else
-	    bc->txt_sz = 12;
-    }
-    */
-    bc->chart_title = new_chart_text(title, txt_color, txt_sz);
+    bc->title = new_chart_text(title, txt_colour, txt_sz);
 
     bc->show_perc = show_perc;
     bc->x_axis = x_axis;
@@ -767,12 +736,8 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
 
 void free_bar_chart(BarChart *bc)
 {
-    /*
-    if (bc->chart_title)
-    	free(bc->chart_title);
-    */
-    if (bc->chart_title != NULL)
-    	free_chart_text(bc->chart_title);
+    if (bc->title != NULL)
+    	free_chart_text(bc->title);
 
     if (bc->x_axis != NULL)
     	free(bc->x_axis);
@@ -826,7 +791,7 @@ int bar_chart_title(cairo_t *cr, BarChart *bc, GtkAllocation *allocation, GtkAli
     int r;
 
     /* Generic title function */
-    r = chart_title(cr, bc->chart_title, bc->txt_colour, (double) bc->txt_sz, allocation, h_align, v_align);
+    r = chart_title(cr, bc->title, allocation, h_align, v_align);
 
     return r;
 }
@@ -878,6 +843,10 @@ printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
     /* Initial position, starting at the x-axis centre */
     xc = (double) (allocation->x + ((allocation->width / 2) - ((bar_width * n) / 2)));
     yc = allocation->height - buf1;
+
+    if (bc->title != NULL)
+    	yc = yc - bc->title->ext.height - 1;
+
     i = 0;
 
     /* Loop thru the bars */
@@ -890,7 +859,7 @@ printf("%s draw bc 3 xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 printf("%s draw bc 3a xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->max_val, 
 							       bar->min_val, bar->abs_val);fflush(stdout);
-    	draw_bar(cr, bar, bar_width, (allocation->height - (buf1 * 2)), xc, yc);
+    	draw_bar(cr, bc, bar, bar_width, (allocation->height - (buf1 * 3)), xc, yc);
     }
 
     return;
@@ -899,15 +868,12 @@ printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->m
 
 /* Draw a bar of a chart */
 
-void draw_bar(cairo_t *cr, Bar *bar, int bar_w, int bar_h, double xc, double yc)
+void draw_bar(cairo_t *cr, BarChart *bc, Bar *bar, int bar_w, int bar_h, double xc, double yc)
 {
     double seg_h;
     GList *l;
     const GdkRGBA *rgba;
     BarSegment *bar_seg;
-
-    /* Initial */
-    //cairo_set_line_width (cr, 1.0);
 
     /* Loop thru the bar segments and draw */
     for(l = bar->bar_segments; l != NULL; l = l->next)
@@ -927,35 +893,59 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 }
 
 
+/* Draw any bar text */
+
+void draw_bar_text(cairo_t *cr, BarChart *bc, Bar *bar, BarSegment *bs, 
+		   int bar_w, int seg_h, double xc, double yc)
+{
+    double fsz;
+    cairo_text_extents_t ext;
+
+    if (bs->desc == NULL && bc->show_perc == FALSE)
+    	return;
+
+    if ((fsz = confirm_font_size(cr, bs->desc, bar_w, bar->txt_sz)) == FALSE)
+    	return FALSE;
+
+    cairo_move_to (cr, desc_x, desc_y);
+    cairo_show_text (cr, ps->desc);
+    cairo_fill (cr);
+
+    return;
+}
+
+
 /* Write a chart title */
 
 // Some notes on titles:
 // The Title functions are designed to be (hopefully at least) quite flexible. 
-// The 'chart_title' function may called directly to create an overall title on
-// the drawing area and each chart has a function for a title for the particular
-// chart. Equally, however, an individual chart title may be used as an overall
+// The 'chart_title' function may be called directly to create an overall title on
+// the drawing area. Also each chart has a title function (that calls this).
+// Equally, however, an individual chart title may be used as an overall
 // title if desired. It all depends on what the passed allocation contains.
 
-int chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
-		GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
+int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
 {
     double xc, yc, fsz;
-    cairo_text_extents_t ext;
+    const GdkRGBA *rgba;
+    cairo_text_extents_t *ext;
 
     /* Ignore if no title */
     if (title == NULL)
     	return FALSE;
 
     /* Appearance */
+    rgba = title->colour;
     cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 
-    if ((fsz = confirm_font_size(cr, title, allocation->width, sz)) == FALSE)
+    if ((fsz = confirm_font_size(cr, title->txt, allocation->width, title->sz)) == FALSE)
     	return FALSE;
 
     cairo_set_font_size (cr, fsz);
 
     /* Determine space to be consumed by text */
-    cairo_text_extents (cr, title, &ext);
+    ext = &(title->ext);
+    cairo_text_extents (cr, title->txt, ext);
 
     /* Set alignment */
     switch (h_align)
@@ -965,11 +955,11 @@ int chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
 	    break;
 
     	case GTK_ALIGN_CENTER:
-	    xc = (((double) allocation->width / 2.0) - (ext.width / 2.0)) + allocation->x;
+	    xc = (((double) allocation->width / 2.0) - (ext->width / 2.0)) + allocation->x;
 	    break;
 
     	case GTK_ALIGN_END:
-	    xc = ((double) allocation->width - ext.width) + allocation->x;
+	    xc = ((double) allocation->width - ext->width) + allocation->x;
 	    break;
 
 	default:
@@ -979,25 +969,25 @@ int chart_title(cairo_t *cr, char *title, const GdkRGBA *rgba, double sz,
     switch (v_align)
     {
     	case GTK_ALIGN_START:
-	    yc = ext.height + allocation->y;
+	    yc = ext->height + allocation->y;
 	    break;
 
     	case GTK_ALIGN_CENTER:
-	    yc = (((double) allocation->height / 2.0) - (ext.height / 2.0)) + allocation->y;
+	    yc = (((double) allocation->height / 2.0) - (ext->height / 2.0)) + allocation->y;
 	    break;
 
     	case GTK_ALIGN_END:
-	    yc = ((double) allocation->height - ext.height) + allocation->y;
+	    yc = ((double) allocation->height - ext->height) + allocation->y;
 	    break;
 
 	default:
-	    yc = ext.height + allocation->y;
+	    yc = ext->height + allocation->y;
     }
 
 printf("%s chart title xc %0.4f yc %0.4f\n", debug_hdr, xc, yc);fflush(stdout);
     /* Set Title */
     cairo_move_to (cr, xc, yc);
-    cairo_show_text (cr, title);
+    cairo_show_text (cr, title->txt);
     cairo_fill (cr);
 
     return TRUE;
@@ -1015,15 +1005,15 @@ void bc_axis_coords(cairo_t *cr, BarChart *bc, Axis *axis, double *x1, double *y
 
 /* New chart text class */
 
-ChartText * new_chart_text(char *txt, const GdkRGBA *color, int sz)
+CText * new_chart_text(char *txt, const GdkRGBA *colour, int sz)
 {
-    ChartText *ctext;
+    CText *ctext;
 
     if (txt == NULL)
     	return NULL;
 
-    ctext = (ChartText *) malloc(sizeof(ChartText);
-    memset(ctext, 0, sizeof(ChartText));
+    ctext = (CText *) malloc(sizeof(CText));
+    memset(ctext, 0, sizeof(CText));
 
     ctext->txt = malloc(strlen(txt) + 1);
     strcpy(ctext->txt, txt);
@@ -1044,7 +1034,7 @@ ChartText * new_chart_text(char *txt, const GdkRGBA *color, int sz)
 
 /* Free chart text resources */
 
-void free_chart_text(ChartText *ctext)
+void free_chart_text(CText *ctext)
 {
     if (ctext->txt)
     	free(ctext->txt);
