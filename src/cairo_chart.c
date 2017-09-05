@@ -870,14 +870,18 @@ printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->m
 
 void draw_bar(cairo_t *cr, BarChart *bc, Bar *bar, int bar_w, int bar_h, double xc, double yc)
 {
+    int pc;
     double seg_h;
+    char *txt[2];
+    char s[10];
     GList *l;
     const GdkRGBA *rgba;
     BarSegment *bar_seg;
 
-    /* Loop thru the bar segments and draw */
+    /* Loop thru the bar segments */
     for(l = bar->bar_segments; l != NULL; l = l->next)
     {
+	/* Determine dimensions and draw segment */
     	bar_seg = (BarSegment *) l->data;
 printf("\n%s draw bar 1  seg val %0.4f\n", debug_hdr, bar_seg->segment_value);fflush(stdout);
     	seg_h = (bar_seg->segment_value / bar->abs_val) * (double) bar_h;
@@ -887,22 +891,63 @@ printf("\n%s draw bar 1  seg val %0.4f\n", debug_hdr, bar_seg->segment_value);ff
 printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, yc, bar_w, seg_h);fflush(stdout);
     	cairo_rectangle (cr, xc, yc, (double) bar_w, seg_h);
 	cairo_fill (cr);
+
+	/* If there is a description, point to it */
+	if (bs->desc != NULL)
+	    txt[0] = bs->desc;
+	else
+	    txt[0] = NULL;
+
+	/* If percentages are desired set up the text and point to it */
+	if (bc->show_perc == TRUE)
+	{
+	    pc = (bar_seg->segment_value / bar->abs_val) * 100.00;
+	    sprintf(s, "(%d%%)", pc);
+	    txt[1] = s;
+	}
+	else
+	{
+	    txt[1] = NULL;
+	}
+
+	/* Draw the text line(s) if any */
+	draw_text_lines(cr, txt, 2, bar_w, xc, yc + seg_h / 2, bar->txt_sz, bar->txt_colour);
     }
 
     return;
 }
 
 
-/* Draw any bar text */
+/* Draw lines of text */
 
-void draw_bar_text(cairo_t *cr, BarChart *bc, Bar *bar, BarSegment *bs, 
-		   int bar_w, int seg_h, double xc, double yc)
+void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double yc, int sz, GdkRGBA *colour)
 {
+    int pc;
+    char *txt[2];
+    char s[10];
     double fsz;
     cairo_text_extents_t ext;
 
     if (bs->desc == NULL && bc->show_perc == FALSE)
     	return;
+
+    if (bs->desc != NULL)
+    	txt[0] = bs->desc;
+    else
+    	txt[0] = NULL;
+
+    if (bc->show_perc == TRUE)
+    {
+    	pc = (bar_seg->segment_value / bar->abs_val) * 100.00;
+    	sprintf(s, "(%d%%)", pc);
+    	txt[1] = s;
+    }
+    else
+    {
+    	txt[1] = NULL;
+    }
+
+    draw_text_lines(cr, txt, bar_w, xc, yc + seg_h / 2, bar->txt_sz, bar->txt_colour);
 
     if ((fsz = confirm_font_size(cr, bs->desc, bar_w, bar->txt_sz)) == FALSE)
     	return FALSE;
