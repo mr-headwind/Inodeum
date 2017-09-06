@@ -80,6 +80,7 @@ int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 CText * new_chart_text(char *, const GdkRGBA *, int);
 void free_chart_text(CText *);
+void draw_text_lines(cairo_t *, char **, int, int, double, double, int, const GdkRGBA *);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
@@ -893,8 +894,8 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 	cairo_fill (cr);
 
 	/* If there is a description, point to it */
-	if (bs->desc != NULL)
-	    txt[0] = bs->desc;
+	if (bar_seg->desc != NULL)
+	    txt[0] = bar_seg->desc;
 	else
 	    txt[0] = NULL;
 
@@ -920,14 +921,27 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 
 /* Draw lines of text */
 
-void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double yc, int sz, GdkRGBA *colour)
+void draw_text_lines(cairo_t *cr, char *txt[2], int max, int w, double xc, double yc, int sz, const GdkRGBA *colour)
 {
     int pc;
-    char *txt[2];
+    //char *txt[2];
+    char *ss;
     char s[10];
     double fsz;
     cairo_text_extents_t ext;
+ss = txt[0];
+if (ss == NULL)
+{printf("%s ss is null\n", debug_hdr); fflush(stdout);}
+else
+{printf("%s ss is %s\n", debug_hdr, ss); fflush(stdout);}
 
+ss = txt[1];
+if (ss == NULL)
+{printf("%s ss is null\n", debug_hdr); fflush(stdout);}
+else
+{printf("%s ss is %s\n", debug_hdr, ss); fflush(stdout);}
+
+    /*
     if (bs->desc == NULL && bc->show_perc == FALSE)
     	return;
 
@@ -955,6 +969,7 @@ void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double
     cairo_move_to (cr, desc_x, desc_y);
     cairo_show_text (cr, ps->desc);
     cairo_fill (cr);
+    */
 
     return;
 }
