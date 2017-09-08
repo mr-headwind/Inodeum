@@ -921,7 +921,7 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 
 /* Draw lines of text */
 
-void draw_text_lines(cairo_t *cr, char *txt[2], int max, int w, double xc, double yc, int sz, const GdkRGBA *colour)
+void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double yc, int sz, const GdkRGBA *colour)
 {
     int pc;
     //char *txt[2];
