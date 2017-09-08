@@ -80,7 +80,7 @@ int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 CText * new_chart_text(char *, const GdkRGBA *, int);
 void free_chart_text(CText *);
-void draw_text_lines(cairo_t *, char **, int, int, double, double, int, const GdkRGBA *);
+void draw_text_lines(cairo_t *, GList *, int, double, double, int, const GdkRGBA *);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
@@ -873,7 +873,6 @@ void draw_bar(cairo_t *cr, BarChart *bc, Bar *bar, int bar_w, int bar_h, double 
 {
     int pc;
     double seg_h;
-    char *txt[2];
     char s[10];
     GList *l;
     const GdkRGBA *rgba;
@@ -893,26 +892,31 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
     	cairo_rectangle (cr, xc, yc, (double) bar_w, seg_h);
 	cairo_fill (cr);
 
-	/* If there is a description, point to it */
-	if (bar_seg->desc != NULL)
-	    txt[0] = bar_seg->desc;
-	else
-	    txt[0] = NULL;
+	/* Add the description even if null */
+	GList *txt = NULL;
+	char *ss;
+	//txt = g_list_append (txt, bar_seg->desc);
+printf("%s glist txt 1\n", debug_hdr);fflush(stdout);
 
-	/* If percentages are desired set up the text and point to it */
+	/* Pass percentage if requested */
 	if (bc->show_perc == TRUE)
 	{
 	    pc = (bar_seg->segment_value / bar->abs_val) * 100.00;
 	    sprintf(s, "(%d%%)", pc);
-	    txt[1] = s;
-	}
-	else
-	{
-	    txt[1] = NULL;
+	    ss = (char *) malloc(20);
+	    strcpy(ss, s);
+printf("%s glist txt 2 s %s\n", debug_hdr, s);fflush(stdout);
+	    //txt = g_list_append (txt, ss);
+printf("%s glist txt 3\n", debug_hdr);fflush(stdout);
 	}
 
 	/* Draw the text line(s) if any */
-	draw_text_lines(cr, txt, 2, bar_w, xc, yc + seg_h / 2, bar->txt_sz, bar->txt_colour);
+printf("%s glist txt 5\n", debug_hdr);fflush(stdout);
+{printf("%s txt length %d\n", debug_hdr, g_list_length(txt)); fflush(stdout);}
+	draw_text_lines(cr, txt, bar_w, xc, yc + seg_h / 2, bar->txt_sz, bar->txt_colour);
+	if (ss != NULL)
+	    free(ss);
+	g_list_free (txt);
     }
 
     return;
@@ -921,25 +925,36 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 
 /* Draw lines of text */
 
-void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double yc, int sz, const GdkRGBA *colour)
+void draw_text_lines(cairo_t *cr, GList *txt, int w, double xc, double yc, int sz, const GdkRGBA *colour)
 {
     int pc;
-    //char *txt[2];
+    GList *l;
     char *ss;
     char s[10];
     double fsz;
     cairo_text_extents_t ext;
-ss = txt[0];
+
+    /* Loop thru text lines */
+    for(l = txt; l != NULL; l = l->next)
+    {
+printf("%s glist txt 6\n", debug_hdr);fflush(stdout);
+if (l != NULL)
+{printf("%s l is not null\n", debug_hdr); fflush(stdout);}
+    	ss = (char *) l->data;
+printf("%s glist txt 7 ss %s\n", debug_hdr, ss);fflush(stdout);
+//ss = txt[0];
 if (ss == NULL)
 {printf("%s ss is null\n", debug_hdr); fflush(stdout);}
 else
 {printf("%s ss is %s\n", debug_hdr, ss); fflush(stdout);}
 
-ss = txt[1];
+/*ss = txt[1];
 if (ss == NULL)
 {printf("%s ss is null\n", debug_hdr); fflush(stdout);}
 else
 {printf("%s ss is %s\n", debug_hdr, ss); fflush(stdout);}
+*/
+    }
 
     /*
     if (bs->desc == NULL && bc->show_perc == FALSE)
