@@ -309,13 +309,13 @@ gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 
 show_surface_info(cr, &allocation);	// Info or Debug
 
-    /* Do title before alocation is adjusted (this does nothing if there is no title) */
-    pie_chart_title(cr, m_ui->pie_chart, &allocation, GTK_ALIGN_CENTER, GTK_ALIGN_START);
-
-    /* Some space needs to be set aside for a bar chart */
+    /* Drawing area space needs to be split up for a pie chart and a bar chart */
     pseudo_alloc.width = (double) pseudo_alloc.width * 0.7;
     pseudo_alloc.x = 0;
     pseudo_alloc.y = 0;
+
+    /* Do title (this does nothing if there is no title) */
+    pie_chart_title(cr, m_ui->pie_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_END);
 
     /* Draw the pie chart */
     draw_pie_chart(cr, m_ui->pie_chart, &pseudo_alloc);

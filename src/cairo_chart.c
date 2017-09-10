@@ -80,7 +80,7 @@ int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 CText * new_chart_text(char *, const GdkRGBA *, int);
 void free_chart_text(CText *);
-void draw_text_lines(cairo_t *, GList *, int, double, double, int, const GdkRGBA *);
+void draw_text_lines(cairo_t *, char **, int, int, double, double, int, const GdkRGBA *);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
@@ -874,8 +874,9 @@ void draw_bar(cairo_t *cr, BarChart *bc, Bar *bar, int bar_w, int bar_h, double 
     int pc;
     double seg_h;
     char s[10];
-    GList *l;
+    char *txt[2];
     const GdkRGBA *rgba;
+    GList *l;
     BarSegment *bar_seg;
 
     /* Loop thru the bar segments */
@@ -893,30 +894,22 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 	cairo_fill (cr);
 
 	/* Add the description even if null */
-	GList *txt = NULL;
-	char *ss;
-	//txt = g_list_append (txt, bar_seg->desc);
-printf("%s glist txt 1\n", debug_hdr);fflush(stdout);
+	txt[0] = bar_seg->desc;
 
 	/* Pass percentage if requested */
 	if (bc->show_perc == TRUE)
 	{
-	    pc = (bar_seg->segment_value / bar->abs_val) * 100.00;
-	    sprintf(s, "(%d%%)", pc);
-	    ss = (char *) malloc(20);
-	    strcpy(ss, s);
-printf("%s glist txt 2 s %s\n", debug_hdr, s);fflush(stdout);
-	    //txt = g_list_append (txt, ss);
-printf("%s glist txt 3\n", debug_hdr);fflush(stdout);
+	    pc = ((bar_seg->segment_value / bar->abs_val) * 100.00) + 0.5;
+	    sprintf(s, "%d%%", pc);
+	    txt[1] = s;
+	}
+	else
+	{
+	    txt[1] = NULL;
 	}
 
 	/* Draw the text line(s) if any */
-printf("%s glist txt 5\n", debug_hdr);fflush(stdout);
-{printf("%s txt length %d\n", debug_hdr, g_list_length(txt)); fflush(stdout);}
-	draw_text_lines(cr, txt, bar_w, xc, yc + seg_h / 2, bar->txt_sz, bar->txt_colour);
-	if (ss != NULL)
-	    free(ss);
-	g_list_free (txt);
+	draw_text_lines(cr, txt, 2, bar_w, xc, yc + (seg_h / 2), bar->txt_sz, bar->txt_colour);
     }
 
     return;
@@ -925,66 +918,60 @@ printf("%s glist txt 5\n", debug_hdr);fflush(stdout);
 
 /* Draw lines of text */
 
-void draw_text_lines(cairo_t *cr, GList *txt, int w, double xc, double yc, int sz, const GdkRGBA *colour)
+void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double yc, int sz, const GdkRGBA *rgba)
 {
-    int pc;
-    GList *l;
-    char *ss;
-    char s[10];
+    int i, len, l_max;
+    double tx, ty;
+    char *ss, *s_max;
     double fsz;
     cairo_text_extents_t ext;
 
-    /* Loop thru text lines */
-    for(l = txt; l != NULL; l = l->next)
+printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d sz %d\n", debug_hdr, xc, yc, w, sz);fflush(stdout);
+    /* May need to override the requested font size */
+    for(l_max = 0, i = 0; i < max; i++)
     {
-printf("%s glist txt 6\n", debug_hdr);fflush(stdout);
-if (l != NULL)
-{printf("%s l is not null\n", debug_hdr); fflush(stdout);}
-    	ss = (char *) l->data;
-printf("%s glist txt 7 ss %s\n", debug_hdr, ss);fflush(stdout);
-//ss = txt[0];
-if (ss == NULL)
-{printf("%s ss is null\n", debug_hdr); fflush(stdout);}
-else
-{printf("%s ss is %s\n", debug_hdr, ss); fflush(stdout);}
+    	ss = txt[i];
 
-/*ss = txt[1];
-if (ss == NULL)
-{printf("%s ss is null\n", debug_hdr); fflush(stdout);}
-else
-{printf("%s ss is %s\n", debug_hdr, ss); fflush(stdout);}
-*/
+    	if (ss == NULL)
+	    continue;
+
+	len = strlen(ss);
+
+	if (len > l_max)
+	{
+	    l_max = len;
+	    s_max = ss;
+	}
     }
-
-    /*
-    if (bs->desc == NULL && bc->show_perc == FALSE)
+    
+printf("%s draw_text_lines 1  l_max %d  s_max %s\n", debug_hdr, l_max, s_max);fflush(stdout);
+    if ((fsz = confirm_font_size(cr, s_max, w, sz)) == FALSE)
     	return;
 
-    if (bs->desc != NULL)
-    	txt[0] = bs->desc;
-    else
-    	txt[0] = NULL;
+printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
+    cairo_set_font_size (cr, fsz);
+    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 
-    if (bc->show_perc == TRUE)
+    /* Loop thru text lines */
+    ty = yc;
+
+    for(i = 0; i < max; i++)
     {
-    	pc = (bar_seg->segment_value / bar->abs_val) * 100.00;
-    	sprintf(s, "(%d%%)", pc);
-    	txt[1] = s;
+    	ss = txt[i];
+
+    	if (ss == NULL)
+	    continue;
+
+	cairo_text_extents (cr, ss, &ext);
+	tx = xc + ((w - ext.width) / 2);
+	ty = ty + (ext.height / 2);
+printf("%s draw_text_lines 3  tx %0.4f ty %0.4f extw %0.4f exth %0.4f\n", 
+			debug_hdr, tx, ty, ext.width, ext.height);fflush(stdout);
+	cairo_move_to (cr, tx, ty);
+	cairo_show_text (cr, ss);
+	cairo_fill (cr);
+	ty = ty + ext.height + 2;
     }
-    else
-    {
-    	txt[1] = NULL;
-    }
-
-    draw_text_lines(cr, txt, bar_w, xc, yc + seg_h / 2, bar->txt_sz, bar->txt_colour);
-
-    if ((fsz = confirm_font_size(cr, bs->desc, bar_w, bar->txt_sz)) == FALSE)
-    	return FALSE;
-
-    cairo_move_to (cr, desc_x, desc_y);
-    cairo_show_text (cr, ps->desc);
-    cairo_fill (cr);
-    */
 
     return;
 }
@@ -1004,6 +991,7 @@ int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h
     double xc, yc, fsz;
     const GdkRGBA *rgba;
     cairo_text_extents_t *ext;
+    const double ltr_buf = 2.0;
 
     /* Ignore if no title */
     if (title == NULL)
@@ -1052,7 +1040,8 @@ int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h
 	    break;
 
     	case GTK_ALIGN_END:
-	    yc = ((double) allocation->height - ext->height) + allocation->y;
+	    yc = (double) (allocation->height + allocation->y) - ltr_buf;
+	    //yc = (double) (allocation->height + allocation->y) - (ext->height / 2);
 	    break;
 
 	default:
