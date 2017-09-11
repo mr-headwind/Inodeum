@@ -60,6 +60,7 @@ typedef struct _pie_chart
     CText *title;
     double total_value;
     int legend;
+    int show_perc;
     GList *pie_slices;
 } PieChart;
 
@@ -68,11 +69,9 @@ typedef struct _pie_chart
 
 typedef struct _pie_slice
 {
-    char *desc;
+    CText *desc;
     double slice_value;
     const GdkRGBA *colour;
-    const GdkRGBA *txt_colour;
-    int txt_sz;
 } PieSlice;
 
 

@@ -53,7 +53,7 @@
 
 /* Prototypes */
 
-PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int);
+PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int, int);
 int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *, int);
 void free_pie_chart(PieChart *);
 void free_slices(gpointer);
@@ -104,11 +104,15 @@ static const double buf2_x = 10.0;
 // . Legend is either TRUE or FALSE.
 // . Text size is optional (0) and will default to 12.
 
-PieChart * pie_chart_create(char *title, double total_val, int legend, const GdkRGBA *txt_colour, int txt_sz)
+PieChart * pie_chart_create(char *title, double total_val, int legend, 
+			    const GdkRGBA *txt_colour, int txt_sz, int show_perc)
 {
     PieChart *pc;
 
     if (legend < 0 || legend > 1)
+    	return NULL;
+
+    if (show_perc < 0 || show_perc > 1)
     	return NULL;
 
     pc = (PieChart *) malloc(sizeof(PieChart));
@@ -116,6 +120,7 @@ PieChart * pie_chart_create(char *title, double total_val, int legend, const Gdk
 
     pc->title = new_chart_text(title, txt_colour, txt_sz);
 
+    pc->show_perc = show_perc;
     pc->total_value = total_val;
     pc->legend = legend;
 
@@ -141,21 +146,7 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
     ps = (PieSlice *) malloc(sizeof(PieSlice));
     memset(ps, 0, sizeof(PieSlice));
 
-    if (desc != NULL)
-    {
-    	ps->desc = malloc(strlen(desc) + 1);
-    	strcpy(ps->desc, desc);
-
-	if (txt_colour != NULL)
-	    ps->txt_colour = txt_colour;
-	else
-	    ps->txt_colour = &BLACK;
-
-	if (txt_sz > 0)
-	    ps->txt_sz = txt_sz;
-	else
-	    ps->txt_sz = 12;
-    }
+    ps->desc = new_chart_text(desc, txt_colour, txt_sz);
 
     ps->slice_value = val;
     ps->colour = colour;
@@ -187,8 +178,8 @@ void free_slices(gpointer data)
 
     ps = (PieSlice *) data;
     
-    if (ps->desc)
-	free(ps->desc);
+    if (ps->desc != NULL)
+    	free_chart_text(ps->desc);
 
     free(ps);
 
@@ -236,7 +227,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
 	    r = -1;
 
     /* Set pie centre and radius leaving a buffer at sides */
-    xc = (double) allocation->width / 2.5;
+    xc = (double) allocation->width / 2.0;
     yc = (double) allocation->height / 2.0;
     radius = (double) (allocation->width / 2.0) * 0.7;
 
@@ -269,7 +260,7 @@ void pc_drawing(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, 
     const GdkRGBA *rgba;
 
     /* Start point */
-    angle_from = M_PI * 3 / 2;
+    angle_from = M_PI * 3/2;
 
     /* Slices */
     for(l = pc->pie_slices; l != NULL; l = l->next)
@@ -282,7 +273,7 @@ void pc_drawing(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, 
     	if (tmp < 1.0)
 	    continue;
 
-    	angle_to = angle_from + (tmp * (M_PI / 180.0));			
+    	angle_to = angle_from + (tmp * (M_PI/180.0));			
 
     	/* Draw */
     	rgba = ps->colour;
@@ -316,7 +307,7 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     const GdkRGBA *rgba;
 
     /* Loop through the slices and set text if present */
-    angle_from = M_PI * 3 / 2;
+    angle_from = M_PI * 3/2;
 
     /* Slices and text */
     for(l = pc->pie_slices; l != NULL; l = l->next)
@@ -326,16 +317,16 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     	if (ps->desc == NULL)
 	    continue;
 
-	cairo_set_font_size (cr, (double) ps->txt_sz);
-    	rgba = ps->txt_colour;
+	cairo_set_font_size (cr, (double) ps->desc->sz);
+    	rgba = ps->desc->colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
-    	angle_to = angle_from + (tmp * (M_PI / 180.0));
+    	angle_to = angle_from + (tmp * (M_PI/180.0));
 
-	text_coords(cr, ps->desc, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
+	text_coords(cr, ps->desc->txt, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
 
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_move_to (cr, desc_x, desc_y);
-    	cairo_show_text (cr, ps->desc);
+    	cairo_show_text (cr, ps->desc->txt);
 	cairo_fill (cr);
     	angle_from = angle_to;
     }
@@ -377,7 +368,7 @@ int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, doubl
     double w, h, buf;
     GList *l;
     PieSlice *ps;
-    cairo_text_extents_t ext;
+    cairo_text_extents_t *ext;
 
     cairo_set_font_size (cr, 9.0);
     w = 1;
@@ -391,13 +382,14 @@ int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, doubl
     	if (ps->desc == NULL)
 	    return FALSE;
 
-	cairo_text_extents (cr, ps->desc, &ext);
-	w = w + ext.width + buf;
+	ext = ps->desc->ext;
+	cairo_text_extents (cr, ps->desc->txt, ext);
+	w = w + ext->width + buf;
 
 	if (w > max_w)
 	{
 	    w = 1;
-	    h = h + (ext.height / 2.0);
+	    h = h + (ext->height / 2.0);
 	}
 
 	if (h > max_h)
@@ -909,7 +901,7 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 	}
 
 	/* Draw the text line(s) if any */
-	draw_text_lines(cr, txt, 2, bar_w, xc, yc + (seg_h / 2), bar->txt_sz, bar->txt_colour);
+	draw_text_lines(cr, txt, 2, bar_w, xc, yc + (seg_h/2), bar->txt_sz, bar->txt_colour);
     }
 
     return;
@@ -1048,7 +1040,8 @@ int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h
 	    yc = ext->height + allocation->y;
     }
 
-printf("%s chart title xc %0.4f yc %0.4f\n", debug_hdr, xc, yc);fflush(stdout);
+printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s\n", 
+  debug_hdr, xc, yc, fsz, title->txt);fflush(stdout);
     /* Set Title */
     cairo_move_to (cr, xc, yc);
     cairo_show_text (cr, title->txt);
