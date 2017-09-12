@@ -315,7 +315,7 @@ show_surface_info(cr, &allocation);	// Info or Debug
     pseudo_alloc.y = 0;
 
     /* Do title (this does nothing if there is no title) */
-    pie_chart_title(cr, m_ui->pie_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_END);
+    pie_chart_title(cr, m_ui->pie_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Draw the pie chart */
     draw_pie_chart(cr, m_ui->pie_chart, &pseudo_alloc);
@@ -324,7 +324,7 @@ show_surface_info(cr, &allocation);	// Info or Debug
     pseudo_alloc.x = pseudo_alloc.width;
     pseudo_alloc.y = 0;
     pseudo_alloc.width = allocation.width - pseudo_alloc.x;
-    bar_chart_title(cr, m_ui->bar_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_END);
+    bar_chart_title(cr, m_ui->bar_chart, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 
     /* Draw the bar chart */
     draw_bar_chart(cr, m_ui->bar_chart, &pseudo_alloc);

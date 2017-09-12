@@ -368,7 +368,7 @@ int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, doubl
     double w, h, buf;
     GList *l;
     PieSlice *ps;
-    cairo_text_extents_t *ext;
+    CText *desc;
 
     cairo_set_font_size (cr, 9.0);
     w = 1;
@@ -382,14 +382,14 @@ int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, doubl
     	if (ps->desc == NULL)
 	    return FALSE;
 
-	ext = ps->desc->ext;
-	cairo_text_extents (cr, ps->desc->txt, ext);
-	w = w + ext->width + buf;
+	desc = ps->desc;
+	cairo_text_extents (cr, desc->txt, &(desc->ext));
+	w = w + desc->ext.width + buf;
 
 	if (w > max_w)
 	{
 	    w = 1;
-	    h = h + (ext->height / 2.0);
+	    h = h + (desc->ext.height / 2.0);
 	}
 
 	if (h > max_h)
@@ -415,7 +415,7 @@ void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double 
     GList *l;
     const GdkRGBA *rgba;
     PieSlice *ps;
-    cairo_text_extents_t ext;
+    CText *desc;
 
     /* Initial */
     cairo_set_font_size (cr, 9.0);
@@ -430,32 +430,34 @@ void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double 
     	if (ps->desc == NULL)		// Should not happen
 	    return;
 
+	desc = ps->desc;
+
     	/* Coloured rectangle */
     	rgba = ps->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 1.0);
-    	cairo_rectangle (cr, x, y, rect_width, ext.height);
+    	cairo_rectangle (cr, x, y, rect_width, desc->ext.height);
 	cairo_fill (cr);
 
     	/* Bit fiddly, but this puts a border on the rectangle */
     	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-    	cairo_rectangle (cr, x, y, rect_width, ext.height);
+    	cairo_rectangle (cr, x, y, rect_width, desc->ext.height);
 	cairo_stroke (cr);
 
 	/* Text description */
-	cairo_text_extents (cr, ps->desc, &ext);
+	cairo_text_extents (cr, desc->txt, &(desc->ext));
     	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-	cairo_move_to (cr, x + rect_width + buf1_x, y + ext.height);
-    	cairo_show_text (cr, ps->desc);
+	cairo_move_to (cr, x + rect_width + buf1_x, y + desc->ext.height);
+    	cairo_show_text (cr, desc->txt);
 	cairo_fill (cr);
 
 	/* Check position */
-	x = x + rect_width + buf2_x + ext.width;
+	x = x + rect_width + buf2_x + desc->ext.width;
 
 	if (x > max_w)
 	{
 	    x = 1;
-	    y = y + (ext.height / 2.0);
+	    y = y + (desc->ext.height / 2.0);
 	}
 
 	if (y > max_h)
@@ -1040,8 +1042,8 @@ int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h
 	    yc = ext->height + allocation->y;
     }
 
-printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s\n", 
-  debug_hdr, xc, yc, fsz, title->txt);fflush(stdout);
+printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s ext h %0.4f\n", 
+  debug_hdr, xc, yc, fsz, title->txt, ext->height);fflush(stdout);
     /* Set Title */
     cairo_move_to (cr, xc, yc);
     cairo_show_text (cr, title->txt);
