@@ -79,10 +79,11 @@ int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 CText * new_chart_text(char *, const GdkRGBA *, int);
+CText * percent_ctext(int, char *, const GdkRGBA *, int, CText *);
+CText * percent_text(cairo_t *, CText *, double, double, CText *);
 void free_chart_text(CText *);
 void draw_text_lines(cairo_t *, char **, int, int, double, double, int, const GdkRGBA *);
 double confirm_font_size(cairo_t *, char *, int, double);
-char * percent_text(void *, int, double, double, char *);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -148,6 +149,7 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
     memset(ps, 0, sizeof(PieSlice));
 
     ps->desc = new_chart_text(desc, txt_colour, txt_sz);
+    ps->perc_txt = percent_ctext(pc->show_perc, "(n%)", txt_colour, txt_sz, ps->desc);
 
     ps->slice_value = val;
     ps->colour = colour;
@@ -181,6 +183,9 @@ void free_slices(gpointer data)
     
     if (ps->desc != NULL)
     	free_chart_text(ps->desc);
+
+    if (ps->perc_txt != NULL)
+    	free_chart_text(ps->perc_txt);
 
     free(ps);
 
@@ -301,10 +306,12 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
 
 void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, double total_amt)
 {
+    int i;
     double angle_from, angle_to, tmp;
     double desc_x, desc_y;
-    char s[10];
-    char *txt[2];
+    //char s[10];
+    CText *txt[2];
+    CText *ctxt;
     GList *l;
     PieSlice *ps;
     const GdkRGBA *rgba;
@@ -317,32 +324,50 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     {
     	ps = (PieSlice *) l->data;
 
+    	/*
     	if (ps->desc == NULL)
 	    continue;
+	*/
 
 	/* Add the description even if null */
 	txt[0] = ps->desc;
 
 	/* Pass percentage if requested */
-	txt[1] = percent_text(ps->desc, pc->show_perc, ps->slice_value, total_amt, s);
+	txt[1] = percent_text(cr, ps->perc_txt, ps->slice_value, total_amt, ps->desc);
 
 	desc_x = 0;
 
-	for(i = 0, i < 2; i++)
+	for(i = 0; i < 2; i++)
 	{
-	    ss = txt[i];
+	    ctxt = txt[i];
 
-	    if (ss == NULL)
+	    if (ctxt == NULL)
 	    	continue;
 
+	    cairo_set_font_size (cr, (double) ctxt->sz);
+	    rgba = ctxt->colour;
+	    tmp = (ps->slice_value / total_amt) * 360.0;
+	    angle_to = angle_from + (tmp * (M_PI/180.0));
+
 	    if (desc_x == 0)
-		text_coords(cr, ss, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
+	    {
+		text_coords(cr, ctxt->txt, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
+		angle_from = angle_to;
+	    }
 	    else
+	    {
+	    	/*
 	    	extent on desc->txt
 	    	adjust desc_x
 	    	adjust desc_y
 	    	adjust fonts sz
+	    	*/
+	    }
 	    	
+	    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+	    cairo_move_to (cr, desc_x, desc_y);
+	    cairo_show_text (cr, ctxt->txt);
+	    cairo_fill (cr);
 	}
 	cairo_set_font_size (cr, (double) ps->desc->sz);
     	rgba = ps->desc->colour;
@@ -1122,6 +1147,56 @@ void free_chart_text(CText *ctext)
 }
 
 
+/* New chart text class */
+
+CText * percent_ctext(int show_pc, char *txt, const GdkRGBA *colour, int sz, CText *base_ctext)
+{
+    int fsz;
+    CText *ctext;
+
+    if (show_pc == FALSE)
+    	return NULL;
+
+    if (base_ctext != NULL)
+	fsz = (double) base_ctext->sz * 0.8;
+    else
+	fsz = sz;
+
+    ctext = new_chart_text(txt, colour, fsz);
+
+    return ctext;
+}
+
+
+/* Set up percentage text */
+
+CText * percent_text(cairo_t *cr, CText *perc_txt, double item_val, double total_val, CText *base_ctext)
+{
+    int pc;
+
+    if (perc_txt == NULL)
+    	return NULL;
+
+    pc = ((item_val / total_val) * 100.00) + 0.5;
+
+    if (base_ctext == NULL)
+    {
+	sprintf(perc_txt->txt, "%d%%", pc);
+    }
+    else
+    {
+	sprintf(perc_txt->txt, "(%d%%)", pc);
+	cairo_set_font_size (cr, (double) base_ctext->sz);
+	cairo_text_extents (cr, base_ctext->txt, &(base_ctext->ext));
+    }
+
+    cairo_set_font_size (cr, (double) perc_txt->sz);
+    cairo_text_extents (cr, perc_txt->txt, &(perc_txt->ext));
+
+    return perc_txt;
+}
+
+
 /* Confirm and override the font size if necessary */
 
 double confirm_font_size(cairo_t *cr, char *txt, int w, double sz)
@@ -1151,26 +1226,6 @@ double confirm_font_size(cairo_t *cr, char *txt, int w, double sz)
     }
 
     return sz_ok;
-}
-
-
-/* Set up percentage text */
-
-char * percent_text(void *p, int show_pc, double item_val, double total_val, char *s)
-{
-    int pc;
-
-    if (show_pc == FALSE)
-    	return NULL;
-
-    pc = ((item_val / total_val) * 100.00) + 0.5;
-
-    if (p != NULL)
-	sprintf(s, "(%d%%)", pc);
-    else
-	sprintf(s, "%d%%", pc);
-
-    return s;
 }
 
 

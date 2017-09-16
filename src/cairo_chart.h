@@ -70,6 +70,7 @@ typedef struct _pie_chart
 typedef struct _pie_slice
 {
     CText *desc;
+    CText *perc_txt;
     double slice_value;
     const GdkRGBA *colour;
 } PieSlice;
