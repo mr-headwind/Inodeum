@@ -108,8 +108,6 @@ typedef struct _bar_chart
 
 typedef struct _bar
 {
-    const GdkRGBA *txt_colour;
-    int txt_sz;
     double abs_val;
     double min_val;
     double max_val;
@@ -121,7 +119,8 @@ typedef struct _bar
 
 typedef struct _bar_segment
 {
-    char *desc;
+    CText *desc;
+    CText *perc_txt;
     const GdkRGBA *colour;
     double segment_value;
 } BarSegment;

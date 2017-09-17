@@ -329,10 +329,10 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
 	    continue;
 	*/
 
-	/* Add the description even if null */
+	/* Add the description (could be null) */
 	txt[0] = ps->desc;
 
-	/* Pass percentage if requested */
+	/* Pass percentage (could be null) */
 	txt[1] = percent_text(cr, ps->perc_txt, ps->slice_value, total_amt, ps->desc);
 
 	desc_x = 0;
@@ -356,12 +356,8 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
 	    }
 	    else
 	    {
-	    	/*
-	    	extent on desc->txt
-	    	adjust desc_x
-	    	adjust desc_y
-	    	adjust fonts sz
-	    	*/
+	    	desc_y += txt[i - 1]->ext.height;
+	    	desc_x = desc_x + ((txt[i-1]->ext.width - ctxt->ext.width) / 2);
 	    }
 	    	
 	    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
@@ -369,6 +365,7 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
 	    cairo_show_text (cr, ctxt->txt);
 	    cairo_fill (cr);
 	}
+	/*
 	cairo_set_font_size (cr, (double) ps->desc->sz);
     	rgba = ps->desc->colour;
     	tmp = (ps->slice_value / total_amt) * 360.0;
@@ -381,6 +378,7 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     	cairo_show_text (cr, ps->desc->txt);
 	cairo_fill (cr);
     	angle_from = angle_to;
+    	*/
     }
 
     return;
@@ -1157,10 +1155,11 @@ CText * percent_ctext(int show_pc, char *txt, const GdkRGBA *colour, int sz, CTe
     if (show_pc == FALSE)
     	return NULL;
 
+    fsz = sz;
+
     if (base_ctext != NULL)
-	fsz = (double) base_ctext->sz * 0.8;
-    else
-	fsz = sz;
+	if (base_ctext->sz > 8)
+	    fsz = (double) base_ctext->sz * 0.8;
 
     ctext = new_chart_text(txt, colour, fsz);
 
