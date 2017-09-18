@@ -65,11 +65,11 @@ extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
-extern PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int);
+extern PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int, int);
 extern int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const GdkRGBA *, int);
 extern BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
-extern Bar * bar_create(BarChart *, const GdkRGBA *, int);
-extern int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, double);
+extern Bar * bar_create(BarChart *);
+extern int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
 extern time_t date_tm_add(struct tm *, char *, int);
 
 
@@ -335,7 +335,8 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 
     //m_ui->pie_chart = pie_chart_create(NULL, 0, FALSE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create(NULL, 0, TRUE, NULL, 0);
-    m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9);
+    //m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, TRUE);
+    m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, FALSE);
 
     if (total > quota)
     {
@@ -354,9 +355,10 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 printf("%s quota %0.4f  rem %0.4f\n", debug_hdr, m_ui->days_quota, m_ui->days_rem); fflush(stdout);
     m_ui->bar_chart = bar_chart_create("Quota Rollover", &DARK_BLUE, 9, TRUE, NULL, NULL);
     //m_ui->bar_chart = bar_chart_create("Rollover Days (%)", &DARK_BLUE, 10, TRUE, NULL, NULL);
-    bar = bar_create(m_ui->bar_chart, &DARK_MAROON, 9);
-    bar_segment_create(m_ui->bar_chart, bar, NULL, &MID_YELLOW, m_ui->days_quota - m_ui->days_rem);
-    bar_segment_create(m_ui->bar_chart, bar, NULL, &WHITE, m_ui->days_rem);
+    bar = bar_create(m_ui->bar_chart);
+    bar_segment_create(m_ui->bar_chart, bar, NULL, &MID_YELLOW, &DARK_MAROON, 9, 
+    		       m_ui->days_quota - m_ui->days_rem);
+    bar_segment_create(m_ui->bar_chart, bar, NULL, &WHITE, &DARK_MAROON, 9, m_ui->days_rem);
 
     return;
 }

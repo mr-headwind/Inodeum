@@ -68,8 +68,8 @@ Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
 void free_axis(Axis *);
 void draw_axis(cairo_t *, Axis *, double, double, double, double);
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
-Bar * bar_create(BarChart *, const GdkRGBA *, int);
-int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, double);
+Bar * bar_create(BarChart *);
+int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
 void free_bar_chart(BarChart *);
 void free_bars(gpointer);
 void free_bar_segment(gpointer);
@@ -82,7 +82,7 @@ CText * new_chart_text(char *, const GdkRGBA *, int);
 CText * percent_ctext(int, char *, const GdkRGBA *, int, CText *);
 CText * percent_text(cairo_t *, CText *, double, double, CText *);
 void free_chart_text(CText *);
-void draw_text_lines(cairo_t *, char **, int, int, double, double, int, const GdkRGBA *);
+void draw_text_lines(cairo_t *, CText **, int, int, double, double);
 double confirm_font_size(cairo_t *, char *, int, double);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
@@ -309,7 +309,6 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     int i;
     double angle_from, angle_to, tmp;
     double desc_x, desc_y;
-    //char s[10];
     CText *txt[2];
     CText *ctxt;
     GList *l;
@@ -323,11 +322,6 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
-
-    	/*
-    	if (ps->desc == NULL)
-	    continue;
-	*/
 
 	/* Add the description (could be null) */
 	txt[0] = ps->desc;
@@ -365,20 +359,6 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
 	    cairo_show_text (cr, ctxt->txt);
 	    cairo_fill (cr);
 	}
-	/*
-	cairo_set_font_size (cr, (double) ps->desc->sz);
-    	rgba = ps->desc->colour;
-    	tmp = (ps->slice_value / total_amt) * 360.0;
-    	angle_to = angle_from + (tmp * (M_PI/180.0));
-
-	text_coords(cr, ps->desc->txt, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
-
-    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-    	cairo_move_to (cr, desc_x, desc_y);
-    	cairo_show_text (cr, ps->desc->txt);
-	cairo_fill (cr);
-    	angle_from = angle_to;
-    	*/
     }
 
     return;
@@ -707,24 +687,13 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 // . Everything is optional (NULL or 0).
 // . The only thing that is ulimately essential is that at least one Bar Segment must be created
 //   separately with the 'bar_segment_create' function which adds it to the GList of bar segments.
-// . Text size defaults to 10 and text colour defaults to BLACK if a description is present.
 
-Bar * bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
+Bar * bar_create(BarChart *bc)
 {
     Bar *bar;
 
     bar = (Bar *) malloc(sizeof(Bar));
     memset(bar, 0, sizeof(Bar));
-
-    if (txt_colour != NULL)
-	bar->txt_colour = txt_colour;
-    else
-	bar->txt_colour = &BLACK;
-
-    if (txt_sz > 0)
-	bar->txt_sz = txt_sz;
-    else
-	bar->txt_sz = 10;
 
     bc->bars = g_list_append (bc->bars, bar);
 
@@ -736,8 +705,10 @@ Bar * bar_create(BarChart *bc, const GdkRGBA *txt_colour, int txt_sz)
 
 // Rules for creation:-
 // . Description is optional (NULL or 0).
+// . Text size defaults to 10 and text colour defaults to BLACK if a description is present.
 
-int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour, double val)
+int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour, 
+		       const GdkRGBA *txt_colour, int txt_sz, double val)
 {
     BarSegment *seg;
 
@@ -750,11 +721,8 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
     seg = (BarSegment *) malloc(sizeof(BarSegment));
     memset(seg, 0, sizeof(BarSegment));
 
-    if (desc != NULL)
-    {
-    	seg->desc = malloc(strlen(desc) + 1);
-    	strcpy(seg->desc, desc);
-    }
+    seg->desc = new_chart_text(desc, txt_colour, txt_sz);
+    seg->perc_txt = percent_ctext(bc->show_perc, "(n%)", txt_colour, txt_sz, seg->desc);
 
     if (val < bar->min_val || bar->min_val == 0)
     	bar->min_val = val;
@@ -820,8 +788,11 @@ void free_bar_segment(gpointer data)
 
     bar_seg = (BarSegment *) data;
     
-    if (bar_seg->desc)
-	free(bar_seg->desc);
+    if (bar_seg->desc != NULL)
+    	free_chart_text(bar_seg->desc);
+
+    if (bar_seg->perc_txt != NULL)
+    	free_chart_text(bar_seg->perc_txt);
 
     free(bar_seg);
 
@@ -889,12 +860,9 @@ printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
     xc = (double) (allocation->x + ((allocation->width / 2) - ((bar_width * n) / 2)));
     yc = allocation->height - buf1;
 
-    if (bc->title != NULL)
-    	yc = yc - bc->title->ext.height - 1;
-
+    /* Loop thru the bars */
     i = 0;
 
-    /* Loop thru the bars */
     for(l = bc->bars; l != NULL; l = l->next)
     {
     	bar = (Bar *) l->data;
@@ -905,6 +873,7 @@ printf("%s draw bc 3a xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->max_val, 
 							       bar->min_val, bar->abs_val);fflush(stdout);
     	draw_bar(cr, bc, bar, bar_width, (allocation->height - (buf1 * 3)), xc, yc);
+    	i++;
     }
 
     return;
@@ -917,8 +886,7 @@ void draw_bar(cairo_t *cr, BarChart *bc, Bar *bar, int bar_w, int bar_h, double 
 {
     int pc;
     double seg_h;
-    char s[10];
-    char *txt[2];
+    CText *txt[2];
     const GdkRGBA *rgba;
     GList *l;
     BarSegment *bar_seg;
@@ -937,14 +905,14 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
     	cairo_rectangle (cr, xc, yc, (double) bar_w, seg_h);
 	cairo_fill (cr);
 
-	/* Add the description even if null */
+	/* Add the description (could be null) */
 	txt[0] = bar_seg->desc;
 
-	/* Pass percentage if requested */
-	txt[1] = percent_text(bar_seg->desc, bc->show_perc, bar_seg->segment_value, bar->abs_val, s);
+	/* Pass percentage (could be null) */
+	txt[1] = percent_text(cr, bar_seg->perc_txt, bar_seg->segment_value, bar->abs_val, bar_seg->desc);
 
 	/* Draw the text line(s) if any */
-	draw_text_lines(cr, txt, 2, bar_w, xc, yc + (seg_h/2), bar->txt_sz, bar->txt_colour);
+	draw_text_lines(cr, txt, 2, bar_w, xc, yc + (seg_h/2));
     }
 
     return;
@@ -953,59 +921,57 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 
 /* Draw lines of text */
 
-void draw_text_lines(cairo_t *cr, char *txt[], int max, int w, double xc, double yc, int sz, const GdkRGBA *rgba)
+void draw_text_lines(cairo_t *cr, CText *txt[], int max, int w, double xc, double yc)
 {
-    int i, len, l_max;
+    int i;
     double tx, ty;
-    char *ss, *s_max;
     double fsz;
-    cairo_text_extents_t ext;
+    CText *ctxt;
+    const GdkRGBA *rgba;
 
-printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d sz %d\n", debug_hdr, xc, yc, w, sz);fflush(stdout);
+printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d\n", debug_hdr, xc, yc, w);fflush(stdout);
     /* May need to override the requested font size */
-    for(l_max = 0, i = 0; i < max; i++)
+    for(i = 0; i < max; i++)
     {
-    	ss = txt[i];
+    	ctxt = txt[i];
 
-    	if (ss == NULL)
+    	if (ctxt == NULL)
 	    continue;
 
-	len = strlen(ss);
+	if ((fsz = confirm_font_size(cr, ctxt->txt, w, ctxt->sz)) == FALSE)
+	    return;
 
-	if (len > l_max)
+	if (fsz != ctxt->sz)
 	{
-	    l_max = len;
-	    s_max = ss;
+	    ctxt->sz = fsz;
+	    cairo_set_font_size (cr, ctxt->sz);
+	    cairo_text_extents (cr, ctxt->txt, &(ctxt->ext));
 	}
     }
     
-printf("%s draw_text_lines 1  l_max %d  s_max %s\n", debug_hdr, l_max, s_max);fflush(stdout);
-    if ((fsz = confirm_font_size(cr, s_max, w, sz)) == FALSE)
-    	return;
-
 printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
-    cairo_set_font_size (cr, fsz);
-    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-
     /* Loop thru text lines */
     ty = yc;
 
     for(i = 0; i < max; i++)
     {
-    	ss = txt[i];
+    	ctxt = txt[i];
 
-    	if (ss == NULL)
+    	if (ctxt == NULL)
 	    continue;
 
-	cairo_text_extents (cr, ss, &ext);
-	tx = xc + ((w - ext.width) / 2);
-	ty = ty + (ext.height / 2);
+	cairo_set_font_size (cr, ctxt->sz);
+	rgba = ctxt->colour;
+	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+
+	tx = xc + ((w - ctxt->ext.width) / 2);
+	ty = ty + (ctxt->ext.height / 2);
 printf("%s draw_text_lines 3  tx %0.4f ty %0.4f extw %0.4f exth %0.4f\n", 
-			debug_hdr, tx, ty, ext.width, ext.height);fflush(stdout);
+			debug_hdr, tx, ty, ctxt->ext.width, ctxt->ext.height);fflush(stdout);
 	cairo_move_to (cr, tx, ty);
-	cairo_show_text (cr, ss);
+	cairo_show_text (cr, ctxt->txt);
 	cairo_fill (cr);
-	ty = ty + ext.height + 2;
+	ty = ty + ctxt->ext.height + 2;
     }
 
     return;
