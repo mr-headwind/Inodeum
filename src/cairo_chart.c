@@ -387,6 +387,26 @@ void text_coords(cairo_t *cr, char *desc,
 
 /* Check if there is sufficient room for a legend */
 
+int check_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double alloc_w, double alloc_h)
+{
+    double w, h, buf;
+    GList *l;
+    PieSlice *ps;
+    CText *desc;
+
+    // Determinine a fixed minimum size for pie
+    // get size (extent) of each slice for desc & percent if applicable
+    // work out space horizontally :-  alloc_width :- determine how many 'lines' required
+    // alloc_height must be > height of lines + minimum allowed height of pie plus space between
+    // if OK, set coords for pie
+    // if not OK:-
+    // test vertical legend
+    // total width size of each slice is ext.width + rect_width (20) + buf1 (5)  *** percent ?
+
+    return TRUE;
+}
+
+
 // Fairly basic rules:-
 // . If any text missing, legend not possible
 // . Each item consists of a coloured rectangle, text and some buffer space
