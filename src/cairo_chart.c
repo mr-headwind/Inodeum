@@ -73,7 +73,7 @@ int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA
 void free_bar_chart(BarChart *);
 void free_bars(gpointer);
 void free_bar_segment(gpointer);
-void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
+int draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 void draw_bar(cairo_t *, BarChart *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
@@ -90,8 +90,9 @@ void show_surface_info(cairo_t *, GtkAllocation *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-cairo_chart.c ";
+static const double lgd_rect_width = 20.0;
+static const double lgd_buf = 5.0;
 static const double buf1_y = 5.0;
-static const double rect_width = 20.0;
 static const double buf1_x = 5.0;
 static const double buf2_x = 10.0;
 
@@ -385,22 +386,87 @@ void text_coords(cairo_t *cr, char *desc,
 }
 
 
-/* Check if there is sufficient room for a legend */
+// Check if there is sufficient room for a legend, abort if any text missing
+// Multiple loops are a little inefficient, but clearer and easier for changes
 
-int check_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double alloc_w, double alloc_h)
+int check_legend(cairo_t *cr, PieChart *pc, double *lw, double *lh, double alloc_w, double alloc_h)
 {
-    double w, h, buf;
+    double rows, rw, sw;
+    double max_txt_width, max_txt_height;
     GList *l;
     PieSlice *ps;
     CText *desc;
+    const int min_pie_sz = 130;			// Radius plus space buffer
 
-    // Determinine a fixed minimum size for pie
-    // get size (extent) of each slice for desc & percent if applicable
-    // work out space horizontally :-  alloc_width :- determine how many 'lines' required
-    // alloc_height must be > height of lines + minimum allowed height of pie plus space between
+    /* Get size (extent) of each slice for desc & percent if applicable */
+    for(l = pc->pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+
+    	if (ps->desc == NULL)
+	    return FALSE;
+
+	desc = ps->desc;
+	cairo_set_font_size (cr, (double) desc->sz);
+	cairo_text_extents (cr, desc->txt, &(desc->ext));
+
+	if (ps->perc_txt != NULL)
+	{
+	    desc = ps->perc_txt;
+	    cairo_set_font_size (cr, (double) desc->sz);
+	    cairo_text_extents (cr, desc->txt, &(desc->ext));
+	}
+    }
+
+    /* Work out space required horizontally as allocation height vs legend 'rows' required */
+    *lw = 0;
+    *lh = 0;
+    rows = 1;
+    rw = 1;
+    max_txt_width = 0;
+    max_txt_height = 0;
+
+    for(l = pc->pie_slices; l != NULL; l = l->next)
+    {
+    	ps = (PieSlice *) l->data;
+
+	desc = ps->desc;
+	sw = desc->ext.width + lgd_rect_width + lgd_buf;
+
+	if (desc->ext.height > max_txt_height)
+	    max_txt_height = desc->ext.height;
+
+	if (ps->perc_txt != NULL)
+	{
+	    desc = ps->perc_txt;
+	    sw = sw + desc->ext.width + 2;
+	}
+
+	if (sw > max_txt_width)
+	    max_txt_width = sw;
+
+	rw += sw;
+
+	if (rw > alloc_w)
+	{
+	    rows++;
+	    rw = sw + 1;
+	}
+    }
+
+    /* Check height - alloc height must be > (row height * rows) + min. pie size (radius plus...) */
+    if (alloc_h > ((rows * (max_txt_height + 2)) + min_pie_sz))
+    {
+    	*lh = (rows * (max_txt_height + 2));
+    	return TRUE;
+    }
+
+    /* Work out space required vertically as allocation height vs max legend width and rows */
+
+    // alloc_width must be > max text width + (radius plus...) of pie plus space between
     // if OK, set coords for pie
-    // if not OK:-
-    // test vertical legend
+    // if not OK, no legend
+
     // total width size of each slice is ext.width + rect_width (20) + buf1 (5)  *** percent ?
 
     return TRUE;
@@ -423,7 +489,7 @@ int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, doubl
     cairo_set_font_size (cr, 9.0);
     w = 1;
     h = yc + radius + buf1_y;
-    buf = rect_width + (buf1_x * 2);			// rect (20), rect:text (5), item:item (10)
+    buf = lgd_rect_width + (buf1_x * 2);			// rect (20), rect:text (5), item:item (10)
 
     for(l = pie_slices; l != NULL; l = l->next)
     {
@@ -486,23 +552,23 @@ void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double 
     	rgba = ps->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 1.0);
-    	cairo_rectangle (cr, x, y, rect_width, desc->ext.height);
+    	cairo_rectangle (cr, x, y, lgd_rect_width, desc->ext.height);
 	cairo_fill (cr);
 
     	/* Bit fiddly, but this puts a border on the rectangle */
     	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-    	cairo_rectangle (cr, x, y, rect_width, desc->ext.height);
+    	cairo_rectangle (cr, x, y, lgd_rect_width, desc->ext.height);
 	cairo_stroke (cr);
 
 	/* Text description */
 	cairo_text_extents (cr, desc->txt, &(desc->ext));
     	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-	cairo_move_to (cr, x + rect_width + buf1_x, y + desc->ext.height);
+	cairo_move_to (cr, x + lgd_rect_width + buf1_x, y + desc->ext.height);
     	cairo_show_text (cr, desc->txt);
 	cairo_fill (cr);
 
 	/* Check position */
-	x = x + rect_width + buf2_x + desc->ext.width;
+	x = x + lgd_rect_width + buf2_x + desc->ext.width;
 
 	if (x > max_w)
 	{
@@ -835,7 +901,7 @@ int bar_chart_title(cairo_t *cr, BarChart *bc, GtkAllocation *allocation, GtkAli
 
 /* Draw a bar chart */
 
-void draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
+int draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
 {
     int i, n, x, y, bar_width;
     double xc, yc;
@@ -871,7 +937,9 @@ printf("%s draw bc 1 alloc x %d y %d w %d h %d\n", debug_hdr, allocation->x, all
 							      allocation->width, allocation->height); fflush(stdout);
 printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
 
-    if (bar_width > max_bar_width)
+    if (bar_width < 1)
+	return FALSE;
+    else if (bar_width > max_bar_width)
     	bar_width = max_bar_width;
     else
     	bar_width -= 1;
@@ -896,7 +964,7 @@ printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->m
     	i++;
     }
 
-    return;
+    return TRUE;
 }
 
 
