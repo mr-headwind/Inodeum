@@ -62,6 +62,7 @@ int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
 void pc_drawing(cairo_t *, PieChart *, double, double, double, double);
 void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
+int check_legend(cairo_t *, PieChart *, double *, double *, double, double);
 int legend_space(cairo_t *, GList *, double, double, double, double);
 void pc_legend(cairo_t *, GList *, double, double, double, double);
 Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
@@ -213,6 +214,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
 {
     int r, tf;
     double xc, yc, radius, total_amt;
+    double lw, lh;
     GList *l;
     PieSlice *ps;
 
@@ -238,14 +240,31 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     yc = (double) allocation->height / 2.0;
     radius = (double) (allocation->width / 2.0) * 0.7;
 
+    /* Check if there is sufficient space for a legend */
+    if (pc->legend == TRUE)
+	tf = check_legend(cr, pc, &lw, &lh, (double) allocation->width, (double) allocation->height)
+    else
+    	tf = FALSE;
+
+    if (tf == TRUE)
+    {
+	if (lw == 0)
+	    yc = ((double) allocation->height lh) / 2.0;
+	radius = ((double) (allocation->width - lw) / 2.0) * 0.7;
+    else
+	xc = ((double) allocation->width - lw) / 2.0;
+    }
+
     /* Draw the pie chart */
     pc_drawing(cr, pc, xc, yc, radius, total_amt);
 
     /* Check if there is sufficient space for a legend */
+    /*
     if (pc->legend == TRUE)
 	tf = legend_space(cr, pc->pie_slices, yc, radius, (double) allocation->width, allocation->height);
     else
     	tf = FALSE;
+    */
 
     /* Labels or legend */
     if ( tf == FALSE)
@@ -391,6 +410,7 @@ void text_coords(cairo_t *cr, char *desc,
 
 int check_legend(cairo_t *cr, PieChart *pc, double *lw, double *lh, double alloc_w, double alloc_h)
 {
+    int no_slices;
     double rows, rw, sw;
     double max_txt_width, max_txt_height;
     GList *l;
@@ -419,10 +439,9 @@ int check_legend(cairo_t *cr, PieChart *pc, double *lw, double *lh, double alloc
     }
 
     /* Work out space required horizontally as allocation height vs legend 'rows' required */
-    *lw = 0;
-    *lh = 0;
     rows = 1;
     rw = 1;
+    no_slices = 0;
     max_txt_width = 0;
     max_txt_height = 0;
 
@@ -430,6 +449,7 @@ int check_legend(cairo_t *cr, PieChart *pc, double *lw, double *lh, double alloc
     {
     	ps = (PieSlice *) l->data;
 
+	no_slices++;
 	desc = ps->desc;
 	sw = desc->ext.width + lgd_rect_width + lgd_buf;
 
@@ -455,21 +475,23 @@ int check_legend(cairo_t *cr, PieChart *pc, double *lw, double *lh, double alloc
     }
 
     /* Check height - alloc height must be > (row height * rows) + min. pie size (radius plus...) */
-    if (alloc_h > ((rows * (max_txt_height + 2)) + min_pie_sz))
-    {
-    	*lh = (rows * (max_txt_height + 2));
+    *lh = (rows * (max_txt_height + 2));
+    *lw = 0;
+
+    if (alloc_h > (*lh + min_pie_sz))
     	return TRUE;
-    }
 
     /* Work out space required vertically as allocation height vs max legend width and rows */
+    if (alloc_w < (max_txt_width + min_pie_sz + 2))
+    	return FALSE;
 
-    // alloc_width must be > max text width + (radius plus...) of pie plus space between
-    // if OK, set coords for pie
-    // if not OK, no legend
+    *lw = max_txt_width + 2;
+    *lh = (no_slices * (max_txt_height + 2));
 
-    // total width size of each slice is ext.width + rect_width (20) + buf1 (5)  *** percent ?
+    if (alloc_h > *lw)
+    	return TRUE;
 
-    return TRUE;
+    return FALSE;
 }
 
 
