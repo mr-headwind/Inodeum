@@ -63,9 +63,7 @@ void pc_drawing(cairo_t *, PieChart *, double, double, double, double);
 void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
 int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, double *, GtkAllocation *);
-int legend_space(cairo_t *, GList *, double, double, double, double);
-void pc_legend(cairo_t *, GList *, double, double, double, double);
-void draw_pc_legend(cairo_t *, GList *, double, double, double);
+void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
 Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
 void free_axis(Axis *);
 void draw_axis(cairo_t *, Axis *, double, double, double, double);
@@ -94,9 +92,7 @@ void show_surface_info(cairo_t *, GtkAllocation *);
 static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 static const double lgd_rect_width = 20.0;
 static const double lgd_buf = 5.0;
-static const double buf1_y = 5.0;
-static const double buf1_x = 5.0;
-static const double buf2_x = 10.0;
+static const double r_rad = 0.7;
 
 
 
@@ -152,7 +148,7 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
     memset(ps, 0, sizeof(PieSlice));
 
     ps->desc = new_chart_text(desc, txt_colour, txt_sz);
-    ps->perc_txt = percent_ctext(pc->show_perc, "(n%)", txt_colour, txt_sz, ps->desc);
+    ps->perc_txt = percent_ctext(pc->show_perc, "(nnnnnn%)", txt_colour, txt_sz, ps->desc);
 
     ps->slice_value = val;
     ps->colour = colour;
@@ -240,7 +236,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     /* Set default pie centre and radius leaving a buffer at sides */
     xc = (double) allocation->width / 2.0;
     yc = (double) allocation->height / 2.0;
-    radius = xc * 0.7;
+    radius = xc * r_rad;
 
     /* Check if there is sufficient space for a legend */
     if (pc->legend == TRUE)
@@ -251,20 +247,11 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     /* Draw the pie chart */
     pc_drawing(cr, pc, xc, yc, radius, total_amt);
 
-    /* Check if there is sufficient space for a legend */
-    /*
-    if (pc->legend == TRUE)
-	tf = legend_space(cr, pc->pie_slices, yc, radius, (double) allocation->width, allocation->height);
-    else
-    	tf = FALSE;
-    */
-
     /* Labels or legend */
     if (lgd == FALSE)
     	ps_labels(cr, pc, xc, yc, radius, total_amt);
     else
-    	draw_pc_legend(cr, pc->pie_slices, lx, ly, (double) allocation->width);
-    	//pc_legend(cr, pc->pie_slices, yc, radius, (double) allocation->width, allocation->height);
+    	draw_pc_legend(cr, pc->pie_slices, total_amt, lx, ly, (double) allocation->width);
 
     return r;
 }
@@ -316,7 +303,7 @@ printf("%s angle to %0.4f angle fr %0.4f\n", debug_hdr, angle_to, angle_from);ff
 }
 
 
-/* Loop through the slices and draw each */
+/* Loop through the slices and draw labels */
 
 void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, double total_amt)
 {
@@ -332,17 +319,17 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     /* Loop through the slices and set text if present */
     angle_from = M_PI * 3/2;
 
-    /* Slices and text */
     for(l = pc->pie_slices; l != NULL; l = l->next)
     {
     	ps = (PieSlice *) l->data;
 
-	/* Add the description (could be null) */
+	/* Set the description (could be null) */
 	txt[0] = ps->desc;
 
-	/* Pass percentage (could be null) */
+	/* Set percentage (could be null) */
 	txt[1] = percent_text(cr, ps->perc_txt, ps->slice_value, total_amt, ps->desc);
 
+	/* Loop to print any description and percentage */
 	desc_x = 0;
 
 	for(i = 0; i < 2; i++)
@@ -460,7 +447,7 @@ int check_legend(cairo_t *cr, PieChart *pc,
 	if (ps->perc_txt != NULL)
 	{
 	    desc = ps->perc_txt;
-	    sw = sw + desc->ext.width + 2;
+	    sw = sw + desc->ext.width + lgd_buf;
 	}
 
 	if (sw > max_txt_width)
@@ -483,92 +470,40 @@ int check_legend(cairo_t *cr, PieChart *pc,
     if (alloc_h >= (lgd_h + min_pie_sz))
     {
 	*yc = (alloc_h - lgd_h) / 2.0;
-	*radius = *yc * 0.7;
-	*lx = alloc_x;
+	*radius = *yc * r_rad;
+	*lx = alloc_x + 1;
 	*ly = alloc_y + alloc_h - lgd_h;
     	return TRUE;
     }
 
     // Work out space required vertically:- allocation height vs max legend width and rows
     // If sufficient space, determine legend coordinates and adjust pie coordinates
-printf("%s lgd sp 1 max_txt_width %0.4f alloc_w %0.4f\n", debug_hdr, max_txt_width, alloc_w); fflush(stdout);
 
-    if (alloc_w < (max_txt_width + min_pie_sz + 2))
+    if (alloc_w < (max_txt_width + min_pie_sz + lgd_buf))
     	return FALSE;
 
     lgd_w = max_txt_width + 2;
-    lgd_h = (no_slices * (max_txt_height + 2)) + (lgd_buf * 3);
-printf("%s lgd sp 2 lgd_w %0.4f lgd_h %0.4f\n", debug_hdr, lgd_w, lgd_h); fflush(stdout);
+    lgd_h = (no_slices * (max_txt_height + 2));
 
     if (alloc_h >= lgd_h)
     {
 	*xc = (alloc_w - lgd_w) / 2.0;
-	*radius = *xc * 0.7;
+	*radius = *xc * r_rad;
 	*lx = alloc_x + alloc_w - lgd_w;
-	*ly = alloc_y + (lgd_buf * 3);
+	*ly = alloc_y + ((alloc_h - lgd_h) / 2);
     	return TRUE;
     }
-printf("%s lgd sp 3\n", debug_hdr); fflush(stdout);
 
     return FALSE;
 }
 
 
-// Fairly basic rules:-
-// . If any text missing, legend not possible
-// . Each item consists of a coloured rectangle, text and some buffer space
-// . Use 1.5 line spacing
-// . Items applied across page while they fit then down, etc. while there is space
-
-int legend_space(cairo_t *cr, GList *pie_slices, double yc, double radius, double max_w, double max_h)
-{
-    double w, h, buf;
-    GList *l;
-    PieSlice *ps;
-    CText *desc;
-
-    cairo_set_font_size (cr, 9.0);
-    w = 1;
-    h = yc + radius + buf1_y;
-    buf = lgd_rect_width + (buf1_x * 2);			// rect (20), rect:text (5), item:item (10)
-
-    for(l = pie_slices; l != NULL; l = l->next)
-    {
-    	ps = (PieSlice *) l->data;
-
-    	if (ps->desc == NULL)
-	    return FALSE;
-
-	desc = ps->desc;
-	cairo_text_extents (cr, desc->txt, &(desc->ext));
-	w = w + desc->ext.width + buf;
-
-	if (w > max_w)
-	{
-	    w = 1;
-	    h = h + (desc->ext.height / 2.0);
-	}
-
-	if (h > max_h)
-	    return FALSE;
-    }
-
-/* Debug
-printf("%s sp 1 max_w %0.4f max_y %0.4f\n", debug_hdr, max_w, max_h); fflush(stdout);
-printf("%s sp 2 w %0.4f ext_w %0.4f\n", debug_hdr, w, ext.width); fflush(stdout);
-printf("%s sp 3 h %0.4f ext_h %0.4f\n", debug_hdr, h, ext.height); fflush(stdout);
-printf("%s sp 4 \n", debug_hdr); fflush(stdout);
-*/
-
-    return TRUE;
-}
-
-
 /* Draw the pie chart legend */
 
-void draw_pc_legend(cairo_t *cr, GList *pie_slices, double lx, double ly, double alloc_w)
+void draw_pc_legend(cairo_t *cr, GList *pie_slices,
+		    double total_amt, double lx, double ly, double alloc_w)
 {
-    double x, y;
+    double x, y, tmp;
     GList *l;
     const GdkRGBA *rgba;
     PieSlice *ps;
@@ -585,7 +520,12 @@ void draw_pc_legend(cairo_t *cr, GList *pie_slices, double lx, double ly, double
 	desc = ps->desc;
 
 	/* Check position */
-	if ((x + lgd_rect_width + lgd_buf + desc->ext.width) > alloc_w)
+	tmp = x + lgd_rect_width + lgd_buf + desc->ext.width;
+
+	if (ps->perc_txt)
+	    tmp = tmp + lgd_buf + ps->perc_txt->ext.width;
+
+	if (tmp > alloc_w)
 	{
 	    x = lx;
 	    y = y + desc->ext.height + lgd_buf;
@@ -603,12 +543,12 @@ void draw_pc_legend(cairo_t *cr, GList *pie_slices, double lx, double ly, double
     	cairo_rectangle (cr, x, y - desc->ext.height, lgd_rect_width, desc->ext.height);
 	cairo_stroke (cr);
 
-	/* Text description */
+	/* Text description an percentage */
 	x = x + lgd_rect_width + lgd_buf;
 
 	cairo_set_font_size (cr, desc->sz);
     	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-	cairo_move_to (cr, x, y - desc->ext.height);
+	cairo_move_to (cr, x, y);
     	cairo_show_text (cr, desc->txt);
 	cairo_fill (cr);
 
@@ -616,76 +556,13 @@ void draw_pc_legend(cairo_t *cr, GList *pie_slices, double lx, double ly, double
 
 	if (ps->perc_txt != NULL)
 	{
-	    desc = ps->perc_txt;
-	    //cairo_set_font_size (cr, desc->sz);
+	    desc = percent_text(cr, ps->perc_txt, ps->slice_value, total_amt, ps->desc);
+	    cairo_set_font_size (cr, desc->sz);
+	    cairo_move_to (cr, x, y);
+	    cairo_show_text (cr, desc->txt);
+	    cairo_fill (cr);
+	    x = x + desc->ext.width + lgd_buf;
 	}
-    }
-
-/* Debug
-printf("%s leg 1  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, max_w, max_h); fflush(stdout);
-printf("%s leg 2\n", debug_hdr); fflush(stdout);
-printf("%s leg 3  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, max_w, max_h); fflush(stdout);
-*/
-
-    return;
-}
-
-
-/* Draw the pie chart legend - see function 'legend_space' for rules */
-
-void pc_legend(cairo_t *cr, GList *pie_slices, double yc, double radius, double max_w, double max_h)
-{
-    double x, y;
-    GList *l;
-    const GdkRGBA *rgba;
-    PieSlice *ps;
-    CText *desc;
-
-    /* Initial */
-    cairo_set_font_size (cr, 9.0);
-    x = 1;
-    y = yc + radius + buf1_y;
-
-    /* Loop through slices and draw a legend for each */
-    for(l = pie_slices; l != NULL; l = l->next)
-    {
-    	ps = (PieSlice *) l->data;
-
-    	if (ps->desc == NULL)		// Should not happen
-	    return;
-
-	desc = ps->desc;
-
-    	/* Coloured rectangle */
-    	rgba = ps->colour;
-    	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-    	cairo_set_line_width (cr, 1.0);
-    	cairo_rectangle (cr, x, y, lgd_rect_width, desc->ext.height);
-	cairo_fill (cr);
-
-    	/* Bit fiddly, but this puts a border on the rectangle */
-    	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-    	cairo_rectangle (cr, x, y, lgd_rect_width, desc->ext.height);
-	cairo_stroke (cr);
-
-	/* Text description */
-	cairo_text_extents (cr, desc->txt, &(desc->ext));
-    	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-	cairo_move_to (cr, x + lgd_rect_width + buf1_x, y + desc->ext.height);
-    	cairo_show_text (cr, desc->txt);
-	cairo_fill (cr);
-
-	/* Check position */
-	x = x + lgd_rect_width + buf2_x + desc->ext.width;
-
-	if (x > max_w)
-	{
-	    x = 1;
-	    y = y + (desc->ext.height / 2.0);
-	}
-
-	if (y > max_h)
-	    return;			// Should not happen
     }
 
 /* Debug
@@ -850,8 +727,8 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 //   separately with the 'bar_create' function which adds it to the GList of bars.
 // . Text size defaults to 12 and text colour defaults to BLACK if a title is present.
 // . The axes are convenience items only. It isn't necessary to have any axes at all and
-//   they can be separate items in their own right if desired. If present they, ( or even it)
-//   will drawn and destroyed as part of the bar chart functions. Just saves having to keep
+//   they can be separate items in their own right if desired. If present they, (or it)
+//   will be drawn and destroyed as part of the bar chart functions. Just saves having to keep
 //   track and code manually.
 
 BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, int show_perc, 
@@ -878,7 +755,6 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 /* Create and initialise a new bar chart bar */
 
 // Rules for creation:-
-// . Everything is optional (NULL or 0).
 // . The only thing that is ulimately essential is that at least one Bar Segment must be created
 //   separately with the 'bar_segment_create' function which adds it to the GList of bar segments.
 
@@ -1333,20 +1209,20 @@ CText * percent_ctext(int show_pc, char *txt, const GdkRGBA *colour, int sz, CTe
 
 CText * percent_text(cairo_t *cr, CText *perc_txt, double item_val, double total_val, CText *base_ctext)
 {
-    int pc;
+    double pc;
 
     if (perc_txt == NULL)
     	return NULL;
 
-    pc = ((item_val / total_val) * 100.00) + 0.5;
+    pc = ((item_val / total_val) * 100.00);
 
     if (base_ctext == NULL)
     {
-	sprintf(perc_txt->txt, "%d%%", pc);
+	sprintf(perc_txt->txt, "%0.1f%%", pc);
     }
     else
     {
-	sprintf(perc_txt->txt, "(%d%%)", pc);
+	sprintf(perc_txt->txt, "(%0.1f%%)", pc);
 	cairo_set_font_size (cr, (double) base_ctext->sz);
 	cairo_text_extents (cr, base_ctext->txt, &(base_ctext->ext));
     }

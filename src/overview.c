@@ -336,7 +336,7 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     //m_ui->pie_chart = pie_chart_create(NULL, 0, FALSE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create(NULL, 0, TRUE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, TRUE);
-    m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, TRUE, &DARK_BLUE, 9, FALSE);
+    m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, TRUE);
 
     if (total > quota)
     {
