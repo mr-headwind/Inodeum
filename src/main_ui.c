@@ -55,7 +55,7 @@ void usage_btns(MainUi *);
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
-void log_panel(MainUi *);
+void pref_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
@@ -77,7 +77,7 @@ extern void OnOverview(GtkWidget*, gpointer);
 extern void OnService(GtkWidget*, gpointer);
 extern void OnMonitor(GtkWidget*, gpointer);
 extern void OnHistory(GtkWidget*, gpointer);
-extern void OnLog(GtkWidget*, gpointer);
+extern void OnPref(GtkWidget*, gpointer);
 extern void OnAbout(GtkWidget*, gpointer);
 extern void OnUserLogin(GtkWidget*, gpointer);
 extern void OnResetPW(GtkWidget*, gpointer);
@@ -288,7 +288,7 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
     service_panel(m_ui);
     monitor_panel(m_ui);
     history_panel(m_ui);
-    log_panel(m_ui);
+    pref_panel(m_ui);
     about_panel(m_ui);
 
     /* Combine everything onto the main view */
@@ -333,8 +333,8 @@ void usage_btns(MainUi *m_ui)
     set_panel_btn(m_ui->history_btn, "history_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i++;
-    m_ui->log_btn = gtk_button_new_with_label("Log");  
-    set_panel_btn(m_ui->log_btn, "log_btn",  m_ui->btn_panel, i, j, 1, 1);
+    m_ui->pref_btn = gtk_button_new_with_label("Preferences");  
+    set_panel_btn(m_ui->pref_btn, "pref_btn",  m_ui->btn_panel, i, j, 1, 1);
 
     i++;
     m_ui->about_btn = gtk_button_new_with_label("About");  
@@ -345,7 +345,7 @@ void usage_btns(MainUi *m_ui)
     g_signal_connect (m_ui->service_btn, "clicked", G_CALLBACK (OnService), m_ui);
     g_signal_connect (m_ui->monitor_btn, "clicked", G_CALLBACK (OnMonitor), m_ui);
     g_signal_connect (m_ui->history_btn, "clicked", G_CALLBACK (OnHistory), m_ui);
-    g_signal_connect (m_ui->log_btn, "clicked", G_CALLBACK (OnLog), m_ui);
+    g_signal_connect (m_ui->pref_btn, "clicked", G_CALLBACK (OnPref), m_ui);
     g_signal_connect (m_ui->about_btn, "clicked", G_CALLBACK (OnAbout), m_ui);
 
     return;
@@ -385,9 +385,9 @@ void history_panel(MainUi *m_ui)
 }
 
 
-/* Create widgets for the log panel */
+/* Create widgets for the preference panel */
 
-void log_panel(MainUi *m_ui)
+void pref_panel(MainUi *m_ui)
 {  
 
     return;

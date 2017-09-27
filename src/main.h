@@ -72,7 +72,7 @@ typedef struct _main_ui
     GtkWidget *service_btn;
     GtkWidget *monitor_btn;
     GtkWidget *history_btn;
-    GtkWidget *log_btn;
+    GtkWidget *pref_btn;
     GtkWidget *about_btn;
 
     /* Data panels */

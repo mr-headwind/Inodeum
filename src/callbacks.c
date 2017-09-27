@@ -54,7 +54,7 @@ gboolean OnOvExpose(GtkWidget *, cairo_t *, gpointer);
 void OnService(GtkWidget*, gpointer);
 void OnMonitor(GtkWidget*, gpointer);
 void OnHistory(GtkWidget*, gpointer);
-void OnLog(GtkWidget*, gpointer);
+void OnPref(GtkWidget*, gpointer);
 void OnAbout(GtkWidget*, gpointer);
 void OnUserLogin(GtkWidget*, gpointer);
 void OnResetPW(GtkWidget*, gpointer);
@@ -183,7 +183,7 @@ void OnHistory(GtkWidget *btn, gpointer user_data)
 
 /* Callback - Log file */
 
-void OnLog(GtkWidget *btn, gpointer user_data)
+void OnPref(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
     IspData *isp_data;
@@ -193,7 +193,7 @@ void OnLog(GtkWidget *btn, gpointer user_data)
     isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display log file contents */
-    printf("%s Log not available yet\n", debug_hdr); fflush(stdout);
+    printf("%s Preference not available yet\n", debug_hdr); fflush(stdout);
 
     return;
 }  
