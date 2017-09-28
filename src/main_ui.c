@@ -55,7 +55,6 @@ void usage_btns(MainUi *);
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
-void pref_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
@@ -69,6 +68,7 @@ extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void display_overview(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
+extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
 extern void monitor_panel(MainUi *);
 extern void set_css();
@@ -80,7 +80,6 @@ extern void OnHistory(GtkWidget*, gpointer);
 extern void OnPref(GtkWidget*, gpointer);
 extern void OnAbout(GtkWidget*, gpointer);
 extern void OnUserLogin(GtkWidget*, gpointer);
-extern void OnResetPW(GtkWidget*, gpointer);
 extern void OnQuit(GtkWidget*, gpointer);
 
 extern void OnOK(GtkRange*, gpointer);
@@ -379,15 +378,6 @@ void service_panel(MainUi *m_ui)
 /* Create widgets for the history panel */
 
 void history_panel(MainUi *m_ui)
-{  
-
-    return;
-}
-
-
-/* Create widgets for the preference panel */
-
-void pref_panel(MainUi *m_ui)
 {  
 
     return;

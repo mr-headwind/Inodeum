@@ -53,11 +53,46 @@
 
 int get_user_pref(char *, char **);
 
+extern void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
+extern void OnResetPW(GtkWidget*, gpointer);
+
 
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-prefs.c ";
 
+
+
+/* Create widgets for the preference panel */
+
+void pref_panel(MainUi *m_ui)
+{  
+    /* Create preference container grid */
+    m_ui->pref_cntr = gtk_grid_new();
+    gtk_widget_set_name(m_ui->pref_cntr, "pref_panel");
+    gtk_grid_set_row_spacing(GTK_GRID (m_ui->pref_cntr), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (m_ui->pref_cntr), 2);
+    gtk_container_set_border_width (GTK_CONTAINER (m_ui->pref_cntr), 2);
+    gtk_widget_set_margin_top (m_ui->pref_cntr, 5);
+    gtk_widget_set_margin_left (m_ui->pref_cntr, 15);
+
+    /* Delete saved password */
+    m_ui->reset_pw_btn = gtk_button_new_with_label("Delete Saved Password");
+    set_panel_btn(m_ui->reset_pw_btn, "reset_pw_btn",  m_ui->pref_cntr, 0, 0, 1, 1);
+    g_signal_connect (m_ui->reset_pw_btn, "activate", G_CALLBACK (OnResetPW), m_ui);
+    gtk_widget_show (m_ui->reset_pw_btn);
+
+    /* Display perecentage on usage pie chart */
+
+    /* Pie chart labels or legend */
+
+    /* Display perecentage on bar chart */
+
+    /* Add to the panel stack */
+    gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->pref_cntr, "pref_panel");
+
+    return;
+}
 
 
 /* Return a pointer to a user preference value for a key or NULL */

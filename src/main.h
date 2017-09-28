@@ -97,6 +97,9 @@ typedef struct _main_ui
     /* Widgets - monitor */
     GtkWidget *log_cntr;
 
+    /* Widgets - preferences */
+    GtkWidget *reset_pw_btn;
+
     /* Other */
     GtkWidget *curr_panel;
 
