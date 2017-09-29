@@ -206,19 +206,15 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
 
     /* Service menu items */
     m_ui->user_login = gtk_menu_item_new_with_mnemonic ("User Login...");
-    m_ui->reset_pw = gtk_menu_item_new_with_mnemonic ("Delete saved password");
 
     /* Add to menu */
     gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->service_menu), m_ui->user_login);
-    gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->service_menu), m_ui->reset_pw);
 
     /* Callbacks */
     g_signal_connect (m_ui->user_login, "activate", G_CALLBACK (OnUserLogin), m_ui); 
-    g_signal_connect (m_ui->reset_pw, "activate", G_CALLBACK (OnResetPW), m_ui); 
 
     /* Show menu items */
     gtk_widget_show (m_ui->user_login);
-    gtk_widget_show (m_ui->reset_pw);
 
 
     /* HELP MENU */

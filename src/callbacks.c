@@ -192,8 +192,8 @@ void OnPref(GtkWidget *btn, gpointer user_data)
     m_ui = (MainUi *) user_data;
     isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
-    /* Display log file contents */
-    printf("%s Preference not available yet\n", debug_hdr); fflush(stdout);
+    /* Display About details */
+    show_panel(m_ui->pref_cntr, m_ui);
 
     return;
 }  

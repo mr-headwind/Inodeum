@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <main.h>
 
 
 /* Defines */
@@ -79,7 +80,7 @@ void pref_panel(MainUi *m_ui)
     /* Delete saved password */
     m_ui->reset_pw_btn = gtk_button_new_with_label("Delete Saved Password");
     set_panel_btn(m_ui->reset_pw_btn, "reset_pw_btn",  m_ui->pref_cntr, 0, 0, 1, 1);
-    g_signal_connect (m_ui->reset_pw_btn, "activate", G_CALLBACK (OnResetPW), m_ui);
+    g_signal_connect (m_ui->reset_pw_btn, "clicked", G_CALLBACK (OnResetPW), m_ui);
     gtk_widget_show (m_ui->reset_pw_btn);
 
     /* Display perecentage on usage pie chart */
