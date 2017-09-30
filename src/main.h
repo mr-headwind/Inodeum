@@ -59,7 +59,6 @@ typedef struct _main_ui
     GtkWidget *file_hdr, *service_hdr, *help_hdr;
     GtkWidget *file_exit;
     GtkWidget *user_login;
-    GtkWidget *reset_pw;
     GtkWidget *help_about;
 
     /* Main Frame widgets */
@@ -99,6 +98,7 @@ typedef struct _main_ui
 
     /* Widgets - preferences */
     GtkWidget *reset_pw_btn;
+    GtkWidget *pw_cntr, *pie_chart_cntr, *bar_chart_cntr;
 
     /* Other */
     GtkWidget *curr_panel;

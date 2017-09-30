@@ -53,8 +53,13 @@
 /* Prototypes */
 
 int get_user_pref(char *, char **);
+GtkWidget * reset_pw(MainUi *);
+GtkWidget * pie_chart_prefs(MainUi *);
+GtkWidget * bar_chart_prefs(MainUi *);
 
 extern void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
+extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+extern void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, int, int, int, int);
 extern void OnResetPW(GtkWidget*, gpointer);
 
 
@@ -68,31 +73,156 @@ static const char *debug_hdr = "DEBUG-prefs.c ";
 
 void pref_panel(MainUi *m_ui)
 {  
-    /* Create preference container grid */
-    m_ui->pref_cntr = gtk_grid_new();
+    /* Create preference container */
+    m_ui->pref_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_name(m_ui->pref_cntr, "pref_panel");
-    gtk_grid_set_row_spacing(GTK_GRID (m_ui->pref_cntr), 2);
-    gtk_grid_set_column_spacing(GTK_GRID (m_ui->pref_cntr), 2);
-    gtk_container_set_border_width (GTK_CONTAINER (m_ui->pref_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->pref_cntr, 5);
-    gtk_widget_set_margin_left (m_ui->pref_cntr, 15);
+    gtk_widget_set_margin_top (m_ui->pref_cntr, 10);
+    gtk_widget_set_margin_left (m_ui->pref_cntr, 5);
 
     /* Delete saved password */
-    m_ui->reset_pw_btn = gtk_button_new_with_label("Delete Saved Password");
-    set_panel_btn(m_ui->reset_pw_btn, "reset_pw_btn",  m_ui->pref_cntr, 0, 0, 1, 1);
-    g_signal_connect (m_ui->reset_pw_btn, "clicked", G_CALLBACK (OnResetPW), m_ui);
-    gtk_widget_show (m_ui->reset_pw_btn);
+    m_ui->pw_cntr = reset_pw(m_ui);
+    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), m_ui->pw_cntr, FALSE, FALSE, 0);
 
-    /* Display perecentage on usage pie chart */
-
-    /* Pie chart labels or legend */
-
-    /* Display perecentage on bar chart */
+    /* Overview charts */
+    m_ui->pie_chart_cntr = pie_chart_prefs(m_ui);
+    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), m_ui->pie_chart_cntr, FALSE, FALSE, 0);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->pref_cntr, "pref_panel");
 
     return;
+}
+
+
+/* Delete saved password on keyring */
+
+GtkWidget * reset_pw(MainUi *m_ui)
+{
+    GtkWidget *frame;
+
+    /* Containers */
+    frame = gtk_frame_new("Reset Password");
+
+    /* Reset button */
+    m_ui->reset_pw_btn = gtk_button_new_with_label("Delete Saved Password");
+    gtk_widget_set_halign(m_ui->reset_pw_btn, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(m_ui->reset_pw_btn, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(m_ui->reset_pw_btn, 5);
+    gtk_widget_set_margin_bottom(m_ui->reset_pw_btn, 5);
+    gtk_container_add(GTK_CONTAINER (frame), m_ui->reset_pw_btn);
+    g_signal_connect (m_ui->reset_pw_btn, "clicked", G_CALLBACK (OnResetPW), m_ui);
+    gtk_widget_show (m_ui->reset_pw_btn);
+
+    return frame;
+}
+
+
+/* Preferences for overview panel pie chart */
+
+GtkWidget * pie_chart_prefs(MainUi *m_ui)
+{
+    GtkWidget *frame;
+    GtkWidget *grid;
+    GtkWidget *lbl;
+    GtkWidget *radio, *radio_grp;
+
+    /* Containers */
+    frame = gtk_frame_new("Overview Pie Chart");
+    grid = gtk_grid_new();
+
+    /* Label */
+    create_label(&(lbl), "usg_lbl", "Display Text", grid, 0, 0, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set label and percentage options */
+    create_radio(&radio, NULL, "Labels", "rad_1", grid, FALSE, 1, 0, 1,1);
+    radio_grp = radio;
+    gtk_widget_set_margin_top (radio, 5);
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1,1);
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1,1);
+
+    /* Label */
+    create_label(&(lbl), "typ_lbl", "Labels", grid, 0, 3, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_start(lbl, 15);css.c
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set legend options */
+    create_radio(&radio, NULL, "On Chart", "rad_1", grid, FALSE, 1, 3, 1,1);
+    radio_grp = radio;
+    gtk_widget_set_margin_top (radio, 5);
+    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1,1);
+    gtk_widget_set_margin_top (radio, 5);
+
+    gtk_container_add(GTK_CONTAINER (frame), grid);
+
+    return frame;
+}
+
+
+/* Preferences for overview panel bar chart */
+
+GtkWidget * bar_chart_prefs(MainUi *m_ui)
+{
+    GtkWidget *frame;
+    GtkWidget *grid;
+    GtkWidget *lbl;
+    GtkWidget *radio, *radio_grp;
+
+    /* Containers */
+    frame = gtk_frame_new("Overview Pie Chart");
+    grid = gtk_grid_new();
+
+    /* Label */
+    create_label(&(lbl), "usg_lbl", "Display Text", grid, 0, 0, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set label and percentage options */
+    create_radio(&radio, NULL, "Labels", "rad_1", grid, FALSE, 1, 0, 1,1);
+    radio_grp = radio;
+    gtk_widget_set_margin_top (radio, 5);
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1,1);
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1,1);
+
+    /* Label */
+    create_label(&(lbl), "typ_lbl", "Labels", grid, 0, 3, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_start(lbl, 15);css.c
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set legend options */
+    create_radio(&radio, NULL, "On Chart", "rad_1", grid, FALSE, 1, 3, 1,1);
+    radio_grp = radio;
+    gtk_widget_set_margin_top (radio, 5);
+    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1,1);
+    gtk_widget_set_margin_top (radio, 5);
+
+    gtk_container_add(GTK_CONTAINER (frame), grid);
+
+    /* Containers */
+    frame = gtk_frame_new("Overview Bar Chart");
+    grid = gtk_grid_new();
+
+    /* Label */
+    create_label(&(lbl), "usg_lbl", "Display Text", grid, 0, 0, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set label and percentage options */
+    create_radio(&radio, NULL, "Labels", "rad_1", grid, FALSE, 1, 0, 1,1);
+    radio_grp = radio;
+    gtk_widget_set_margin_top (radio, 5);
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, TRUE, 1, 1, 1,1);
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, FALSE, 1, 2, 1,1);
+
+    gtk_container_add(GTK_CONTAINER (frame), grid);
+
+    return frame;
 }
 
 

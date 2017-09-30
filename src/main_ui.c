@@ -56,6 +56,7 @@ void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, int, int, int, int);
 void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
 
@@ -426,6 +427,26 @@ void create_entry(GtkWidget **ent, char *nm,
 
     gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (*cntr), *ent, col, row, 1, 1);
+
+    return;
+}
+
+
+/* Create standard radio */
+
+void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidget *cntr, 
+		  int active, int col, int row, int c_spn, int r_spn)
+{  
+    if (grp == NULL)
+	*rad = gtk_radio_button_new_with_label (NULL, txt);
+    else
+	*rad = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (grp), txt);
+
+    gtk_widget_set_name(*rad, "rad_1");
+    gtk_grid_attach(GTK_GRID (cntr), *rad, col, row, c_spn, r_spn);
+
+    if (active == TRUE)
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (*rad), TRUE);
 
     return;
 }
