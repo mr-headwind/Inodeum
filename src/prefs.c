@@ -52,15 +52,16 @@
 
 /* Prototypes */
 
+void pref_panel(MainUi *);
 int get_user_pref(char *, char **);
 GtkWidget * reset_pw(MainUi *);
-GtkWidget * pie_chart_prefs(MainUi *);
-GtkWidget * bar_chart_prefs(MainUi *);
+GtkWidget * chart_prefs(MainUi *);
 
 extern void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, int, int, int, int);
 extern void OnResetPW(GtkWidget*, gpointer);
+extern void OnPrefSave(GtkWidget*, gpointer);
 
 
 /* Globals */
@@ -72,7 +73,9 @@ static const char *debug_hdr = "DEBUG-prefs.c ";
 /* Create widgets for the preference panel */
 
 void pref_panel(MainUi *m_ui)
-{  
+{
+    GtkWidget *chart_cntr;
+
     /* Create preference container */
     m_ui->pref_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_name(m_ui->pref_cntr, "pref_panel");
@@ -84,8 +87,8 @@ void pref_panel(MainUi *m_ui)
     gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), m_ui->pw_cntr, FALSE, FALSE, 0);
 
     /* Overview charts */
-    m_ui->pie_chart_cntr = pie_chart_prefs(m_ui);
-    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), m_ui->pie_chart_cntr, FALSE, FALSE, 0);
+    chart_cntr = chart_prefs(m_ui);
+    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), chart_cntr, FALSE, FALSE, 0);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->pref_cntr, "pref_panel");
@@ -117,36 +120,37 @@ GtkWidget * reset_pw(MainUi *m_ui)
 }
 
 
-/* Preferences for overview panel pie chart */
+/* Preferences for overview panel charts */
 
-GtkWidget * pie_chart_prefs(MainUi *m_ui)
+GtkWidget * chart_prefs(MainUi *m_ui)
 {
     GtkWidget *frame;
     GtkWidget *grid;
     GtkWidget *lbl;
+    GtkWidget *save_btn;
     GtkWidget *radio, *radio_grp;
 
     /* Containers */
-    frame = gtk_frame_new("Overview Pie Chart");
+    frame = gtk_frame_new("Overview Charts");
     grid = gtk_grid_new();
 
     /* Label */
-    create_label(&(lbl), "usg_lbl", "Display Text", grid, 0, 0, 1, 1);
+    create_label(&(lbl), "title_4", "Usage Pie Chart", grid, 0, 0, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
     gtk_widget_set_margin_start(lbl, 15);
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
-    create_radio(&radio, NULL, "Labels", "rad_1", grid, FALSE, 1, 0, 1,1);
+    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 0, 1,1);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 5);
     create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1,1);
     create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1,1);
 
     /* Label */
-    create_label(&(lbl), "typ_lbl", "Labels", grid, 0, 3, 1, 1);
+    create_label(&(lbl), "typ_lbl", "Description", grid, 0, 3, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 15);css.c
+    gtk_widget_set_margin_start(lbl, 15);
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set legend options */
@@ -155,6 +159,25 @@ GtkWidget * pie_chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_top (radio, 5);
     create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1,1);
     gtk_widget_set_margin_top (radio, 5);
+
+    /* Label */
+    create_label(&(lbl), "title_4", "Quota Bar Chart", grid, 0, 4, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_top(lbl, 12);
+    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set label and percentage options */
+    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 4, 1,1);
+    radio_grp = radio;
+    gtk_widget_set_margin_top (radio, 12);
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, TRUE, 1, 5, 1,1);
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, FALSE, 1, 6, 1,1);
+
+    /* Save button */
+    save_btn = gtk_button_new_with_label("Save");
+    gtk_grid_attach(GTK_GRID (grid), save_btn, 2, 7, 1, 1);
+    g_signal_connect (save_btn, "clicked", G_CALLBACK (OnPrefSave), m_ui);
 
     gtk_container_add(GTK_CONTAINER (frame), grid);
 
@@ -171,56 +194,6 @@ GtkWidget * bar_chart_prefs(MainUi *m_ui)
     GtkWidget *lbl;
     GtkWidget *radio, *radio_grp;
 
-    /* Containers */
-    frame = gtk_frame_new("Overview Pie Chart");
-    grid = gtk_grid_new();
-
-    /* Label */
-    create_label(&(lbl), "usg_lbl", "Display Text", grid, 0, 0, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 15);
-    gtk_widget_set_margin_end(lbl, 10);
-
-    /* Set label and percentage options */
-    create_radio(&radio, NULL, "Labels", "rad_1", grid, FALSE, 1, 0, 1,1);
-    radio_grp = radio;
-    gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1,1);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1,1);
-
-    /* Label */
-    create_label(&(lbl), "typ_lbl", "Labels", grid, 0, 3, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 15);css.c
-    gtk_widget_set_margin_end(lbl, 10);
-
-    /* Set legend options */
-    create_radio(&radio, NULL, "On Chart", "rad_1", grid, FALSE, 1, 3, 1,1);
-    radio_grp = radio;
-    gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1,1);
-    gtk_widget_set_margin_top (radio, 5);
-
-    gtk_container_add(GTK_CONTAINER (frame), grid);
-
-    /* Containers */
-    frame = gtk_frame_new("Overview Bar Chart");
-    grid = gtk_grid_new();
-
-    /* Label */
-    create_label(&(lbl), "usg_lbl", "Display Text", grid, 0, 0, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 15);
-    gtk_widget_set_margin_end(lbl, 10);
-
-    /* Set label and percentage options */
-    create_radio(&radio, NULL, "Labels", "rad_1", grid, FALSE, 1, 0, 1,1);
-    radio_grp = radio;
-    gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, TRUE, 1, 1, 1,1);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, FALSE, 1, 2, 1,1);
-
-    gtk_container_add(GTK_CONTAINER (frame), grid);
 
     return frame;
 }

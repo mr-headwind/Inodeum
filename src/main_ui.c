@@ -458,6 +458,10 @@ void disable_login(MainUi *m_ui)
 {  
     gtk_widget_set_sensitive (m_ui->user_login, FALSE);
 
+    if (m_ui->user_cd == FALSE)
+    	gtk_widget_set_sensitive (m_ui->reset_pw_btn, FALSE);
+
+
     return;
 }
 

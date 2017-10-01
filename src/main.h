@@ -98,7 +98,7 @@ typedef struct _main_ui
 
     /* Widgets - preferences */
     GtkWidget *reset_pw_btn;
-    GtkWidget *pw_cntr, *pie_chart_cntr, *bar_chart_cntr;
+    GtkWidget *pw_cntr;
 
     /* Other */
     GtkWidget *curr_panel;
@@ -110,6 +110,6 @@ typedef struct _main_ui
     int close_hndlr_id;
 
     /* Misc */
-    int duration;
+    int duration, user_cd;
     double days_rem, days_quota;
 } MainUi;

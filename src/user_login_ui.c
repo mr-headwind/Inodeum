@@ -292,7 +292,6 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 		keyring_error(res, "(item attributes list)", display_name, info, NULL, m_ui->window);
 		break;
 	    }
-
 	    /* Get the username and password */
 	    for(i = 0; i < attrs->len; i++)
 	    {
@@ -326,6 +325,7 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Clean up */
+    m_ui->user_cd = fnd;
     g_list_free(item_ids);
 
     return fnd;
@@ -357,6 +357,7 @@ int store_user_creds(IspData *isp_data, MainUi *m_ui)
 	return FALSE;
     }
 
+    m_ui->user_cd = TRUE;
     free(display_name);
     gnome_keyring_attribute_list_free (attrs);
 

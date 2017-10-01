@@ -58,6 +58,7 @@ void OnPref(GtkWidget*, gpointer);
 void OnAbout(GtkWidget*, gpointer);
 void OnUserLogin(GtkWidget*, gpointer);
 void OnResetPW(GtkWidget*, gpointer);
+void OnPrefSave(GtkWidget*, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
@@ -266,6 +267,19 @@ void OnResetPW(GtkWidget *menu_item, gpointer user_data)
 
     if (delete_user_creds(isp_data, m_ui) == FALSE)
     	log_msg("ERR0028", NULL, "ERR0028", m_ui->window);
+
+    return;
+}  
+
+
+/* Callback - Save user preferences */
+
+void OnPrefSave(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
 
     return;
 }  
