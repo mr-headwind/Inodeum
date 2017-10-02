@@ -56,7 +56,9 @@ void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
-void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, int, int, int, int);
+void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, 
+		  int, int, int, int, int,
+		  char *, char *);
 void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
 
@@ -435,7 +437,8 @@ void create_entry(GtkWidget **ent, char *nm,
 /* Create standard radio */
 
 void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidget *cntr, 
-		  int active, int col, int row, int c_spn, int r_spn)
+		  int active, int col, int row, int c_spn, int r_spn,
+		  char *obj_nm, char *obj_data_str)
 {  
     if (grp == NULL)
 	*rad = gtk_radio_button_new_with_label (NULL, txt);
@@ -447,6 +450,9 @@ void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidge
 
     if (active == TRUE)
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (*rad), TRUE);
+
+    if (obj_nm != NULL && obj_data_str != NULL)
+	g_object_set_data_full (G_OBJECT (rad), obj_nm, g_strdup (obj_data_str), (GDestroyNotify) g_free);
 
     return;
 }

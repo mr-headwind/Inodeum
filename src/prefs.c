@@ -42,31 +42,56 @@
 #include <string.h>
 #include <errno.h>
 #include <main.h>
+#include <defs.h>
 
 
 /* Defines */
 
+#define PREF_KEY_SZ 10
+#define OV_PIE_LBL "3"
+#define OV_PIE_LGD "1"
+#define OV_BAR_LBL "2"
+
 
 /* Types */
+
+typedef struct _user_pref
+{
+    char key[10];
+    char val[10];
+} UserPref;
 
 
 /* Prototypes */
 
 void pref_panel(MainUi *);
 int get_user_pref(char *, char **);
+int add_user_pref(char *, char *);
+int read_user_prefs(GtkWidget *);
+int write_user_prefs(GtkWidget *);
+void set_default_prefs();
 GtkWidget * reset_pw(MainUi *);
 GtkWidget * chart_prefs(MainUi *);
 
 extern void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
-extern void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, int, int, int, int);
+extern void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, 
+			 int, int, int, int, int,
+			 char *, char *);
+extern void log_msg(char*, char*, char*, GtkWidget*);
+extern char * app_dir_path();
+extern void string_trim(char*);
 extern void OnResetPW(GtkWidget*, gpointer);
 extern void OnPrefSave(GtkWidget*, gpointer);
+extern void OnPrefPieLbl(GtkToggleButton*, gpointer);
+extern void OnPrefPieLgd(GtkToggleButton*, gpointer);
+extern void OnPrefBarLbl(GtkToggleButton*, gpointer);
 
 
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-prefs.c ";
+static GList *pref_list = NULL;
 
 
 
@@ -124,6 +149,7 @@ GtkWidget * reset_pw(MainUi *m_ui)
 
 GtkWidget * chart_prefs(MainUi *m_ui)
 {
+    char *p;
     GtkWidget *frame;
     GtkWidget *grid;
     GtkWidget *lbl;
@@ -141,11 +167,16 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
-    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 0, 1,1);
+    get_user_pref(OV_PIE_LBL, &p);
+
+    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 0, 1, 1, "idx", "1");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1,1);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1,1);
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1, 1, "idx", "2");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1, 1, "idx", "3");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
 
     /* Label */
     create_label(&(lbl), "typ_lbl", "Description", grid, 0, 3, 1, 1);
@@ -154,10 +185,12 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set legend options */
-    create_radio(&radio, NULL, "On Chart", "rad_1", grid, FALSE, 1, 3, 1,1);
+    create_radio(&radio, NULL, "On Chart", "rad_1", grid, TRUE, 1, 3, 1, 1, "idx", "1");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1,1);
+    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1, 1, "idx", "2");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
     gtk_widget_set_margin_top (radio, 5);
 
     /* Label */
@@ -168,11 +201,14 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
-    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 4, 1,1);
+    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 4, 1, 1, "idx", "1");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 12);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, TRUE, 1, 5, 1,1);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, FALSE, 1, 6, 1,1);
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, TRUE, 1, 5, 1, 1, "idx", "2");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, FALSE, 1, 6, 1, 1, "idx", "3");
+    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
 
     /* Save button */
     save_btn = gtk_button_new_with_label("Save");
@@ -185,29 +221,218 @@ GtkWidget * chart_prefs(MainUi *m_ui)
 }
 
 
-/* Preferences for overview panel bar chart */
-
-GtkWidget * bar_chart_prefs(MainUi *m_ui)
-{
-    GtkWidget *frame;
-    GtkWidget *grid;
-    GtkWidget *lbl;
-    GtkWidget *radio, *radio_grp;
-
-
-    return frame;
-}
-
-
 /* Return a pointer to a user preference value for a key or NULL */
 
 int get_user_pref(char *key, char **val)
 {
     int i;
+    UserPref *user_pref;
 
-printf("%s USER PREFERENCES Not Implemented yet\n", debug_hdr);
     *val = NULL;
     i = 0;
 
+    pref_list = g_list_first(pref_list);
+
+    while(pref_list != NULL)
+    {
+    	user_pref = (UserPref *) pref_list->data;
+
+    	if (strcmp(user_pref->key, key) == 0)
+    	{
+	    *val = user_pref->val;
+	    break;
+    	}
+
+	pref_list = g_list_next(pref_list);
+	i++;
+    }
+
     return i;
+}
+
+
+/* Add a user preference */
+
+int add_user_pref(char *key, char *val)
+{
+    UserPref *user_pref;
+
+    strcpy(user_pref->key, key);
+    strcpy(user_pref->val, val);
+    pref_list = g_list_append(pref_list, (gpointer) user_pref);
+
+    return TRUE;
+}
+
+
+/* Read the user preferences file */
+
+int read_user_prefs(GtkWidget *window)
+{
+    FILE *fd = NULL;
+    struct stat fileStat;
+    char buf[256];
+    char *pref_fn;
+    char *app_dir;
+    char *p, *p2;
+    int app_dir_len;
+    int err;
+    UserPref *user_pref;
+
+    /* Get the full path for the preferences file */
+    app_dir = app_dir_path();
+    app_dir_len = strlen(app_dir);
+    pref_fn = (char *) malloc(app_dir_len + 19);
+    sprintf(pref_fn, "%s/%s", app_dir, USER_PREFS);
+
+    /* If no preferences exist, create a default set */
+    err = stat(pref_fn, &fileStat);
+
+    if ((err < 0) || (fileStat.st_size == 0))
+    {
+    	set_default_prefs();
+	free(pref_fn);
+	return TRUE;
+    }
+    
+    /* Read existing user preferences */
+    if ((fd = fopen(pref_fn, "r")) == (FILE *) NULL)
+    {
+	free(pref_fn);
+	return FALSE;
+    }
+    
+    /* Store the preferences */
+    while ((fgets(buf, sizeof(buf), fd)) != NULL)
+    {
+	/* Check and save key */
+	if ((p = strchr(buf, '|')) == NULL)
+	{
+	    free(pref_fn);
+	    sprintf(app_msg_extra, "%s", buf);
+	    log_msg("ERR0042", "Invalid user preference key format", "ERR0042", window);
+	    return FALSE;
+	}
+
+	if ((p - buf) > (PREF_KEY_SZ - 1))
+	{
+	    free(pref_fn);
+	    sprintf(app_msg_extra, "%s", buf);
+	    log_msg("ERR0042", "Invalid user preference key size", "ERR0042", window);
+	    return FALSE;
+	}
+
+	/* Check and save value */
+	if ((p2 = strchr((p), '\n')) == NULL)
+	{
+	    free(pref_fn);
+	    sprintf(app_msg_extra, "%s", buf);
+	    log_msg("ERR0042", "Invalid user preference value", "ERR0042", window);
+	    return FALSE;
+	}
+
+	/* Create a preference entry */
+	UserPref *user_pref = (UserPref *) malloc(sizeof(UserPref));
+	strncpy(user_pref->key, buf, p - buf);
+	user_pref->key[p - buf] = '\0';
+
+	p++;
+	*p2 = '\0';
+
+	strcpy(user_pref->val, p);
+	    
+	pref_list = g_list_prepend(pref_list, user_pref);
+    }
+
+    /* Still may need set up some default preferences */
+    pref_list = g_list_reverse(pref_list);
+    set_default_prefs();
+
+    /* Close off */
+    fclose(fd);
+    free(pref_fn);
+
+    return TRUE;
+}
+
+
+/* Write the user preferences file */
+
+int write_user_prefs(GtkWidget *window)
+{
+    FILE *fd = NULL;
+    char buf[256];
+    char *pref_fn;
+    char *app_dir;
+    int app_dir_len;
+    UserPref *user_pref;
+
+    /* Get the full path for the preferecnes file */
+    app_dir = app_dir_path();
+    app_dir_len = strlen(app_dir);
+    pref_fn = (char *) malloc(app_dir_len + 19);
+    sprintf(pref_fn, "%s/user_preferences", app_dir);
+
+    /* New or overwrite file */
+    if ((fd = fopen(pref_fn, "w")) == (FILE *) NULL)
+    {
+	free(pref_fn);
+	return FALSE;
+    }
+
+    /* Write new values */
+    pref_list = g_list_first(pref_list);
+
+    while(pref_list != NULL)
+    {
+    	UserPref *user_pref = (UserPref *) pref_list->data;
+
+    	if (user_pref->val != NULL)
+    	{
+	    sprintf(buf, "%s|%s\n", user_pref->key, user_pref->val);
+	    
+	    if ((fputs(buf, fd)) == EOF)
+	    {
+		free(pref_fn);
+		log_msg("ERR0043", pref_fn, "ERR0043", window);
+		return FALSE;
+	    }
+    	}
+
+	pref_list = g_list_next(pref_list);
+    }
+
+    /* Close off */
+    fclose(fd);
+    free(pref_fn);
+
+    return TRUE;
+}
+
+
+/* Set up default user preferences. All preferences may not be present */
+
+void set_default_prefs()
+{
+    char *p;
+
+    /* Overview pie chart labels */
+    get_user_pref(OV_PIE_LBL, &p);
+
+    if (p == NULL)
+	add_user_pref(OV_PIE_LBL, "3");
+
+    /* Overview pie chart labels or legend */
+    get_user_pref(OV_PIE_LGD, &p);
+
+    if (p == NULL)
+	add_user_pref(OV_PIE_LGD, "1");
+
+    /* Overview bar chart labels */
+    get_user_pref(OV_BAR_LBL, &p);
+
+    if (p == NULL)
+	add_user_pref(OV_BAR_LBL, "2");
+
+    return;
 }

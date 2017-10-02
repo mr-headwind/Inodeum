@@ -53,6 +53,7 @@ void initialise(IspData *, MainUi *);
 void final(IspData *, MainUi *);
 
 extern void main_ui(IspData *, MainUi *);
+extern int read_user_prefs(GtkWidget *);
 extern int check_app_dir();
 extern int reset_log();
 extern void close_log();
@@ -106,6 +107,9 @@ void initialise(IspData *isp_data, MainUi *m_ui)
     /* Start session */
     if (! reset_log())
     	exit(-1);
+
+    /* Load user preferences (a default set if required) */
+    read_user_prefs(NULL);
 
     log_msg("MSG0001", NULL, NULL, NULL);
 

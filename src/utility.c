@@ -71,13 +71,13 @@ int is_ui_reg(char *, int);
 void free_window_reg();
 void close_open_ui();
 int val_str2dbl(char *, double *, char *, GtkWidget *);
+void string_trim(char*);
 char * log_name();
 char * app_dir_path();
 char * home_dir();
 
 /* ??? */
 gint query_dialog(GtkWidget *, char *, char *);
-void string_trim(char*);
 int close_ui(char *);
 void strlower(char *, char *);
 void dttm_stamp(char *, size_t);
@@ -139,10 +139,12 @@ static const char *app_messages[][2] =
     { "ERR0039", "Invalid XML format found: %s. "},
     { "ERR0040", "Unable to convert %s to a number. "},
     { "ERR0041", "File %s does not exist or cannot be read. "},
+    { "ERR0042", "File error %s "},
+    { "ERR0043", "Failed to create file: %s "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 43;
+static const int Msg_Count = 45;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

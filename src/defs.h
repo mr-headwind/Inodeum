@@ -84,6 +84,7 @@ extern const GdkRGBA DARK_MAROON;
 #define ABOUT_UI "About"
 #define USER_UI "User"
 #define VIEW_FILE_UI "File Viewer"
+#define USER_PREFS "user_preferences"
 #endif
 
 

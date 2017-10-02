@@ -59,6 +59,9 @@ void OnAbout(GtkWidget*, gpointer);
 void OnUserLogin(GtkWidget*, gpointer);
 void OnResetPW(GtkWidget*, gpointer);
 void OnPrefSave(GtkWidget*, gpointer);
+void OnPrefPieLbl(GtkToggleButton*, gpointer);
+void OnPrefPieLgd(GtkToggleButton*, gpointer);
+void OnPrefBarLbl(GtkToggleButton*, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
@@ -77,6 +80,7 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
+extern int write_user_prefs(GtkWidget *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 extern void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 extern int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
@@ -280,6 +284,72 @@ void OnPrefSave(GtkWidget *btn, gpointer user_data)
 
     /* Get data */
     m_ui = (MainUi *) user_data;
+
+    /* Write user preferences to file */
+    write_user_prefs(m_ui->window);
+
+    return;
+}  
+
+
+/* Callback - User preference (pie chart labels) toggled */
+
+void OnPrefPieLbl(GtkToggleButton *rad, gpointer user_data)
+{  
+    MainUi *m_ui;
+    char *idx;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Ignore if not active */
+    if (! gtk_toggle_button_get_active(rad))
+	return;
+
+    /* Determine which radio toggled */
+    idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
+
+    return;
+}  
+
+
+/* Callback - User preference (label or legend) toggled */
+
+void OnPrefPieLgd(GtkToggleButton *rad, gpointer user_data)
+{  
+    MainUi *m_ui;
+    char *idx;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Ignore if not active */
+    if (! gtk_toggle_button_get_active(rad))
+	return;
+
+    /* Determine which radio toggled */
+    idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
+
+    return;
+}  
+
+
+/* Callback - User preference (bar chart labels) toggled */
+
+void OnPrefBarLbl(GtkToggleButton *rad, gpointer user_data)
+{  
+    MainUi *m_ui;
+    char *idx;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Ignore if not active */
+    if (! gtk_toggle_button_get_active(rad))
+	return;
+
+    /* Determine which radio toggled */
+    idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
 
     return;
 }  
