@@ -452,7 +452,7 @@ void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidge
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (*rad), TRUE);
 
     if (obj_nm != NULL && obj_data_str != NULL)
-	g_object_set_data_full (G_OBJECT (rad), obj_nm, g_strdup (obj_data_str), (GDestroyNotify) g_free);
+	g_object_set_data_full (G_OBJECT (*rad), obj_nm, g_strdup (obj_data_str), (GDestroyNotify) g_free);
 
     return;
 }

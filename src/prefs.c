@@ -70,6 +70,7 @@ int add_user_pref(char *, char *);
 int read_user_prefs(GtkWidget *);
 int write_user_prefs(GtkWidget *);
 void set_default_prefs();
+void free_prefs();
 GtkWidget * reset_pw(MainUi *);
 GtkWidget * chart_prefs(MainUi *);
 
@@ -150,6 +151,7 @@ GtkWidget * reset_pw(MainUi *m_ui)
 GtkWidget * chart_prefs(MainUi *m_ui)
 {
     char *p;
+    int i, idx[3];
     GtkWidget *frame;
     GtkWidget *grid;
     GtkWidget *lbl;
@@ -168,14 +170,21 @@ GtkWidget * chart_prefs(MainUi *m_ui)
 
     /* Set label and percentage options */
     get_user_pref(OV_PIE_LBL, &p);
+if (p == NULL)
+{printf("%s pref 1 null\n", debug_hdr); fflush(stdout);}
+else
+{printf("%s pref 2 not null %s\n", debug_hdr, p); fflush(stdout);}
+    memset(&idx, 0, sizeof(idx));
+    i = atoi(p);
+    idx[i] = TRUE;
 
-    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 0, 1, 1, "idx", "1");
+    create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 1, 0, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, FALSE, 1, 1, 1, 1, "idx", "2");
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, idx[1], 1, 1, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, TRUE, 1, 2, 1, 1, "idx", "3");
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 1, 2, 1, 1, "idx", "2");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
 
     /* Label */
@@ -185,11 +194,16 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set legend options */
-    create_radio(&radio, NULL, "On Chart", "rad_1", grid, TRUE, 1, 3, 1, 1, "idx", "1");
+    get_user_pref(OV_PIE_LGD, &p);
+    memset(&idx, 0, sizeof(idx));
+    i = atoi(p);
+    idx[i] = TRUE;
+
+    create_radio(&radio, NULL, "On Chart", "rad_1", grid, idx[0], 1, 3, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, FALSE, 2, 3, 1, 1, "idx", "2");
+    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, idx[1], 2, 3, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
     gtk_widget_set_margin_top (radio, 5);
 
@@ -201,13 +215,18 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
-    create_radio(&radio, NULL, "Label", "rad_1", grid, FALSE, 1, 4, 1, 1, "idx", "1");
+    get_user_pref(OV_BAR_LBL, &p);
+    memset(&idx, 0, sizeof(idx));
+    i = atoi(p);
+    idx[i] = TRUE;
+
+    create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 1, 4, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 12);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, TRUE, 1, 5, 1, 1, "idx", "2");
+    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, idx[1], 1, 5, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, FALSE, 1, 6, 1, 1, "idx", "3");
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 1, 6, 1, 1, "idx", "2");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
 
     /* Save button */
@@ -255,8 +274,7 @@ int get_user_pref(char *key, char **val)
 
 int add_user_pref(char *key, char *val)
 {
-    UserPref *user_pref;
-
+    UserPref *user_pref = (UserPref *) malloc(sizeof(UserPref));
     strcpy(user_pref->key, key);
     strcpy(user_pref->val, val);
     pref_list = g_list_append(pref_list, (gpointer) user_pref);
@@ -420,19 +438,40 @@ void set_default_prefs()
     get_user_pref(OV_PIE_LBL, &p);
 
     if (p == NULL)
-	add_user_pref(OV_PIE_LBL, "3");
+	add_user_pref(OV_PIE_LBL, "2");
 
     /* Overview pie chart labels or legend */
     get_user_pref(OV_PIE_LGD, &p);
 
     if (p == NULL)
-	add_user_pref(OV_PIE_LGD, "1");
+	add_user_pref(OV_PIE_LGD, "0");
 
     /* Overview bar chart labels */
     get_user_pref(OV_BAR_LBL, &p);
 
     if (p == NULL)
-	add_user_pref(OV_BAR_LBL, "2");
+	add_user_pref(OV_BAR_LBL, "1");
+
+    return;
+}
+
+
+/* Free the user preferences */
+
+void free_prefs()
+{
+    UserPref *user_pref;
+
+    pref_list = g_list_first(pref_list);
+
+    while(pref_list != NULL)
+    {
+    	user_pref = (UserPref *) pref_list->data;
+    	free(user_pref);
+	pref_list = g_list_next(pref_list);
+    }
+
+    g_list_free(pref_list);
 
     return;
 }

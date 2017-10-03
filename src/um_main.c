@@ -54,6 +54,7 @@ void final(IspData *, MainUi *);
 
 extern void main_ui(IspData *, MainUi *);
 extern int read_user_prefs(GtkWidget *);
+extern void free_prefs();
 extern int check_app_dir();
 extern int reset_log();
 extern void close_log();
@@ -124,6 +125,9 @@ void final(IspData *isp_data, MainUi *m_ui)
     /* Close log file */
     log_msg("MSG0002", NULL, NULL, NULL);
     close_log();
+
+    /* Free user preferences */
+    free_prefs();
 
     /* Clean up */
     if (isp_data->uname != NULL)
