@@ -87,6 +87,14 @@ extern const GdkRGBA DARK_MAROON;
 #define USER_PREFS "user_preferences"
 #endif
 
+/* Preferences */
+#ifndef USER_PREF
+#define USER_PREF
+#define OV_PIE_LBL "ovpielbl"
+#define OV_PIE_LGD "ovpielgd"
+#define OV_BAR_LBL "ovbarlbl"
+#endif
+
 
 /* Utility globals */
 #ifndef ERR_INCLUDED

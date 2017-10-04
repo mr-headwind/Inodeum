@@ -81,6 +81,7 @@ extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
 extern int write_user_prefs(GtkWidget *);
+extern int set_user_pref(char *, char *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 extern void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 extern int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
@@ -306,8 +307,9 @@ void OnPrefPieLbl(GtkToggleButton *rad, gpointer user_data)
     if (! gtk_toggle_button_get_active(rad))
 	return;
 
-    /* Determine which radio toggled */
+    /* Determine which radio toggled and set the preference */
     idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
+    set_user_pref(OV_PIE_LBL, idx);
 
     return;
 }  
@@ -327,8 +329,9 @@ void OnPrefPieLgd(GtkToggleButton *rad, gpointer user_data)
     if (! gtk_toggle_button_get_active(rad))
 	return;
 
-    /* Determine which radio toggled */
+    /* Determine which radio toggled and set the preference */
     idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
+    set_user_pref(OV_PIE_LGD, idx);
 
     return;
 }  
@@ -348,8 +351,9 @@ void OnPrefBarLbl(GtkToggleButton *rad, gpointer user_data)
     if (! gtk_toggle_button_get_active(rad))
 	return;
 
-    /* Determine which radio toggled */
+    /* Determine which radio toggled and set the preference */
     idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
+    set_user_pref(OV_BAR_LBL, idx);
 
     return;
 }  

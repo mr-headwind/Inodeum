@@ -48,9 +48,6 @@
 /* Defines */
 
 #define PREF_KEY_SZ 10
-#define OV_PIE_LBL "3"
-#define OV_PIE_LGD "1"
-#define OV_BAR_LBL "2"
 
 
 /* Types */
@@ -66,6 +63,7 @@ typedef struct _user_pref
 
 void pref_panel(MainUi *);
 int get_user_pref(char *, char **);
+int set_user_pref(char *, char *);
 int add_user_pref(char *, char *);
 int read_user_prefs(GtkWidget *);
 int write_user_prefs(GtkWidget *);
@@ -165,15 +163,11 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     /* Label */
     create_label(&(lbl), "title_4", "Usage Pie Chart", grid, 0, 0, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_start(lbl, 10);
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
     get_user_pref(OV_PIE_LBL, &p);
-if (p == NULL)
-{printf("%s pref 1 null\n", debug_hdr); fflush(stdout);}
-else
-{printf("%s pref 2 not null %s\n", debug_hdr, p); fflush(stdout);}
     memset(&idx, 0, sizeof(idx));
     i = atoi(p);
     idx[i] = TRUE;
@@ -190,7 +184,7 @@ else
     /* Label */
     create_label(&(lbl), "typ_lbl", "Description", grid, 0, 3, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_start(lbl, 10);
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set legend options */
@@ -211,7 +205,7 @@ else
     create_label(&(lbl), "title_4", "Quota Bar Chart", grid, 0, 4, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
     gtk_widget_set_margin_top(lbl, 12);
-    gtk_widget_set_margin_start(lbl, 15);
+    gtk_widget_set_margin_start(lbl, 10);
     gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
@@ -231,6 +225,8 @@ else
 
     /* Save button */
     save_btn = gtk_button_new_with_label("Save");
+    gtk_widget_set_margin_end(save_btn, 5);
+    gtk_widget_set_margin_bottom(save_btn, 5);
     gtk_grid_attach(GTK_GRID (grid), save_btn, 2, 7, 1, 1);
     g_signal_connect (save_btn, "clicked", G_CALLBACK (OnPrefSave), m_ui);
 
@@ -246,15 +242,14 @@ int get_user_pref(char *key, char **val)
 {
     int i;
     UserPref *user_pref;
+    GList *l;
 
     *val = NULL;
     i = 0;
 
-    pref_list = g_list_first(pref_list);
-
-    while(pref_list != NULL)
+    for(l = pref_list; l != NULL; l = l->next)
     {
-    	user_pref = (UserPref *) pref_list->data;
+    	user_pref = (UserPref *) l->data;
 
     	if (strcmp(user_pref->key, key) == 0)
     	{
@@ -262,7 +257,33 @@ int get_user_pref(char *key, char **val)
 	    break;
     	}
 
-	pref_list = g_list_next(pref_list);
+	i++;
+    }
+
+    return i;
+}
+
+
+/* Set a user preference */
+
+int set_user_pref(char *key, char *val)
+{
+    int i;
+    UserPref *user_pref;
+    GList *l;
+
+    i = 0;
+
+    for(l = pref_list; l != NULL; l = l->next)
+    {
+    	user_pref = (UserPref *) l->data;
+
+    	if (strcmp(user_pref->key, key) == 0)
+    	{
+	    strcpy(user_pref->val, val);
+	    break;
+    	}
+
 	i++;
     }
 
@@ -274,10 +295,14 @@ int get_user_pref(char *key, char **val)
 
 int add_user_pref(char *key, char *val)
 {
+    GList *l;
+
     UserPref *user_pref = (UserPref *) malloc(sizeof(UserPref));
     strcpy(user_pref->key, key);
     strcpy(user_pref->val, val);
-    pref_list = g_list_append(pref_list, (gpointer) user_pref);
+
+    l = g_list_append(pref_list, (gpointer) user_pref);
+    pref_list = l;
 
     return TRUE;
 }
@@ -384,6 +409,7 @@ int write_user_prefs(GtkWidget *window)
     char *app_dir;
     int app_dir_len;
     UserPref *user_pref;
+    GList *l;
 
     /* Get the full path for the preferecnes file */
     app_dir = app_dir_path();
@@ -399,11 +425,9 @@ int write_user_prefs(GtkWidget *window)
     }
 
     /* Write new values */
-    pref_list = g_list_first(pref_list);
-
-    while(pref_list != NULL)
+    for(l = pref_list; l != NULL; l = l->next)
     {
-    	UserPref *user_pref = (UserPref *) pref_list->data;
+    	user_pref = (UserPref *) l->data;
 
     	if (user_pref->val != NULL)
     	{
@@ -416,8 +440,6 @@ int write_user_prefs(GtkWidget *window)
 		return FALSE;
 	    }
     	}
-
-	pref_list = g_list_next(pref_list);
     }
 
     /* Close off */
