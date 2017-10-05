@@ -98,7 +98,6 @@ typedef struct _main_ui
 
     /* Widgets - preferences */
     GtkWidget *reset_pw_btn;
-    GtkWidget *pw_cntr;
 
     /* Other */
     GtkWidget *curr_panel;

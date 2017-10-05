@@ -71,9 +71,11 @@ void set_default_prefs();
 void free_prefs();
 GtkWidget * reset_pw(MainUi *);
 GtkWidget * chart_prefs(MainUi *);
+GtkWidget * refresh_pref(MainUi *);
 
 extern void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, 
 			 int, int, int, int, int,
 			 char *, char *);
@@ -98,21 +100,27 @@ static GList *pref_list = NULL;
 
 void pref_panel(MainUi *m_ui)
 {
+    GtkWidget *pw_cntr;
     GtkWidget *chart_cntr;
+    GtkWidget *refresh_cntr;
 
     /* Create preference container */
     m_ui->pref_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_name(m_ui->pref_cntr, "pref_panel");
-    gtk_widget_set_margin_top (m_ui->pref_cntr, 10);
+    gtk_widget_set_margin_top (m_ui->pref_cntr, 5);
     gtk_widget_set_margin_left (m_ui->pref_cntr, 5);
 
     /* Delete saved password */
-    m_ui->pw_cntr = reset_pw(m_ui);
-    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), m_ui->pw_cntr, FALSE, FALSE, 0);
+    pw_cntr = reset_pw(m_ui);
+    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), pw_cntr, FALSE, FALSE, 0);
 
     /* Overview charts */
     chart_cntr = chart_prefs(m_ui);
     gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), chart_cntr, FALSE, FALSE, 0);
+
+    /* Refresh interval */
+    refresh_cntr = refresh_pref(m_ui);
+    gtk_box_pack_start (GTK_BOX (m_ui->pref_cntr), refresh_cntr, FALSE, FALSE, 0);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->pref_cntr, "pref_panel");
@@ -134,8 +142,8 @@ GtkWidget * reset_pw(MainUi *m_ui)
     m_ui->reset_pw_btn = gtk_button_new_with_label("Delete Saved Password");
     gtk_widget_set_halign(m_ui->reset_pw_btn, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(m_ui->reset_pw_btn, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top(m_ui->reset_pw_btn, 5);
-    gtk_widget_set_margin_bottom(m_ui->reset_pw_btn, 5);
+    gtk_widget_set_margin_top(m_ui->reset_pw_btn, 3);
+    gtk_widget_set_margin_bottom(m_ui->reset_pw_btn, 3);
     gtk_container_add(GTK_CONTAINER (frame), m_ui->reset_pw_btn);
     g_signal_connect (m_ui->reset_pw_btn, "clicked", G_CALLBACK (OnResetPW), m_ui);
     gtk_widget_show (m_ui->reset_pw_btn);
@@ -161,7 +169,7 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     grid = gtk_grid_new();
 
     /* Label */
-    create_label(&(lbl), "title_4", "Usage Pie Chart", grid, 0, 0, 1, 1);
+    create_label(&(lbl), "title_4", "Usage Chart", grid, 0, 0, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
     gtk_widget_set_margin_start(lbl, 10);
     gtk_widget_set_margin_end(lbl, 10);
@@ -202,9 +210,8 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     gtk_widget_set_margin_top (radio, 5);
 
     /* Label */
-    create_label(&(lbl), "title_4", "Quota Bar Chart", grid, 0, 4, 1, 1);
+    create_label(&(lbl), "title_4", "Rollover Chart", grid, 0, 4, 1, 1);
     gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_top(lbl, 12);
     gtk_widget_set_margin_start(lbl, 10);
     gtk_widget_set_margin_end(lbl, 10);
 
@@ -217,7 +224,6 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 1, 4, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
     radio_grp = radio;
-    gtk_widget_set_margin_top (radio, 12);
     create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, idx[1], 1, 5, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
     create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 1, 6, 1, 1, "idx", "2");
@@ -226,9 +232,42 @@ GtkWidget * chart_prefs(MainUi *m_ui)
     /* Save button */
     save_btn = gtk_button_new_with_label("Save");
     gtk_widget_set_margin_end(save_btn, 5);
-    gtk_widget_set_margin_bottom(save_btn, 5);
+    gtk_widget_set_margin_bottom(save_btn, 3);
     gtk_grid_attach(GTK_GRID (grid), save_btn, 2, 7, 1, 1);
     g_signal_connect (save_btn, "clicked", G_CALLBACK (OnPrefSave), m_ui);
+
+    gtk_container_add(GTK_CONTAINER (frame), grid);
+
+    return frame;
+}
+
+
+/* Preferences for data refresh interval */
+
+GtkWidget * refresh_pref(MainUi *m_ui)
+{
+    char *p;
+    GtkWidget *frame;
+    GtkWidget *grid;
+    GtkWidget *lbl;
+    GtkWidget *ent;
+
+    /* Containers */
+    frame = gtk_frame_new("Refresh");
+    grid = gtk_grid_new();
+
+    /* Label */
+    create_label(&(lbl), "lbl", "Data Refresh interval (minutes)", grid, 0, 0, 1, 1);
+    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    gtk_widget_set_margin_start(lbl, 10);
+    gtk_widget_set_margin_end(lbl, 10);
+
+    /* Set refresh interval */
+    get_user_pref(REFRESH_INT, &p);
+    create_entry(&(ent), "data_1", grid, 1, 0);
+    gtk_entry_set_max_length (GTK_ENTRY (ent), 3);
+    gtk_entry_set_width_chars (GTK_ENTRY (ent), 5);
+    //g_signal_connect (ent, "toggled", G_CALLBACK (OnPrefRefresh), m_ui);
 
     gtk_container_add(GTK_CONTAINER (frame), grid);
 

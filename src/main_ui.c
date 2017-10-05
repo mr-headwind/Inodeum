@@ -56,13 +56,13 @@ void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, 
 		  int, int, int, int, int,
 		  char *, char *);
 void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
 
-void create_entry(GtkWidget **, char *, int, int, GtkWidget **);
 void disable_login(MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -417,8 +417,7 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
 
 /* Create standard entry */
 
-void create_entry(GtkWidget **ent, char *nm, 
-		    int col, int row, GtkWidget **cntr) 
+void create_entry(GtkWidget **ent, char *nm, GtkWidget *cntr, int col, int row) 
 {  
     GtkWidget *lbl;
 
@@ -428,7 +427,7 @@ void create_entry(GtkWidget **ent, char *nm,
     gtk_entry_set_width_chars (GTK_ENTRY (*ent), 15);
 
     gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (*cntr), *ent, col, row, 1, 1);
+    gtk_grid_attach(GTK_GRID (cntr), *ent, col, row, 1, 1);
 
     return;
 }
