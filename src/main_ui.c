@@ -423,8 +423,6 @@ void create_entry(GtkWidget **ent, char *nm, GtkWidget *cntr, int col, int row)
 
     *ent = gtk_entry_new();  
     gtk_widget_set_name(*ent, nm);
-    gtk_entry_set_max_length (GTK_ENTRY (*ent), 32);
-    gtk_entry_set_width_chars (GTK_ENTRY (*ent), 15);
 
     gtk_widget_set_valign(GTK_WIDGET (*ent), GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (cntr), *ent, col, row, 1, 1);
