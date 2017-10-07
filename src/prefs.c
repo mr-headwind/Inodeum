@@ -153,9 +153,8 @@ GtkWidget * std_prefs(MainUi *m_ui)
     char *p;
     int i, idx[3];
     GtkWidget *frame;
-    GtkWidget *grid;
+    GtkWidget *grid, *tbox;
     GtkWidget *lbl;
-    GtkWidget *ent;
     GtkWidget *save_btn;
     GtkWidget *radio, *radio_grp;
 
@@ -164,10 +163,8 @@ GtkWidget * std_prefs(MainUi *m_ui)
     grid = gtk_grid_new();
 
     /* Label */
-    create_label(&(lbl), "title_4", "Quota Usage", grid, 0, 0, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
+    create_label(&(lbl), "title_4", "Usage pie", grid, 0, 0, 1, 1);
     gtk_widget_set_margin_start(lbl, 5);
-    gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
     get_user_pref(OV_PIE_LBL, &p);
@@ -175,20 +172,26 @@ GtkWidget * std_prefs(MainUi *m_ui)
     i = atoi(p);
     idx[i] = TRUE;
 
-    create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 1, 0, 1, 1, "idx", "0");
+    create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 0, 1, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
     radio_grp = radio;
-    gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, idx[1], 1, 1, 1, 1, "idx", "1");
+    gtk_widget_set_halign(radio, GTK_ALIGN_END);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
+
+    create_radio(&radio, radio_grp, "Percent", "rad_1", grid, idx[1], 1, 1, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 1, 2, 1, 1, "idx", "2");
+    gtk_widget_set_halign(radio, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
+
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 2, 1, 1, 1, "idx", "2");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
+    gtk_widget_set_halign(radio, GTK_ALIGN_START);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
 
     /* Label */
-    create_label(&(lbl), "typ_lbl", "Description", grid, 0, 3, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 10);
-    gtk_widget_set_margin_end(lbl, 10);
+    create_label(&(lbl), "typ_lbl", "Description", grid, 0, 2, 1, 1);
+    gtk_widget_set_margin_start(lbl, 5);
+    gtk_widget_set_margin_top (lbl, 0);
 
     /* Set legend options */
     get_user_pref(OV_PIE_LGD, &p);
@@ -196,20 +199,24 @@ GtkWidget * std_prefs(MainUi *m_ui)
     i = atoi(p);
     idx[i] = TRUE;
 
-    create_radio(&radio, NULL, "On Chart", "rad_1", grid, idx[0], 1, 3, 1, 1, "idx", "0");
+    create_radio(&radio, NULL, "On Chart", "rad_1", grid, idx[0], 1, 2, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
     radio_grp = radio;
     gtk_widget_set_margin_top (radio, 5);
-    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, idx[1], 2, 3, 1, 1, "idx", "1");
+    gtk_widget_set_margin_start (radio, 10);
+    gtk_widget_set_halign(radio, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
+
+    create_radio(&radio, radio_grp, "Legend", "rad_1", grid, idx[1], 2, 2, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
+    gtk_widget_set_halign(radio, GTK_ALIGN_START);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_top (radio, 5);
+    gtk_widget_set_margin_end (radio, 10);
 
     /* Label */
-    create_label(&(lbl), "title_4", "Rollover", grid, 0, 4, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_top(lbl, 10);
+    create_label(&(lbl), "title_4", "Rollover bar", grid, 0, 3, 1, 1);
     gtk_widget_set_margin_start(lbl, 5);
-    gtk_widget_set_margin_end(lbl, 10);
 
     /* Set label and percentage options */
     get_user_pref(OV_BAR_LBL, &p);
@@ -217,40 +224,57 @@ GtkWidget * std_prefs(MainUi *m_ui)
     i = atoi(p);
     idx[i] = TRUE;
 
-    create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 1, 4, 1, 1, "idx", "0");
+    create_radio(&radio, NULL, "Label", "rad_1", grid, idx[0], 0, 4, 1, 1, "idx", "0");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
     radio_grp = radio;
-    gtk_widget_set_margin_top (radio, 12);
-    create_radio(&radio, radio_grp, "Percentage", "rad_1", grid, idx[1], 1, 5, 1, 1, "idx", "1");
+    gtk_widget_set_halign(radio, GTK_ALIGN_END);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
+
+    create_radio(&radio, radio_grp, "Percent", "rad_1", grid, idx[1], 1, 4, 1, 1, "idx", "1");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
-    create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 1, 6, 1, 1, "idx", "2");
+    gtk_widget_set_halign(radio, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
+
+    create_radio(&radio, radio_grp, "Both", "rad_1", grid, idx[2], 2, 4, 1, 1, "idx", "2");
     g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
+    gtk_widget_set_halign(radio, GTK_ALIGN_START);
+    gtk_widget_set_valign(radio, GTK_ALIGN_CENTER);
 
     /* Label */
-    create_label(&(lbl), "lbl", "Refresh interval", grid, 0, 7, 1, 1);
-    gtk_widget_set_halign(lbl, GTK_ALIGN_END);
-    gtk_widget_set_margin_start(lbl, 10);
-    gtk_widget_set_margin_end(lbl, 10);
+    create_label(&(lbl), "title_4", "Refresh every", grid, 0, 5, 1, 1);
+    gtk_widget_set_margin_start(lbl, 5);
 
     /* Set refresh interval */
-    get_user_pref(REFRESH_INT, &p);
-    create_entry(&(ent), "data_1", grid, 1, 7);
-    gtk_entry_set_max_length (GTK_ENTRY (ent), 3);
-    gtk_entry_set_width_chars (GTK_ENTRY (ent), 5);
-    gtk_widget_set_margin_start(ent, 10);
-    gtk_widget_set_margin_end(ent, 20);
+    get_user_pref(REFRESH_TM, &p);
+    m_ui->refresh_tm = gtk_entry_new();  
+    gtk_widget_set_name(m_ui->refresh_tm, "data_1");
+    gtk_entry_set_text (GTK_ENTRY (m_ui->refresh_tm), p);
+    gtk_widget_set_hexpand (m_ui->refresh_tm, FALSE);
+    gtk_entry_set_max_length (GTK_ENTRY (m_ui->refresh_tm), 3);
+    gtk_entry_set_width_chars (GTK_ENTRY (m_ui->refresh_tm), 3);
+    gtk_widget_set_margin_start(m_ui->refresh_tm, 8);
+    gtk_widget_set_valign(GTK_WIDGET (m_ui->refresh_tm), GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(GTK_WIDGET (m_ui->refresh_tm), GTK_ALIGN_CENTER);
 
     //g_signal_connect (ent, "toggled", G_CALLBACK (OnPrefRefresh), m_ui);
 
     /* Label */
-    create_label(&(lbl), "lbl", "(mins)", grid, 2, 7, 1, 1);
-    gtk_widget_set_margin_start(lbl, 5);
+    lbl = gtk_label_new("(mins.)");  
+    gtk_widget_set_name(lbl, "title_4");
+
+    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+    gtk_box_pack_start (GTK_BOX (tbox), m_ui->refresh_tm, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tbox), lbl, FALSE, FALSE, 0);
+    gtk_widget_set_valign(GTK_WIDGET (tbox), GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top (tbox, 5);
+    gtk_grid_attach(GTK_GRID (grid), tbox, 1, 5, 1, 1);
 
     /* Save button */
     save_btn = gtk_button_new_with_label("Save");
-    gtk_widget_set_margin_end(save_btn, 5);
+    gtk_widget_set_margin_top(save_btn, 10);
     gtk_widget_set_margin_bottom(save_btn, 3);
-    gtk_grid_attach(GTK_GRID (grid), save_btn, 2, 8, 1, 1);
+    gtk_widget_set_valign(save_btn, GTK_ALIGN_CENTER);
+    gtk_grid_attach(GTK_GRID (grid), save_btn, 1, 6, 1, 1);
     g_signal_connect (save_btn, "clicked", G_CALLBACK (OnPrefSave), m_ui);
 
     gtk_container_add(GTK_CONTAINER (frame), grid);
@@ -496,6 +520,12 @@ void set_default_prefs()
 
     if (p == NULL)
 	add_user_pref(OV_BAR_LBL, "1");
+
+    /* Overview bar chart labels */
+    get_user_pref(REFRESH_TM, &p);
+
+    if (p == NULL)
+	add_user_pref(REFRESH_TM, "30");
 
     return;
 }

@@ -71,7 +71,7 @@ static const char *about_text[][2] =
     		 "This program comes with ABSOLUTELY NO\n"
     		 "WARRANTY. See the GNU General Public\n" 
 		 "License, version 3 or later for details.\n" },
-    { "Credits", "Tony Buckley\t (tony.buckley000@gmail.com)\n" }
+    { "Credits", "Tony Buckley\t tony.buckley000@gmail.com\n" }
 };
 static const int txt_max = 2;
 

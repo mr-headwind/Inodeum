@@ -419,8 +419,6 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
 
 void create_entry(GtkWidget **ent, char *nm, GtkWidget *cntr, int col, int row) 
 {  
-    GtkWidget *lbl;
-
     *ent = gtk_entry_new();  
     gtk_widget_set_name(*ent, nm);
 
