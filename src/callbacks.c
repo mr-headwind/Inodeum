@@ -282,11 +282,14 @@ void OnResetPW(GtkWidget *menu_item, gpointer user_data)
 void OnPrefSave(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
+    const char *s;
 
     /* Get data */
     m_ui = (MainUi *) user_data;
 
     /* Write user preferences to file */
+    s = gtk_entry_get_text (GTK_ENTRY (m_ui->refresh_tm));
+    set_user_pref(REFRESH_TM, (char *) s);
     write_user_prefs(m_ui->window);
 
     return;

@@ -56,10 +56,9 @@ void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void service_panel(MainUi *);
 void history_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+void create_label2(GtkWidget **, char *, char *, GtkWidget *);
 void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
-void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, 
-		  int, int, int, int, int,
-		  char *, char *);
+void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, char *, char *);
 void show_panel(GtkWidget *, MainUi *); 
 GtkWidget * debug_cntr(GtkWidget *);
 
@@ -415,6 +414,23 @@ void create_label(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr,
 }
 
 
+/* Create standard label */
+
+void create_label2(GtkWidget **lbl, char *nm, char *txt, GtkWidget *cntr) 
+{  
+    *lbl = gtk_label_new(txt);  
+    gtk_widget_set_name(*lbl, nm);
+
+    gtk_widget_set_halign(*lbl, GTK_ALIGN_START);
+    gtk_widget_set_valign(*lbl, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top (*lbl, 5);
+    gtk_widget_set_margin_start (*lbl, 10);
+    gtk_box_pack_start (GTK_BOX (cntr), *lbl, FALSE, FALSE, 0);
+
+    return;
+}
+
+
 /* Create standard entry */
 
 void create_entry(GtkWidget **ent, char *nm, GtkWidget *cntr, int col, int row) 
@@ -432,8 +448,7 @@ void create_entry(GtkWidget **ent, char *nm, GtkWidget *cntr, int col, int row)
 /* Create standard radio */
 
 void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidget *cntr, 
-		  int active, int col, int row, int c_spn, int r_spn,
-		  char *obj_nm, char *obj_data_str)
+		  int active, char *obj_nm, char *obj_data_str)
 {  
     if (grp == NULL)
 	*rad = gtk_radio_button_new_with_label (NULL, txt);
@@ -441,7 +456,11 @@ void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidge
 	*rad = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (grp), txt);
 
     gtk_widget_set_name(*rad, "rad_1");
-    gtk_grid_attach(GTK_GRID (cntr), *rad, col, row, c_spn, r_spn);
+    gtk_widget_set_halign(*rad, GTK_ALIGN_START);
+    gtk_widget_set_valign(*rad, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top (*rad, 0);
+    gtk_widget_set_margin_start (*rad, 0);
+    gtk_box_pack_start (GTK_BOX (cntr), *rad, FALSE, FALSE, 0);
 
     if (active == TRUE)
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (*rad), TRUE);
