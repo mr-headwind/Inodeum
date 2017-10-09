@@ -37,6 +37,7 @@
 #include <gtk/gtk.h>  
 #include <cairo/cairo.h>
 #include <math.h>
+#include <ctype.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -62,6 +63,8 @@ void OnPrefSave(GtkWidget*, gpointer);
 void OnPrefPieLbl(GtkToggleButton*, gpointer);
 void OnPrefPieLgd(GtkToggleButton*, gpointer);
 void OnPrefBarLbl(GtkToggleButton*, gpointer);
+int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
+void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
@@ -282,14 +285,11 @@ void OnResetPW(GtkWidget *menu_item, gpointer user_data)
 void OnPrefSave(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
-    const char *s;
 
     /* Get data */
     m_ui = (MainUi *) user_data;
 
     /* Write user preferences to file */
-    s = gtk_entry_get_text (GTK_ENTRY (m_ui->refresh_tm));
-    set_user_pref(REFRESH_TM, (char *) s);
     write_user_prefs(m_ui->window);
 
     return;
@@ -357,6 +357,53 @@ void OnPrefBarLbl(GtkToggleButton *rad, gpointer user_data)
     /* Determine which radio toggled and set the preference */
     idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
     set_user_pref(OV_BAR_LBL, idx);
+
+    return;
+}  
+
+
+/* Callback - User preference (Data Refresh) set */
+
+int OnSetRefresh(GtkWidget *refresh_tm, GdkEvent *ev, gpointer user_data)
+{  
+    MainUi *m_ui;
+    const char *s;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Write user preferences to file */
+    s = gtk_entry_get_text (GTK_ENTRY (refresh_tm));
+    set_user_pref(REFRESH_TM, (char *) s);
+
+    return FALSE;
+}  
+
+
+/* Callback - User preference (Data Refresh) text checking */
+
+void OnRefreshTxt(GtkEditable *edit, 
+		 gchar *new_txt, 
+		 gint new_length, 
+		 gpointer pos, 
+		 gpointer user_data)
+{  
+    int i;
+    const gchar* content;
+    MainUi *m_ui;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Check numeric content only */
+    for(i = 0; i < new_length; i++)
+    {
+    	if (! isdigit(*(new_txt + i)))
+    	{
+	    log_msg("ERR0029", new_txt, "ERR0029", m_ui->window);
+	    break;
+	}
+    }
 
     return;
 }  

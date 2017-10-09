@@ -85,6 +85,8 @@ extern void OnPrefSave(GtkWidget*, gpointer);
 extern void OnPrefPieLbl(GtkToggleButton*, gpointer);
 extern void OnPrefPieLgd(GtkToggleButton*, gpointer);
 extern void OnPrefBarLbl(GtkToggleButton*, gpointer);
+extern int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
+extern void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 
 
 /* Globals */
@@ -250,7 +252,8 @@ GtkWidget * std_prefs(MainUi *m_ui)
     gtk_widget_set_valign(GTK_WIDGET (m_ui->refresh_tm), GTK_ALIGN_CENTER);
     gtk_widget_set_halign(GTK_WIDGET (m_ui->refresh_tm), GTK_ALIGN_CENTER);
 
-    //g_signal_connect (ent, "entry", G_CALLBACK (OnPrefRefresh), m_ui);
+    g_signal_connect (G_OBJECT (m_ui->refresh_tm), "focus-out-event", G_CALLBACK (OnSetRefresh), m_ui);
+    g_signal_connect (m_ui->refresh_tm, "insert-text", G_CALLBACK (OnRefreshTxt), m_ui);
     gtk_box_pack_start (GTK_BOX (tbox), m_ui->refresh_tm, FALSE, FALSE, 0);
 
     /* Label */

@@ -71,6 +71,7 @@ extern BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Ax
 extern Bar * bar_create(BarChart *);
 extern int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
 extern time_t date_tm_add(struct tm *, char *, int);
+extern int get_user_pref(char *, char **);
 
 
 
@@ -327,12 +328,14 @@ char * format_remdays(time_t time_rovr, double *ndays)
 void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 {  
     double total, quota;
+    char *p;
     Bar *bar;
 
     /* Pie Chart and slices (quota still available or excess) */
     val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);
     val_str2dbl(srv_usg->quota, &quota, NULL, NULL);
 
+    get_user_pref(OV_PIE_LGD, &p);
     //m_ui->pie_chart = pie_chart_create(NULL, 0, FALSE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create(NULL, 0, TRUE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, TRUE);
