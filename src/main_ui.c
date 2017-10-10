@@ -105,7 +105,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     gtk_window_set_title(GTK_WINDOW(m_ui->window), TITLE);
     gtk_window_set_position(GTK_WINDOW(m_ui->window), GTK_WIN_POS_CENTER);
     gtk_window_set_default_size(GTK_WINDOW(m_ui->window), 300, 390);
-    gtk_container_set_border_width(GTK_CONTAINER(m_ui->window), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(m_ui->window), 2);
 
     /* Main view */
     m_ui->mbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
@@ -126,7 +126,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     /* Combine everything onto the window */
     gtk_box_pack_start (GTK_BOX (m_ui->mbox), m_ui->menu_bar, FALSE, FALSE, 2);
     gtk_box_pack_start (GTK_BOX (m_ui->mbox), m_ui->ctrl_box, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (m_ui->mbox), m_ui->status_info, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->mbox), m_ui->status_info, FALSE, FALSE, 0);
 
     gtk_container_add(GTK_CONTAINER(m_ui->window), m_ui->mbox);  
 

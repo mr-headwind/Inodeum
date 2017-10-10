@@ -79,6 +79,7 @@ int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
 CText * new_chart_text(char *, const GdkRGBA *, int);
+CText * label_text(int, CText *);
 CText * percent_ctext(int, char *, const GdkRGBA *, int, CText *);
 CText * percent_text(cairo_t *, CText *, double, double, CText *);
 void free_chart_text(CText *);
@@ -106,14 +107,14 @@ static const double r_rad = 0.7;
 // . Text size is optional (0) and will default to 12.
 
 PieChart * pie_chart_create(char *title, double total_val, int legend, 
-			    const GdkRGBA *txt_colour, int txt_sz, int show_perc)
+			    const GdkRGBA *txt_colour, int txt_sz, int lbl_opt)
 {
     PieChart *pc;
 
     if (legend < 0 || legend > 1)
     	return NULL;
 
-    if (show_perc < 0 || show_perc > 1)
+    if (lbl_opt < LBL || lbl_opt > BOTH)
     	return NULL;
 
     pc = (PieChart *) malloc(sizeof(PieChart));
@@ -121,7 +122,7 @@ PieChart * pie_chart_create(char *title, double total_val, int legend,
 
     pc->title = new_chart_text(title, txt_colour, txt_sz);
 
-    pc->show_perc = show_perc;
+    pc->lbl_opt = lbl_opt;
     pc->total_value = total_val;
     pc->legend = legend;
 
@@ -148,7 +149,7 @@ int pie_slice_create(PieChart *pc, char *desc, double val,
     memset(ps, 0, sizeof(PieSlice));
 
     ps->desc = new_chart_text(desc, txt_colour, txt_sz);
-    ps->perc_txt = percent_ctext(pc->show_perc, "(nnnnnn%)", txt_colour, txt_sz, ps->desc);
+    ps->perc_txt = percent_ctext(pc->lbl_opt, "(nnnnnn%)", txt_colour, txt_sz, ps->desc);
 
     ps->slice_value = val;
     ps->colour = colour;
@@ -324,7 +325,7 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
     	ps = (PieSlice *) l->data;
 
 	/* Set the description (could be null) */
-	txt[0] = ps->desc;
+	txt[0] = label_text(pc->lbl_opt, ps->desc);
 
 	/* Set percentage (could be null) */
 	txt[1] = percent_text(cr, ps->perc_txt, ps->slice_value, total_amt, ps->desc);
@@ -731,12 +732,12 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 //   will be drawn and destroyed as part of the bar chart functions. Just saves having to keep
 //   track and code manually.
 
-BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, int show_perc, 
+BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, int lbl_opt, 
 			    Axis *x_axis, Axis *y_axis)
 {
     BarChart *bc;
 
-    if (show_perc < 0 || show_perc > 1)
+    if (lbl_opt < LBL || lbl_opt > BOTH)
     	return NULL;
 
     bc = (BarChart *) malloc(sizeof(BarChart));
@@ -744,7 +745,7 @@ BarChart * bar_chart_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 
     bc->title = new_chart_text(title, txt_colour, txt_sz);
 
-    bc->show_perc = show_perc;
+    bc->lbl_opt = lbl_opt;
     bc->x_axis = x_axis;
     bc->y_axis = y_axis;
 
@@ -792,7 +793,7 @@ int bar_segment_create(BarChart *bc, Bar *bar, char *desc, const GdkRGBA *colour
     memset(seg, 0, sizeof(BarSegment));
 
     seg->desc = new_chart_text(desc, txt_colour, txt_sz);
-    seg->perc_txt = percent_ctext(bc->show_perc, "(n%)", txt_colour, txt_sz, seg->desc);
+    seg->perc_txt = percent_ctext(bc->lbl_opt, "(n%)", txt_colour, txt_sz, seg->desc);
 
     if (val < bar->min_val || bar->min_val == 0)
     	bar->min_val = val;
@@ -978,7 +979,7 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 	cairo_fill (cr);
 
 	/* Add the description (could be null) */
-	txt[0] = bar_seg->desc;
+	txt[0] = label_text(bc->lbl_opt, bar_seg->desc);
 
 	/* Pass percentage (could be null) */
 	txt[1] = percent_text(cr, bar_seg->perc_txt, bar_seg->segment_value, bar->abs_val, bar_seg->desc);
@@ -1183,14 +1184,25 @@ void free_chart_text(CText *ctext)
 }
 
 
+/* Set up label text */
+
+CText * label_text(int lbl_opt, CText *desc)
+{
+    if (lbl_opt == PC)
+    	return NULL;
+
+    return desc;
+}
+
+
 /* New chart text class */
 
-CText * percent_ctext(int show_pc, char *txt, const GdkRGBA *colour, int sz, CText *base_ctext)
+CText * percent_ctext(int lbl_opt, char *txt, const GdkRGBA *colour, int sz, CText *base_ctext)
 {
     int fsz;
     CText *ctext;
 
-    if (show_pc == FALSE)
+    if (lbl_opt == LBL)
     	return NULL;
 
     fsz = sz;

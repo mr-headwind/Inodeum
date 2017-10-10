@@ -327,6 +327,7 @@ char * format_remdays(time_t time_rovr, double *ndays)
 
 void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 {  
+    int lbl, lgd;
     double total, quota;
     char *p;
     Bar *bar;
@@ -335,11 +336,14 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);
     val_str2dbl(srv_usg->quota, &quota, NULL, NULL);
 
+    get_user_pref(OV_PIE_LBL, &p);
+    lbl = atoi(p);
     get_user_pref(OV_PIE_LGD, &p);
+    lgd = atoi(p);
     //m_ui->pie_chart = pie_chart_create(NULL, 0, FALSE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create(NULL, 0, TRUE, NULL, 0);
     //m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, TRUE);
-    m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, FALSE, &DARK_BLUE, 9, TRUE);
+    m_ui->pie_chart = pie_chart_create("Quota Distribution", 0, lgd, &DARK_BLUE, 9, lbl);
 
     if (total > quota)
     {
@@ -356,7 +360,9 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     /*
     */
 printf("%s quota %0.4f  rem %0.4f\n", debug_hdr, m_ui->days_quota, m_ui->days_rem); fflush(stdout);
-    m_ui->bar_chart = bar_chart_create("Quota Rollover", &DARK_BLUE, 9, TRUE, NULL, NULL);
+    get_user_pref(OV_BAR_LBL, &p);
+    lbl = atoi(p);
+    m_ui->bar_chart = bar_chart_create("Quota Rollover", &DARK_BLUE, 9, lbl, NULL, NULL);
     //m_ui->bar_chart = bar_chart_create("Rollover Days (%)", &DARK_BLUE, 10, TRUE, NULL, NULL);
     bar = bar_create(m_ui->bar_chart);
     bar_segment_create(m_ui->bar_chart, bar, NULL, &MID_YELLOW, &DARK_MAROON, 9, 

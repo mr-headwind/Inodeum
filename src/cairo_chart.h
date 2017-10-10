@@ -60,7 +60,7 @@ typedef struct _pie_chart
     CText *title;
     double total_value;
     int legend;
-    int show_perc;
+    int lbl_opt;
     GList *pie_slices;
 } PieChart;
 
@@ -95,7 +95,7 @@ typedef struct _axis
 typedef struct _bar_chart
 {
     CText *title;
-    int show_perc;
+    int lbl_opt;
     double chart_min_val;
     double chart_max_val;
     Axis *x_axis;

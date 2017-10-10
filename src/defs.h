@@ -42,6 +42,13 @@
 #define FALSE 0
 #endif
 
+#ifndef LBL_OPT
+#define LBL_OPT
+#define LBL 0
+#define PC 1
+#define BOTH 2
+#endif
+
 #ifndef AC_COLOURS
 #define AC_COLOURS
 #ifdef MAIN_UI
