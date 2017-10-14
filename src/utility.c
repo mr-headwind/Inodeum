@@ -142,10 +142,11 @@ static const char *app_messages[][2] =
     { "ERR0041", "File %s does not exist or cannot be read. "},
     { "ERR0042", "File error %s "},
     { "ERR0043", "Failed to create file: %s "},
+    { "ERR0044", "Failed to create data refresh timer. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 46;
+static const int Msg_Count = 47;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

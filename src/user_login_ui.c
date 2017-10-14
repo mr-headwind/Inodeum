@@ -97,6 +97,7 @@ extern void OnQuit(GtkWidget*, gpointer);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void disable_login(MainUi *);
 extern void display_overview(IspData *isp_data, MainUi *m_ui);
+extern int refresh_thread(MainUi *);
 extern void set_css();
 
 
@@ -511,6 +512,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     {
     	disable_login(m_ui);
     	display_overview(isp_data, m_ui);
+    	refresh_thread(m_ui);
     }
 
     else if (r == -1)

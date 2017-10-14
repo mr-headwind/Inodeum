@@ -38,9 +38,12 @@
 /* Includes */
 #include <stdlib.h>  
 #include <string.h>  
+#include <unistd.h>
+#include <errno.h>
 #include <libgen.h>  
 #include <gtk/gtk.h>  
 #include <gdk/gdkkeysyms.h>  
+#include <pthread.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -60,8 +63,8 @@ void create_label2(GtkWidget **, char *, char *, GtkWidget *);
 void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, char *, char *);
 void show_panel(GtkWidget *, MainUi *); 
+int refresh_thread(MainUi *);
 GtkWidget * debug_cntr(GtkWidget *);
-
 void disable_login(MainUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -74,6 +77,7 @@ extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
 extern void monitor_panel(MainUi *);
 extern void set_css();
+extern int get_user_pref(char *, char **);
 
 extern void OnOverview(GtkWidget*, gpointer);
 extern void OnService(GtkWidget*, gpointer);
@@ -90,6 +94,7 @@ extern void OnOK(GtkRange*, gpointer);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-main_ui.c ";
+static pthread_t refresh_tid;
 
 
 /* Create the user interface and set the CallBacks */
@@ -166,6 +171,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     {
     	disable_login(m_ui);
     	display_overview(isp_data, m_ui);
+    	refresh_thread(m_ui);
     }
 
     return;
@@ -484,6 +490,29 @@ void disable_login(MainUi *m_ui)
 
     return;
 }
+
+
+/* Start the refresh timer thread */
+
+int refresh_thread(MainUi *m_ui)
+{  
+    int p_err;
+    long l;
+    char *p;
+
+    /* Get interval specified */
+    get_user_pref(REFRESH_TM, &p);
+    l = atol(p);
+
+    /* Start thread */
+    if ((p_err = pthread_create(&refresh_tid, NULL, timer_thread, (void *) l)) != 0)
+    {
+	sprintf(app_msg_extra, "Error: %s", strerror(p_err));
+	log_msg("ERR0044", NULL, "ERR0044", m_ui->window);
+	return FALSE;
+    }
+
+    return TRUE;;
 
 
 /* Debug widget container */
