@@ -63,9 +63,11 @@ void create_label2(GtkWidget **, char *, char *, GtkWidget *);
 void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, char *, char *);
 void show_panel(GtkWidget *, MainUi *); 
-int refresh_thread(MainUi *);
-GtkWidget * debug_cntr(GtkWidget *);
 void disable_login(MainUi *);
+int refresh_thread(MainUi *);
+void add_main_loop(MainUi *);
+void timer_thread(void *);
+GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void user_login_main(IspData *, GtkWidget *);
@@ -94,7 +96,9 @@ extern void OnOK(GtkRange*, gpointer);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-main_ui.c ";
-static pthread_t refresh_tid;
+static const int main_loop_interval = 30;
+static int ret_mon;
+static RefreshTmr RefTmr;
 
 
 /* Create the user interface and set the CallBacks */
@@ -171,7 +175,9 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     {
     	disable_login(m_ui);
     	display_overview(isp_data, m_ui);
-    	refresh_thread(m_ui);
+
+    	if (refresh_thread(m_ui) == TRUE)
+	    add_main_loop(m_ui);
     }
 
     return;
@@ -492,27 +498,74 @@ void disable_login(MainUi *m_ui)
 }
 
 
-/* Start the refresh timer thread */
+/* Start the refresh timer thread and set the start time */
 
 int refresh_thread(MainUi *m_ui)
 {  
     int p_err;
-    long l;
     char *p;
 
-    /* Get interval specified */
+    /* Initial timer setup */
+    RefTmr.refresh_req = FALSE;
+    RefTmr.start_t = time(NULL);
     get_user_pref(REFRESH_TM, &p);
-    l = atol(p);
+    RefTmr.ref_interval = atol(p) * 60;
 
     /* Start thread */
-    if ((p_err = pthread_create(&refresh_tid, NULL, timer_thread, (void *) l)) != 0)
+    if ((p_err = pthread_create(&(RefTmr.refresh_tid), NULL, timer_thread, (void *) RefTmr)) != 0)
     {
 	sprintf(app_msg_extra, "Error: %s", strerror(p_err));
 	log_msg("ERR0044", NULL, "ERR0044", m_ui->window);
 	return FALSE;
     }
 
-    return TRUE;;
+    return TRUE;
+}
+
+
+/* Add a main loop timer */
+
+void add_main_loop(MainUi *m_ui)
+{  
+    tmr_id = g_timeout_add_seconds(main_loop_interval, refresh_main_loop_fn, m_ui);
+
+    return;
+}
+
+
+/* Refresh timer thread */
+
+void timer_thread(void *arg)
+{  
+    int rem;
+    RefreshTmr *ref_tmr;
+
+    /* Initial */
+    ref_tmr = (RefreshTmr *) arg;
+
+    /* Get time */
+    while(1)
+    {
+	ref_tmr->curr_t = time(NULL);
+	rem = abs((ref_tmr->curr_t - ref_tmr->start_t + ref_tmr->ref_interval) / 60);
+
+	/* Set info text */
+	if (ref_tmr->curr_t - (ref_tmr->start_t + ref_tmr->ref_interval) >= 0)
+	{
+	    sprintf(ref_tmr->info_txt, "Refreshing usage details...");
+	    break;
+	}
+	else
+	{
+	    sprintf(ref_tmr->info_txt, "Next usage refresh due in %d minutes", rem);
+	}
+
+	usleep(15000);
+    }
+    
+    pthread_exit(&ret_mon);
+}
+
 
 
 /* Debug widget container */

@@ -113,3 +113,17 @@ typedef struct _main_ui
     int duration, user_cd;
     double days_rem, days_quota;
 } MainUi;
+
+
+/* Structure for main loop and data refresh timer */
+
+typedef struct _refresh_tmr
+{
+    pthread_t refresh_tid;
+    guint tmr_id;
+    int refresh_req = FALSE;
+    time_t start_t;
+    time_t curr_t;
+    long ref_interval;
+    char info_txt[50];
+} RefreshTmr;
