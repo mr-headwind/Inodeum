@@ -44,6 +44,20 @@
 #include <cairo_chart.h>
 
 
+/* Structure for main loop and data refresh timer */
+
+typedef struct _refresh_tmr
+{
+    pthread_t refresh_tid;
+    guint tmr_id;
+    int refresh_req = FALSE;
+    time_t start_t;
+    time_t curr_t;
+    long ref_interval;
+    char info_txt[50];
+} RefreshTmr;
+
+
 /* Structure to contain main interface items for easy access */
 
 typedef struct _main_ui
@@ -112,18 +126,5 @@ typedef struct _main_ui
     /* Misc */
     int duration, user_cd;
     double days_rem, days_quota;
+    RefreshTmr RefTmr;
 } MainUi;
-
-
-/* Structure for main loop and data refresh timer */
-
-typedef struct _refresh_tmr
-{
-    pthread_t refresh_tid;
-    guint tmr_id;
-    int refresh_req = FALSE;
-    time_t start_t;
-    time_t curr_t;
-    long ref_interval;
-    char info_txt[50];
-} RefreshTmr;
