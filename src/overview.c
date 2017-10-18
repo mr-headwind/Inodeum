@@ -59,6 +59,7 @@ char * format_dt(char *, time_t *, struct tm **);
 char * format_remdays(time_t, double *);
 void create_charts(ServUsage *, IspData *, MainUi *);
 
+extern void show_panel(GtkWidget *, MainUi *);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
@@ -151,13 +152,6 @@ void overview_panel(MainUi *m_ui)
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr, "oview_panel");
 
-    /*
-    m_ui->txt_view = gtk_text_view_new();
-    gtk_container_add(GTK_CONTAINER(m_ui->scrollwin), m_ui->txt_view);
-    gtk_widget_set_name(m_ui->txt_view, "xml");
-    gtk_text_view_set_editable (GTK_TEXT_VIEW (m_ui->txt_view), FALSE);
-    */
-
     return;
 }
 
@@ -166,7 +160,27 @@ void overview_panel(MainUi *m_ui)
 
 void display_overview(IspData *isp_data, MainUi *m_ui)
 {  
-    int ov_set;
+    ServUsage *srv_usg;
+
+    /* Make panel current */
+    show_panel(m_ui->oview_cntr, m_ui);
+
+    /* Set up usage graphs */
+    srv_usg = get_service_usage();
+    create_charts(srv_usg, isp_data, m_ui);
+
+    /* Show */
+    gtk_widget_show_all(m_ui->window);
+
+
+    return;
+}
+
+
+/* Load usage details */
+
+void load_overview(IspData *isp_data, MainUi *m_ui)
+{  
     char *s;
     time_t time_rovr;
     struct tm *dtm;
@@ -202,15 +216,6 @@ void display_overview(IspData *isp_data, MainUi *m_ui)
     s = format_usg(srv_usg->total_bytes, srv_usg->unit);
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
     free(s);
-
-    m_ui->curr_panel = m_ui->oview_cntr;
-    gtk_stack_set_visible_child (GTK_STACK (m_ui->panel_stk), m_ui->oview_cntr);
-
-    /* Set up usage graphs */
-    create_charts(srv_usg, isp_data, m_ui);
-
-    /* Show */
-    gtk_widget_show_all(m_ui->window);
 
     return;
 }

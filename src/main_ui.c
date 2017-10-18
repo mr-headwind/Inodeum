@@ -173,6 +173,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     else
     {
     	disable_login(m_ui);
+    	load_overview(isp_data, m_ui);
     	display_overview(isp_data, m_ui);
 
     	if (refresh_thread(m_ui) == TRUE)
@@ -518,11 +519,17 @@ void refresh_main_loop_fn(gpointer user_data)
     /* Initial */
     m_ui = (MainUi *) user_data;
     ref_tmr = m_ui->RefTmr;
+    gtk_label_set_text (GTK_LABEL (m_ui->status_info), ref_tmr->status_info);
+    gtk_widget_show (m_ui->status_info);
+
+    if (ref_tmr->refresh_req = FALSE)
+    	return;
 
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return;
 
+    load_overview(isp_data, m_ui);
     refresh_thread(m_ui);
 
     return;

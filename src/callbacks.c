@@ -51,7 +51,6 @@
 /* Prototypes */
 
 void OnOverview(GtkWidget*, gpointer);
-gboolean OnOvExpose(GtkWidget *, cairo_t *, gpointer);
 void OnService(GtkWidget*, gpointer);
 void OnMonitor(GtkWidget*, gpointer);
 void OnHistory(GtkWidget*, gpointer);
@@ -66,6 +65,7 @@ void OnPrefBarLbl(GtkToggleButton*, gpointer);
 int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
 void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
+gboolean OnOvExpose(GtkWidget *, cairo_t *, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
 void OnOK(GtkWidget*, gpointer);
