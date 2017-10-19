@@ -73,7 +73,6 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
-extern void display_overview(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
@@ -174,7 +173,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     {
     	disable_login(m_ui);
     	load_overview(isp_data, m_ui);
-    	display_overview(isp_data, m_ui);
+    	show_panel(m_ui->oview_cntr, m_ui);
 
     	if (refresh_thread(m_ui) == TRUE)
 	    add_main_loop(m_ui);

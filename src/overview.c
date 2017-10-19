@@ -53,13 +53,11 @@
 /* Prototypes */
 
 void overview_panel(MainUi *m_ui);
-void display_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
 char * format_dt(char *, time_t *, struct tm **);
 char * format_remdays(time_t, double *);
 void create_charts(ServUsage *, IspData *, MainUi *);
 
-extern void show_panel(GtkWidget *, MainUi *);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
@@ -71,6 +69,8 @@ extern int pie_slice_create(PieChart *, char *, double, const GdkRGBA *, const G
 extern BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 extern Bar * bar_create(BarChart *);
 extern int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
+extern void free_pie_chart(PieChart *);
+extern void free_bar_chart(BarChart *);
 extern time_t date_tm_add(struct tm *, char *, int);
 extern int get_user_pref(char *, char **);
 
@@ -156,27 +156,6 @@ void overview_panel(MainUi *m_ui)
 }
 
 
-/* Display usage details */
-
-void display_overview(IspData *isp_data, MainUi *m_ui)
-{  
-    ServUsage *srv_usg;
-
-    /* Make panel current */
-    show_panel(m_ui->oview_cntr, m_ui);
-
-    /* Set up usage graphs */
-    srv_usg = get_service_usage();
-    create_charts(srv_usg, isp_data, m_ui);
-
-    /* Show */
-    gtk_widget_show_all(m_ui->window);
-
-
-    return;
-}
-
-
 /* Load usage details */
 
 void load_overview(IspData *isp_data, MainUi *m_ui)
@@ -216,6 +195,12 @@ void load_overview(IspData *isp_data, MainUi *m_ui)
     s = format_usg(srv_usg->total_bytes, srv_usg->unit);
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
     free(s);
+
+    /* Show */
+    gtk_widget_show_all(m_ui->window);
+
+    /* Set up usage graphs */
+    create_charts(srv_usg, isp_data, m_ui);
 
     return;
 }
@@ -336,6 +321,13 @@ void create_charts(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     double total, quota;
     char *p;
     Bar *bar;
+
+    /* Charts need to be recreated after refresh */
+    if (m_ui->pie_chart != NULL)
+    	free_pie_chart(m_ui->pie_chart);
+
+    if (m_ui->bar_chart != NULL)
+    	free_bar_chart(m_ui->bar_chart);
 
     /* Pie Chart and slices (quota still available or excess) */
     val_str2dbl(srv_usg->total_bytes, &total, NULL, NULL);

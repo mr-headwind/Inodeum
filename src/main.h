@@ -50,7 +50,7 @@ typedef struct _refresh_tmr
 {
     pthread_t refresh_tid;
     guint tmr_id;
-    int refresh_req = FALSE;
+    int refresh_req;
     time_t start_t;
     time_t curr_t;
     long ref_interval;
