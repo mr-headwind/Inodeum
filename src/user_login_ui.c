@@ -96,8 +96,10 @@ extern void deregister_window(GtkWidget *);
 extern void OnQuit(GtkWidget*, gpointer);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void disable_login(MainUi *);
-extern void display_overview(IspData *isp_data, MainUi *m_ui);
+extern void load_overview(IspData *isp_data, MainUi *m_ui);
+extern void show_panel(GtkWidget *, MainUi *);
 extern int refresh_thread(MainUi *);
+extern void add_main_loop(MainUi *);
 extern void set_css();
 
 
@@ -511,8 +513,11 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     if (r == TRUE)
     {
     	disable_login(m_ui);
-    	display_overview(isp_data, m_ui);
-    	refresh_thread(m_ui);
+    	load_overview(isp_data, m_ui);
+    	show_panel(m_ui->oview_cntr, m_ui);
+
+    	if (refresh_thread(m_ui) == TRUE)
+	    add_main_loop(m_ui);
     }
 
     else if (r == -1)

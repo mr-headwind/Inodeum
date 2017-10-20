@@ -53,6 +53,7 @@
 /* Prototypes */
 
 void overview_panel(MainUi *m_ui);
+void load_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
 char * format_dt(char *, time_t *, struct tm **);
 char * format_remdays(time_t, double *);

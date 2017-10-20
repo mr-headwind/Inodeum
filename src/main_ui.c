@@ -65,8 +65,9 @@ void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, c
 void show_panel(GtkWidget *, MainUi *); 
 void disable_login(MainUi *);
 void add_main_loop(MainUi *);
+gboolean refresh_main_loop_fn(gpointer);
 int refresh_thread(MainUi *);
-void timer_thread(void *);
+void * timer_thread(void *);
 GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -74,6 +75,7 @@ extern void user_login_main(IspData *, GtkWidget *);
 extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
+extern void load_overview(IspData *, MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
 extern void monitor_panel(MainUi *);
@@ -509,29 +511,33 @@ void add_main_loop(MainUi *m_ui)
 
 /* Main loop timer function to check for data refresh */
 
-void refresh_main_loop_fn(gpointer user_data)
+gboolean refresh_main_loop_fn(gpointer user_data)
 {
     int r;
     MainUi *m_ui;
+    IspData *isp_data;
     RefreshTmr *ref_tmr;
 
     /* Initial */
+printf("%s main loop refresh in\n", debug_hdr); fflush(stdout);
     m_ui = (MainUi *) user_data;
-    ref_tmr = m_ui->RefTmr;
-    gtk_label_set_text (GTK_LABEL (m_ui->status_info), ref_tmr->status_info);
+    ref_tmr = &(m_ui->RefTmr);
+    isp_data = (IspData *) g_object_get_data (G_OBJECT (m_ui->window), "isp_data");
+
+    gtk_label_set_text (GTK_LABEL (m_ui->status_info), ref_tmr->info_txt);
     gtk_widget_show (m_ui->status_info);
 
-    if (ref_tmr->refresh_req = FALSE)
-    	return;
+    if (ref_tmr->refresh_req == FALSE)
+    	return TRUE;
 
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
-    	return;
+    	return FALSE;
 
     load_overview(isp_data, m_ui);
     refresh_thread(m_ui);
 
-    return;
+    return TRUE;
 }
 
 
@@ -549,7 +555,7 @@ int refresh_thread(MainUi *m_ui)
     m_ui->RefTmr.ref_interval = atol(p) * 60;
 
     /* Start thread */
-    if ((p_err = pthread_create(&(m_ui->RefTmr.refresh_tid), NULL, timer_thread, (void *) m_ui)) != 0)
+    if ((p_err = pthread_create(&(m_ui->RefTmr.refresh_tid), NULL, &timer_thread, (void *) m_ui)) != 0)
     {
 	sprintf(app_msg_extra, "Error: %s", strerror(p_err));
 	log_msg("ERR0044", NULL, "ERR0044", m_ui->window);
@@ -562,24 +568,26 @@ int refresh_thread(MainUi *m_ui)
 
 /* Refresh timer thread */
 
-void timer_thread(void *arg)
+void * timer_thread(void *arg)
 {  
     int mins;
+    time_t ref_t;
     MainUi *m_ui;
     RefreshTmr *ref_tmr;
 
     /* Initial */
     m_ui = (MainUi *) arg;
-    ref_tmr = m_ui->RefTmr;
+    ref_tmr = &(m_ui->RefTmr);
+    ref_t = ref_tmr->start_t + ref_tmr->ref_interval;
 
     /* Get time */
     while(1)
     {
 	ref_tmr->curr_t = time(NULL);
-	mins = abs((ref_tmr->curr_t - ref_tmr->start_t + ref_tmr->ref_interval) / 60);
+	mins = (int) (((ref_t - ref_tmr->curr_t) / 60.0) + 0.5);
 
 	/* Set info text */
-	if (ref_tmr->curr_t - (ref_tmr->start_t + ref_tmr->ref_interval) >= 0)
+	if (ref_tmr->curr_t >= ref_t)
 	{
 	    sprintf(ref_tmr->info_txt, "Refreshing usage details...");
 	    break;
@@ -589,6 +597,8 @@ void timer_thread(void *arg)
 	    sprintf(ref_tmr->info_txt, "Next usage refresh due in %d minutes", mins);
 	}
 
+printf("%s timer thread start: %ld, current: %ld, interval %ld\n", 
+    debug_hdr, ref_tmr->start_t, ref_tmr->curr_t, ref_tmr->ref_interval); fflush(stdout);
 	sleep(15);
     }
     
