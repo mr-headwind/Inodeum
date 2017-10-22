@@ -59,6 +59,7 @@ static const gchar *css_data =
 	"GtkLabel#title_2 { font: Serif 15; font-style: italic; color: #fa8072; }"
 	"GtkLabel#title_3 { font: Sans 9; color: @DARK_BLUE;}"
 	"GtkLabel#title_4 { font: Sans 9; font-weight: bold; }"
+	"GtkLabel#status { font: Sans 9; color: #b8860b; font-style: italic; }"
 	"GtkEntry#data_1 { color: @DARK_BLUE; }"
 	"GtkRadioButton#rad_1 { color: @DARK_BLUE; font: Sans 9; }"
 	"GtkRadioButton > GtkLabel { color: @DARK_BLUE; font: Sans 8; }"

@@ -128,6 +128,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 
     /* INFORMATION AREA AT BOTTOM OF WINDOW */
     m_ui->status_info = gtk_label_new(NULL);
+    gtk_widget_set_name (GTK_WIDGET (m_ui->status_info), "status");
     gtk_widget_set_margin_top(GTK_WIDGET (m_ui->status_info), 5);
     gtk_label_set_text(GTK_LABEL (m_ui->status_info), " ");
     gtk_widget_set_halign(GTK_WIDGET (m_ui->status_info), GTK_ALIGN_START);
@@ -594,7 +595,7 @@ void * timer_thread(void *arg)
 	}
 	else
 	{
-	    sprintf(ref_tmr->info_txt, "Next usage refresh due in %d minutes", mins);
+	    sprintf(ref_tmr->info_txt, "Next refresh due in %d minutes", mins);
 	}
 
 printf("%s timer thread start: %ld, current: %ld, interval %ld\n", 
