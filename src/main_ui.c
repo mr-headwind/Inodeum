@@ -531,6 +531,7 @@ printf("%s main loop refresh in\n", debug_hdr); fflush(stdout);
     if (ref_tmr->refresh_req == FALSE)
     	return TRUE;
 
+printf("%s main loop refresh do refresh\n", debug_hdr); fflush(stdout);
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return FALSE;
@@ -588,14 +589,18 @@ void * timer_thread(void *arg)
 	mins = (int) (((ref_t - ref_tmr->curr_t) / 60.0) + 0.5);
 
 	/* Set info text */
-	if (ref_tmr->curr_t >= ref_t)
+	if (mins == 0)
 	{
 	    sprintf(ref_tmr->info_txt, "Refreshing usage details...");
+	    ref_tmr->refresh_req = TRUE;
 	    break;
 	}
 	else
 	{
-	    sprintf(ref_tmr->info_txt, "Next refresh due in %d minutes", mins);
+	    if (mins == 1)
+		sprintf(ref_tmr->info_txt, "Next refresh due in %d minute", mins);
+	    else
+		sprintf(ref_tmr->info_txt, "Next refresh due in %d minutes", mins);
 	}
 
 printf("%s timer thread start: %ld, current: %ld, interval %ld\n", 

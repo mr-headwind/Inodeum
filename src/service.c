@@ -130,6 +130,14 @@ int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui)
     int i, r;
     IspListObj *isp_srv;
 
+    /* Clean up any previous list */
+    if (isp_data->srv_list_head != NULL)
+    {
+	g_list_free_full(isp_data->srv_list_head, (GDestroyNotify) free_srv_list);
+	isp_data->srv_list_head = NULL;
+	isp_data->srv_list = NULL;
+    }
+
     /* Services count */
     if ((p = get_list_count(xml, "services", &(isp_data)->srv_cnt, m_ui)) == NULL)
     	return FALSE;
@@ -927,6 +935,13 @@ void free_srv_list(gpointer data)
     free(isp_srv->val);
     free(isp_srv->href);
     free(isp_srv->type);
+
+    if (isp_srv->sub_list_head != NULL)
+    {
+	g_list_free_full(isp_srv->sub_list_head, (GDestroyNotify) free_srv_list);
+	isp_srv->sub_list_head = NULL;
+	isp_srv->sub_list = NULL;
+    }
 
     free(isp_srv);
 
