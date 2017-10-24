@@ -38,6 +38,7 @@
 #include <cairo/cairo.h>
 #include <math.h>
 #include <ctype.h>
+#include <pthread.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -567,8 +568,17 @@ printf("%s OnExpose 9\n", debug_hdr); fflush(stdout);
 
 /* Callback - Quit */
 
-void OnQuit(GtkWidget *window, gpointer user_data)
+void OnQuit(GtkWidget *w, gpointer user_data)
 {  
+    GtkWidget *window;
+    MainUi *m_ui;
+
+    /* Do some clean up */
+    window = (GtkWidget *) user_data;
+    m_ui = g_object_get_data (G_OBJECT(window), "ui");
+    pthread_cancel(m_ui->RefTmr.refresh_tid);
+    g_source_remove (m_ui->RefTmr.tmr_id);
+
     /* Close any open windows */
     close_open_ui();
     free_window_reg();

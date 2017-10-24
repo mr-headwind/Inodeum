@@ -39,7 +39,6 @@
 #include <string.h>  
 #include <gtk/gtk.h>  
 #include <gnome-keyring-memory.h>
-#include <pthread.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
@@ -163,8 +162,6 @@ void final(IspData *isp_data, MainUi *m_ui)
 
     if (m_ui->bar_chart != NULL)
 	free_bar_chart(m_ui->bar_chart);
-
-    pthread_cancel(m_ui->RefTmr.refresh_tid);
 
     clean_up(isp_data);
 

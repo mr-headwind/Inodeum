@@ -211,7 +211,7 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
     gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->file_menu), m_ui->file_exit);
 
     /* Callbacks */
-    g_signal_connect_swapped (m_ui->file_exit, "activate", G_CALLBACK (OnQuit), m_ui->window); 
+    g_signal_connect (m_ui->file_exit, "activate", G_CALLBACK (OnQuit), m_ui->window); 
 
     /* Show menu items */
     gtk_widget_show (m_ui->file_exit);
