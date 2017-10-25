@@ -536,8 +536,11 @@ printf("%s main loop refresh do refresh\n", debug_hdr); fflush(stdout);
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return FALSE;
 
+printf("%s main loop refresh overview\n", debug_hdr); fflush(stdout);
     load_overview(isp_data, m_ui);
+printf("%s main loop refresh thread\n", debug_hdr); fflush(stdout);
     refresh_thread(m_ui);
+printf("%s main loop refresh return\n", debug_hdr); fflush(stdout);
 
     return TRUE;
 }
@@ -582,6 +585,7 @@ void * timer_thread(void *arg)
     ref_tmr = &(m_ui->RefTmr);
     ref_t = ref_tmr->start_t + ref_tmr->ref_interval;
 
+printf("%s timer thread start\n", debug_hdr); fflush(stdout);
     /* Get time */
     while(1)
     {
@@ -608,6 +612,7 @@ printf("%s timer thread start: %ld, current: %ld, interval %ld\n",
 	sleep(15);
     }
     
+printf("%s timer thread exit\n", debug_hdr); fflush(stdout);
     pthread_exit(&ret_mon);
 }
 

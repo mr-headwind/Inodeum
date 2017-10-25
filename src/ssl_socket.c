@@ -107,17 +107,20 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 {  
     int r;
 
-    /* Initial */
-    if (ssl_service_init(isp_data, m_ui) == FALSE)
-    	return FALSE;
+    if (isp_data->ctx == NULL)
+    {
+	/* Initial */
+	if (ssl_service_init(isp_data, m_ui) == FALSE)
+	    return FALSE;
 
-    /* Connection */
-    if (ssl_isp_connect(isp_data, m_ui) == FALSE)
-    	return FALSE;
+	/* Connection */
+	if (ssl_isp_connect(isp_data, m_ui) == FALSE)
+	    return FALSE;
 
-    /* User Agent and encoded username/password */
-    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
-    encode_un_pw(isp_data, m_ui);
+	/* User Agent and encoded username/password */
+	sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
+	encode_un_pw(isp_data, m_ui);
+    }
 
     /* 1. Service Listing */
     if ((r = service_list(isp_data, m_ui)) != TRUE)
