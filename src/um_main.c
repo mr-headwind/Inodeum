@@ -146,11 +146,13 @@ void final(IspData *isp_data, MainUi *m_ui)
     if (isp_data->ip != NULL)
 	free(isp_data->ip);
 
+    /*
     if (isp_data->web != NULL)
 	BIO_free_all(isp_data->web);
 
     if (isp_data->ctx != NULL)
 	SSL_CTX_free(isp_data->ctx);
+    */
 
     /* ??? Not sure if needed
     if (isp_data->ssl != NULL)

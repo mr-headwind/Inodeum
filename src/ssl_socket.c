@@ -108,20 +108,17 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 {  
     int r;
 
-    if (isp_data->ctx == NULL)
-    {
-	/* Initial */
-	if (ssl_service_init(isp_data, m_ui) == FALSE)
-	    return FALSE;
+    /* Initial */
+    if (ssl_service_init(isp_data, m_ui) == FALSE)
+	return FALSE;
 
-	/* Connection */
-	if (ssl_isp_connect(isp_data, m_ui) == FALSE)
-	    return FALSE;
+    /* Connection */
+    if (ssl_isp_connect(isp_data, m_ui) == FALSE)
+	return FALSE;
 
-	/* User Agent and encoded username/password */
-	sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
-	encode_un_pw(isp_data, m_ui);
-    }
+    /* User Agent and encoded username/password */
+    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
+    encode_un_pw(isp_data, m_ui);
 
     /* 1. Service Listing */
     if ((r = service_list(isp_data, m_ui)) != TRUE)
@@ -140,7 +137,8 @@ if (init == FALSE)		// Debug
     if (get_default_service(isp_data, m_ui) == FALSE)
     	return FALSE;
 
-    BIO_reset(isp_data->web);
+    BIO_free_all(isp_data->web);
+    SSL_CTX_free(isp_data->ctx);
 init = TRUE;	// Debug
 
     return TRUE;
