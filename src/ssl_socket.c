@@ -133,7 +133,7 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
     BIO_reset(isp_data->web);
 
     /* 3. Usage and Service details for 'Default' service */
-if (init == FALSE)		// Debug
+//if (init == FALSE)		// Debug
     if (get_default_service(isp_data, m_ui) == FALSE)
     	return FALSE;
 
@@ -218,6 +218,8 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
     }
 
+    SSL_set_mode(isp_data->ssl, SSL_MODE_AUTO_RETRY);
+
     /* Remove unwanted ciphers */
     /* PRETTY SURE RC4-MD5 IS OK, but connection still fails if the list below is set 
     const char* const PREFERRED_CIPHERS = "HIGH:RC4:MD5:!aNULL:!kRSA:!PSK:!SRP";
@@ -238,6 +240,12 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     /* Connection and handshake */
     if (BIO_do_connect(isp_data->web) <= 0)
+    {
+	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
+    	return FALSE;
+    }
+
+    if (BIO_do_handshake(isp_data->web) <= 0)
     {
 	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
     	return FALSE;
@@ -316,7 +324,7 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     }
 
     /* Services list */
-if (init == FALSE)		// Debug
+//if (init == FALSE)		// Debug
     r = parse_serv_list(xml, isp_data, m_ui);
     free(xml);
 
@@ -375,7 +383,7 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     	return FALSE;
 
     /* Resources list */
-if (init == FALSE)		// Debug
+//if (init == FALSE)		// Debug
     r = parse_resource_list(xml, isp_srv, isp_data, m_ui);
     free(xml);
     

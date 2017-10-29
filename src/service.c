@@ -1099,14 +1099,14 @@ char * resp_status_desc(char *xml, MainUi *m_ui)
     /* Check for html document and subsequent paragraph */
     if ((p = strstr(xml, htmldoc)) == NULL)
     {
-    	txt = (char *) malloc(strlen(no_msg));
+    	txt = (char *) malloc(strlen(no_msg) + 1);
     	strcpy(txt, no_msg);
     }
     else
     {
 	if ((p = get_tag(p, "p", FALSE, m_ui)) == NULL)
 	{
-	    txt = (char *) malloc(strlen(no_msg));
+	    txt = (char *) malloc(strlen(no_msg) + 1);
 	    strcpy(txt, no_msg);
 	}
 	else
