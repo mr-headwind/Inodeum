@@ -73,6 +73,7 @@ char * next_rollover_dt();
 void clean_up(IspData *);
 void free_srv_list(gpointer);
 void free_hist_list(gpointer);
+void free_traffic_list(gpointer);
 int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
 ServUsage * get_service_usage();
@@ -87,7 +88,6 @@ extern int get_user_pref(char *, char **);
 static const char *debug_hdr = "DEBUG-service.c ";
 static ServUsage srv_usage;
 static SrvPlan srv_plan;
-static GList *usg_hist_list = NULL;
 
 
 
@@ -441,13 +441,17 @@ fflush(stdout);
 int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
     int r, i;
-    int max_attr;
     char *p, *attr, *tag, *val;
     UsageDay *usg_day;
+    TrafficData *traffic;
+    const int max_traffic_attr = 3;		// direction, name & unit
 
     /* Clear history if necessary */
-    if (usg_hist_list != NULL)
-    	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
+    if (isp_data->usg_hist_list != NULL)
+    {
+    	g_list_free_full (isp_data->usg_hist_list, (GDestroyNotify) free_hist_list);
+	isp_data->usg_hist_list = NULL;
+    }
 
     /* Process all the '<usage tags' */
     r = TRUE;
@@ -460,7 +464,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	/* New usage day */
 	p += 6;
-	i = 0;
 	usg_day = malloc(sizeof(UsageDay));
 	memset(usg_day, 0, sizeof(UsageDay));
 
@@ -485,45 +488,39 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    	break;
 	    }
 
-	    max_attr = 3;
+	    traffic = malloc(sizeof(TrafficData));
+	    memset(traffic, 0, sizeof(TrafficData));
+printf("%s traffic 0 \n", debug_hdr); fflush(stdout);
 
-	    while(max_attr > 0)
+	    for(i = 0; i < max_traffic_attr; i++)
 	    {
 		if ((p = get_next_tag_attr(p, &attr, &val, m_ui)) == NULL)
 		    break;
 
+printf("%s traffic 1 attr %s\n", debug_hdr, attr); fflush(stdout);
 		if (strcmp(attr, "direction") == 0)
 		{
 		    /* Direction is 'up' or 'down' */
-		    max_attr--;
-
 		    if (strcmp(val, "up") == 0)
-			usg_day->traffic[i].direction = 0;
+			traffic->direction = 0;
 		    else
-			usg_day->traffic[i].direction = 1;
+			traffic->direction = 1;
 		}
 		else if (strcmp(attr, "name") == 0)
 		{
 		    /* Traffic name is 'metered' or 'unmetered' or 'total' */
-		    max_attr--;
-
 		    if (strcmp(val, "metered") == 0)
-			usg_day->traffic[i].tr_name = 0;
-
+			traffic->tr_name = 0;
 		    else if (strcmp(val, "total") == 0)
-		    {
-			usg_day->traffic[i].tr_name = 2;
-			max_attr--;
-		    }
+			traffic->tr_name = 2;
 		    else
-			usg_day->traffic[i].tr_name = 1;
+			traffic->tr_name = 1;
 		}
 		else if (strcmp(attr, "unit") == 0)
 		{
 		    /* Unit of measurement */
-		    max_attr--;
-		    usg_day->traffic[i].unit = malloc(strlen(val) + 1);
-		    strcpy(usg_day->traffic[i].unit, val);
+		    traffic->unit = malloc(strlen(val) + 1);
+		    strcpy(traffic->unit, val);
 		}
 
 		free(attr);
@@ -532,22 +529,28 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	    /* Amount of data */
 	    get_tag_val(p, &val, m_ui);
-	    usg_day->traffic[i].traffic_amt = atol(val);
+	    traffic->traffic_amt = atol(val);
 	    free(val);
 
-	    i++;
+	    /* Add to traffic list */
+	    usg_day->traffic_list = g_list_prepend (usg_day->traffic_list, traffic);
 	}
 
+printf("%s traffic 9 attr done\n", debug_hdr); fflush(stdout);
 	/* Add to history list */
-	usg_hist_list = g_list_prepend (usg_hist_list, usg_day);
+	usg_day->traffic_list = g_list_reverse (usg_day->traffic_list);
+	isp_data->usg_hist_list = g_list_prepend (isp_data->usg_hist_list, usg_day);
     }
 
     /* Reset the list */
-    usg_hist_list = g_list_reverse (usg_hist_list);
+    isp_data->usg_hist_list = g_list_reverse (isp_data->usg_hist_list);
 
     /* Clear if error */
     if (r == FALSE)
-    	g_list_free_full (usg_hist_list, (GDestroyNotify) free_hist_list);
+    {
+    	g_list_free_full (isp_data->usg_hist_list, (GDestroyNotify) free_hist_list);
+	isp_data->usg_hist_list = NULL;
+    }
 
 /* Test debug
 printf("%s\nUsage History\n", debug_hdr); fflush(stdout);
@@ -962,13 +965,23 @@ void free_hist_list(gpointer data)
     if (usg_day->usg_dt)
 	free(usg_day->usg_dt);
 
-    for(i = 0; i < 5; i++)
-    {
-    	if (usg_day->traffic[i].unit != NULL)
-	    free(usg_day->traffic[i].unit);
-    }
-
+    g_list_free_full (usg_day->traffic_list, (GDestroyNotify) free_traffic_list);
     free(usg_day);
+
+    return;
+}
+
+
+/* Free a traffic list item */
+
+void free_traffic_list(gpointer data)
+{  
+    int i;
+    TrafficData *traffic;
+
+    traffic = (TrafficData *) data;
+    free(traffic->unit);
+    free(traffic);
 
     return;
 }

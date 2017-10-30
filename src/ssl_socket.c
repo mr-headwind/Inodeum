@@ -96,7 +96,6 @@ extern int check_http_status(char *, int *, MainUi *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-ssl_socket.c ";
-static int init = FALSE;	// Debug
 
 
 /* API Webtools service requests */
@@ -133,13 +132,11 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
     BIO_reset(isp_data->web);
 
     /* 3. Usage and Service details for 'Default' service */
-//if (init == FALSE)		// Debug
     if (get_default_service(isp_data, m_ui) == FALSE)
     	return FALSE;
 
     BIO_free_all(isp_data->web);
     SSL_CTX_free(isp_data->ctx);
-init = TRUE;	// Debug
 
     return TRUE;
 }  
@@ -239,11 +236,15 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Connection and handshake */
+    log_msg("MSG0003", "Connecting...", NULL, NULL);
+
     if (BIO_do_connect(isp_data->web) <= 0)
     {
 	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
     	return FALSE;
     }
+
+    log_msg("MSG0003", "Handshaking...", NULL, NULL);
 
     if (BIO_do_handshake(isp_data->web) <= 0)
     {
@@ -284,6 +285,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 
     r = TRUE;
     sprintf(isp_data->url, "/api/%s/", API_VER);
+    log_msg("MSG0003", "Retrieving usage details...", NULL, NULL);
     
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
@@ -324,7 +326,6 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     }
 
     /* Services list */
-//if (init == FALSE)		// Debug
     r = parse_serv_list(xml, isp_data, m_ui);
     free(xml);
 
@@ -383,7 +384,6 @@ printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     	return FALSE;
 
     /* Resources list */
-//if (init == FALSE)		// Debug
     r = parse_resource_list(xml, isp_srv, isp_data, m_ui);
     free(xml);
     

@@ -169,7 +169,7 @@ typedef struct _traffic_data
 typedef struct _usage_day
 {
     char *usg_dt;
-    TrafficData traffic[5];
+    GList *traffic_list;
 } UsageDay;
 
 
@@ -198,4 +198,5 @@ typedef struct _isp_data
     int srv_cnt;
     GList *srv_list;
     GList *srv_list_head;
+    GList *usg_hist_list;
 } IspData;
