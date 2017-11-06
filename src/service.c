@@ -490,14 +490,12 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	    traffic = malloc(sizeof(TrafficData));
 	    memset(traffic, 0, sizeof(TrafficData));
-printf("%s traffic 0 \n", debug_hdr); fflush(stdout);
 
 	    for(i = 0; i < max_traffic_attr; i++)
 	    {
 		if ((p = get_next_tag_attr(p, &attr, &val, m_ui)) == NULL)
 		    break;
 
-printf("%s traffic 1 attr %s\n", debug_hdr, attr); fflush(stdout);
 		if (strcmp(attr, "direction") == 0)
 		{
 		    /* Direction is 'up' or 'down' */
@@ -510,11 +508,18 @@ printf("%s traffic 1 attr %s\n", debug_hdr, attr); fflush(stdout);
 		{
 		    /* Traffic name is 'metered' or 'unmetered' or 'total' */
 		    if (strcmp(val, "metered") == 0)
+		    {
 			traffic->tr_name = 0;
+		    }
 		    else if (strcmp(val, "total") == 0)
+		    {
 			traffic->tr_name = 2;
+			i++;
+		    }
 		    else
+		    {
 			traffic->tr_name = 1;
+		    }
 		}
 		else if (strcmp(attr, "unit") == 0)
 		{
@@ -536,7 +541,6 @@ printf("%s traffic 1 attr %s\n", debug_hdr, attr); fflush(stdout);
 	    usg_day->traffic_list = g_list_prepend (usg_day->traffic_list, traffic);
 	}
 
-printf("%s traffic 9 attr done\n", debug_hdr); fflush(stdout);
 	/* Add to history list */
 	usg_day->traffic_list = g_list_reverse (usg_day->traffic_list);
 	isp_data->usg_hist_list = g_list_prepend (isp_data->usg_hist_list, usg_day);

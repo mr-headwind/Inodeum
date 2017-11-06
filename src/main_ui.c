@@ -520,7 +520,6 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     RefreshTmr *ref_tmr;
 
     /* Initial */
-printf("%s main loop refresh in\n", debug_hdr); fflush(stdout);
     m_ui = (MainUi *) user_data;
     ref_tmr = &(m_ui->RefTmr);
     isp_data = (IspData *) g_object_get_data (G_OBJECT (m_ui->window), "isp_data");
@@ -531,16 +530,12 @@ printf("%s main loop refresh in\n", debug_hdr); fflush(stdout);
     if (ref_tmr->refresh_req == FALSE)
     	return TRUE;
 
-printf("%s main loop refresh do refresh\n", debug_hdr); fflush(stdout);
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return FALSE;
 
-printf("%s main loop refresh overview\n", debug_hdr); fflush(stdout);
     load_overview(isp_data, m_ui);
-printf("%s main loop refresh thread\n", debug_hdr); fflush(stdout);
     refresh_thread(m_ui);
-printf("%s main loop refresh return\n", debug_hdr); fflush(stdout);
 
     return TRUE;
 }
