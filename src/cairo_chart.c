@@ -583,7 +583,8 @@ printf("%s leg 3  x %0.4f y %0.4f max w %0.4f max h %0.4f\n", debug_hdr, x, y, m
 //   The others may be added as required or will be derived as part of a chart.
 
 Axis * create_axis(char *unit, double start_val, double end_val, double step, 
-		   const GdkRGBA *txt_colour, int txt_sz)
+		   const GdkRGBA *txt_colour, int txt_sz,
+		   const GdkRGBA *step_colour, int step_txt_sz)
 {
     Axis *axis;
 
@@ -601,18 +602,8 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step,
     axis->x2 = -1;
     axis->y2 = -1;
 
-    axis->unit = malloc(strlen(unit) + 1);
-    strcpy(axis->unit, unit);
-
-    if (txt_colour != NULL)
-	axis->txt_colour = txt_colour;
-    else
-	axis->txt_colour = &BLACK;
-
-    if (txt_sz > 0)
-	axis->txt_sz = txt_sz;
-    else
-	axis->txt_sz = 10;
+    axis->unit = new_chart_text(unit, txt_colour, txt_sz);
+    axis->step_mk = new_chart_text("nn", step_colour, step_txt_sz);
 
     axis->start_val = start_val;
     axis->end_val = end_val;
@@ -626,8 +617,8 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step,
 
 void free_axis(Axis *axis)
 {
-    if (axis->unit)
-    	free(axis->unit);
+    if (axis->unit != NULL)
+    	free_chart_text(axis->unit);
 
     free(axis);
 
@@ -640,14 +631,15 @@ void free_axis(Axis *axis)
 void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double y2)
 {
     int i, n_steps;
-    double step_x, step_y, tmpx, tmpy, offset;
+    double step_mk, tmpx, tmpy, offset;
+    CText *desc;
+    const GdkRGBA *rgba;
+
     char s[10];
     const int mark_width = 5;
     const int txt_buf = 3;
-    cairo_text_extents_t ext;
-    const GdkRGBA *rgba;
 
-    /* Save the latest coordinates */
+    /* Save the coordinates */
     axis->x1 = x1;
     axis->y1 = y1;
     axis->x2 = x2;
@@ -655,22 +647,28 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 
     /* Steps */
     n_steps = (int) (axis->end_val - axis->start_val) / axis->step;
-    step_x = (x2 - x1) / n_steps;
-    step_y = (y2 - y1) / n_steps;
+
+    if (x1 == x2)
+	step_mk = (y2 - y1) / n_steps;		// Y axis
+    else
+	step_mk = (x2 - x1) / n_steps;		// X axis
 
     /* Draw axis line */
+    cairo_set_line_width (cr, 1.0); 
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
     cairo_move_to (cr, x1, y1);
     cairo_line_to (cr, x2, y2);
 
     /* Draw step marks and text */
-    cairo_set_font_size (cr, 8);
-
     for(i = 0; i < n_steps; i++)
     {
 	cairo_move_to (cr, x1 + (step_x * i), y1 + (step_y * i));
 	sprintf(s, "%0.5f", (double) n_steps * axis->step);
-	cairo_text_extents (cr, s, &ext);
+
+	desc = axis->unit;
+	cairo_set_font_size (cr, (double) desc->sz);
+	cairo_text_extents (cr, desc->txt, &(desc->ext));
+
 	cairo_get_current_point (cr, &tmpx, &tmpy);
 
 	if (step_x == 0)					// Vertical
@@ -691,9 +689,10 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
     /* Draw axis unit label text */
     if (axis->unit != NULL)
     {
-	rgba = axis->txt_colour;
+	desc = axis->unit;
+	rgba = desc->colour;
 	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-	cairo_set_font_size (cr, axis->txt_sz);
+	cairo_set_font_size (cr, desc->sz);
 
 	if (step_x == 0)
 	{

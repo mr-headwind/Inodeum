@@ -80,9 +80,8 @@ typedef struct _pie_slice
 
 typedef struct _axis
 {
-    char *unit;
-    const GdkRGBA *txt_colour;
-    int txt_sz;
+    CText *unit;
+    CText *step_mk;
     double start_val;
     double end_val;
     double step;
@@ -124,3 +123,23 @@ typedef struct _bar_segment
     const GdkRGBA *colour;
     double segment_value;
 } BarSegment;
+
+
+/* Line Graph main details */
+
+typedef struct _line_graph
+{
+    CText *unit;
+    Axis *x_axis;
+    Axis *y_axis;
+    GList *points;
+} LineGraph;
+
+
+/* Individual line graph points */
+
+typedef struct _point
+{
+    double x_val;
+    double y_val;
+} Point;
