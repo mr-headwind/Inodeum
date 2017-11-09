@@ -66,7 +66,7 @@ int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, 
 void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
 Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
 void free_axis(Axis *);
-void draw_axis(cairo_t *, Axis *, double, double, double, double);
+int draw_axis(cairo_t *, Axis *, double, double, double, double);
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 Bar * bar_create(BarChart *);
 int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
@@ -603,7 +603,7 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step,
     axis->y2 = -1;
 
     axis->unit = new_chart_text(unit, txt_colour, txt_sz);
-    axis->step_mk = new_chart_text("nn", step_colour, step_txt_sz);
+    axis->step_mk = new_chart_text("xy", step_colour, step_txt_sz);
 
     axis->start_val = start_val;
     axis->end_val = end_val;
@@ -620,6 +620,9 @@ void free_axis(Axis *axis)
     if (axis->unit != NULL)
     	free_chart_text(axis->unit);
 
+    if (axis->step_mk != NULL)
+    	free_chart_text(axis->unit);
+
     free(axis);
 
     return;
@@ -628,30 +631,53 @@ void free_axis(Axis *axis)
 
 /* Draw an axis */
 
-void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double y2)
+int draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double y2)
 {
     int i, n_steps;
-    double step_mk, tmpx, tmpy, offset;
+    double step_mk, tmpx, tmpy;
+    double x_offset, y_offset, x_mk_offset, y_mk_offset;
     CText *desc;
     const GdkRGBA *rgba;
+    const int mark_width = -5;
 
-    char s[10];
-    const int mark_width = 5;
-    const int txt_buf = 3;
+    /* Steps */
+    n_steps = (int) (((axis->end_val - axis->start_val) / axis->step) + 0.5);
 
-    /* Save the coordinates */
+    if (x1 == x2)
+    {
+	step_mk = (y2 - y1) / n_steps;		// Y axis
+	x_offset = 0;
+	y_offset = step_mk;
+	x_mk_offset = 0;Save t
+	y_mk_offset = mark_width;
+    }
+    else if (y1 == y2)
+    {
+	step_mk = (x2 - x1) / n_steps;		// X axis
+	x_offset = step_mk * -1.0;
+	y_offset = 0;
+	x_mk_offset = mark_width;
+	y_mk_offset = 0;
+    }
+    else
+    {
+    	return FALSE;
+    }
+
+    /* The coordinates may need adjustment to make space for labels & step marks */
+    for(i = 0; i < n_steps; i++)
+    {
+	sprintf(s, "%0.5f", (double) n_steps * axis->step);
+
+	desc = axis->unit;
+	cairo_set_font_size (cr, (double) desc->sz);
+	cairo_text_extents (cr, desc->txt, &(desc->ext));
+    }
+
     axis->x1 = x1;
     axis->y1 = y1;
     axis->x2 = x2;
     axis->y2 = y2;
-
-    /* Steps */
-    n_steps = (int) (axis->end_val - axis->start_val) / axis->step;
-
-    if (x1 == x2)
-	step_mk = (y2 - y1) / n_steps;		// Y axis
-    else
-	step_mk = (x2 - x1) / n_steps;		// X axis
 
     /* Draw axis line */
     cairo_set_line_width (cr, 1.0); 
@@ -659,9 +685,19 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
     cairo_move_to (cr, x1, y1);
     cairo_line_to (cr, x2, y2);
 
-    /* Draw step marks and text */
+    /* Save current point (axis end point) */
+    cairo_get_current_point (cr, &tmpx, &tmpy);
+
+    /* Draw step marks and value text from the axis end backwards */
     for(i = 0; i < n_steps; i++)
     {
+	/* Draw step mark line */
+	cairo_line_to (cr, tmpx + x_mk_offset, tmpy + y_mk_offset);
+
+	/* Move to next step mark */
+	cairo_move_to (cr, tmpx + (x_offset * i), tmpy + (y_offset * i));
+
+	/*
 	cairo_move_to (cr, x1 + (step_x * i), y1 + (step_y * i));
 	sprintf(s, "%0.5f", (double) n_steps * axis->step);
 
@@ -684,6 +720,7 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 
     	cairo_show_text (cr, s);
 	cairo_fill (cr);
+	*/
     }
 
     /* Draw axis unit label text */
@@ -715,7 +752,7 @@ void draw_axis(cairo_t *cr, Axis *axis, double x1, double y1, double x2, double 
 	cairo_fill (cr);
     }
 
-    return;
+    return TRUE;
 }
 
 
