@@ -72,7 +72,7 @@ int is_ui_reg(char *, int);
 void free_window_reg();
 void close_open_ui();
 int val_str2dbl(char *, double *, char *, GtkWidget *);
-int long_len(long);
+int long_chars(long);
 void string_trim(char*);
 char * log_name();
 char * app_dir_path();
@@ -653,7 +653,7 @@ int val_str2dbl(char *s, double *numb, char *subst, GtkWidget *window)
 
 /* Return the length of a long int */
 
-int long_len(long numb)
+int long_chars(long numb)
 {
     int i;
     long l;
