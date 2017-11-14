@@ -64,11 +64,11 @@ void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
 int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, double *, GtkAllocation *);
 void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
-Axis * create_axis(char *, double, double, double, const GdkRGBA *, int);
+Axis * create_axis(char *, double, double, double, double, const GdkRGBA *, int, const GdkRGBA *, int);
 void free_axis(Axis *);
 int draw_axis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
 int axis_space_analysis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
-BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *, );
+BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 Bar * bar_create(BarChart *);
 int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
 void free_bar_chart(BarChart *);
@@ -98,6 +98,7 @@ static const double lgd_rect_width = 20.0;
 static const double lgd_buf = 5.0;
 static const double r_rad = 0.7;
 static const long mark_length = 5.0;
+static const double axis_buf = 5.0;
 
 
 
@@ -237,7 +238,7 @@ int draw_pie_chart(cairo_t *cr, PieChart *pc, GtkAllocation *allocation)
     if (pc->total_value != 0)
     	if (pc->total_value != total_amt)
 	    r = -1;
-(double) desc->sz
+
     /* Set default pie centre and radius leaving a buffer at sides */
     xc = (double) allocation->width / 2.0;
     yc = (double) allocation->height / 2.0;
@@ -292,7 +293,7 @@ void pc_drawing(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, 
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
     	cairo_set_line_width (cr, 2.0);
     	cairo_move_to (cr, xc, yc);
-    	cairo_arc (cr, xc, yc, radius, angle_from, angle_to);(double) desc->sz
+    	cairo_arc (cr, xc, yc, radius, angle_from, angle_to);
 	cairo_line_to (cr, xc, yc);
 	cairo_fill (cr);
 	cairo_stroke (cr);
@@ -352,7 +353,7 @@ void ps_labels(cairo_t *cr, PieChart *pc, double xc, double yc, double radius, d
 	    if (desc_x == 0)
 	    {
 		text_coords(cr, ctxt->txt, angle_from, angle_to, xc, yc, radius, 0.5, &desc_x, &desc_y);
-		angle_from = angle_to;(double) desc->sz
+		angle_from = angle_to;
 	    }
 	    else
 	    {
@@ -643,10 +644,12 @@ int draw_axis(cairo_t *cr, Axis *axis,
 {
     int i, n_steps;
     double step_dist, tmpx, tmpy;
+    CText *unit;
     double x_offset, y_offset, x_mk_offset, y_mk_offset;
-    CText *unit, *step_mk;
-    cairo_text_extents_t ext;
     const GdkRGBA *rgba;
+    /*
+    cairo_text_extents_t ext;
+    */
 
     /* Initial */
     axis->x1 = x1;
@@ -668,7 +671,7 @@ int draw_axis(cairo_t *cr, Axis *axis,
 	step_dist = (axis->y2 - axis->y1) / n_steps;	
 	x_offset = 0;
 	y_offset = step_dist;
-	x_mk_offset = mark_width * -1.0;
+	x_mk_offset = mark_length * -1.0;
 	y_mk_offset = 0;
     }
     else if (y1 == y2)				 // X axis
@@ -677,7 +680,7 @@ int draw_axis(cairo_t *cr, Axis *axis,
 	x_offset = step_dist;
 	y_offset = 0;
 	x_mk_offset = 0;
-	y_mk_offset = mark_width;
+	y_mk_offset = mark_length;
     }
 
     /* Draw axis line */
@@ -727,28 +730,22 @@ int draw_axis(cairo_t *cr, Axis *axis,
     /* Draw axis unit label text */
     if (axis->unit != NULL)
     {
+	unit = axis->unit;
 	rgba = unit->colour;
 	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 	cairo_set_font_size (cr, unit->sz);
 
-	if (step_x == 0)
+	if (x1 == x2)				 // Y axis
 	{
-	    offset = ext.width + txt_buf;
-	    cairo_move_to (cr, x1, (y1 - y2) / 2);
-	    cairo_text_extents (cr, axis->unit, &ext);
-	    cairo_get_current_point (cr, &tmpx, &tmpy);
-	    cairo_move_to (cr, tmpx - offset - ext.width, tmpy);
+	    cairo_move_to (cr, axis->x1 - (unit->ext.width / 2), axis->y1 - mark_length);
 	}
-	else
+	else					 // X axis
 	{
-	    offset = ext.height + txt_buf;
-	    cairo_move_to (cr, (x1 - x2) / 2, y1);
-	    cairo_text_extents (cr, axis->unit, &ext);
-	    cairo_get_current_point (cr, &tmpx, &tmpy);
-	    cairo_move_to (cr, tmpx, tmpy + offset + ext.height);
+	    cairo_move_to (cr, axis->x1 + ((axis->x2 -axis->x1) / 2) - (unit->ext.width / 2), 
+			       axis->y1 + mark_length + unit->ext.height + axis_buf);
 	}
 
-	cairo_show_text (cr, axis->unit);
+	cairo_show_text (cr, unit->txt);
 	cairo_fill (cr);
     }
 
@@ -769,7 +766,7 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
     /* Size of axis unit label */
     unit = axis->unit;
     cairo_set_font_size (cr, unit->sz);
-    cairo_text_extents (cr, desc->txt, &(unit->ext));
+    cairo_text_extents (cr, unit->txt, &(unit->ext));
 
     /* Size of step mark line and value */
     /* Use last step value (plus a little) for width or height (rather crude, but...) */
@@ -781,7 +778,7 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
     s = (char *) malloc(sz + 2);
 
     step_mk = axis->step_mk;
-    sprintf(s, "%*.*f", sz, prec, (double) n_steps * axis->step);
+    sprintf(s, "%*.*f", sz, axis->prec, (double) n_steps * axis->step);
     cairo_set_font_size (cr, step_mk->sz);
     cairo_text_extents (cr, s, &(step_mk->ext));
     free(s);
@@ -792,18 +789,18 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
 	sz = (y2 - y1) +				// Proposed axis line height
 	     (unit->ext.height * 2.0) + mark_length + 	// X and Y unit text height
 	     mark_length + 				// X axis step mark line height
-	     step_mk->ext.height + 5.0; 		// X axis Step mark text height plus a buffer
+	     step_mk->ext.height + axis_buf; 		// X axis Step mark text height plus a buffer
 
     	/* Need to adjust if insufficient */
     	if (allocation->height < sz)
     	{
 	    axis->y1 = y1 + unit->ext.height + mark_length;
-	    axis->y2 = y2 - (unit->ext.height + mark_length) - step_mk->ext.height + 5.0;
+	    axis->y2 = y2 - (unit->ext.height + mark_length) - step_mk->ext.height + axis_buf;
     	}
 
-    	if ((allocation->x - x1) < (mark_length + step_mk->ext.width) + 5.0)
+    	if ((allocation->x - x1) < (mark_length + step_mk->ext.width) + axis_buf)
     	{
-	    axis->x1 = x1 + mark_length + step_mk->ext.width + 5.0;
+	    axis->x1 = x1 + mark_length + step_mk->ext.width + axis_buf;
 	    axis->x2 = axis->x1;
     	}
     }
@@ -811,18 +808,18 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
     {
 	sz = (x2 - x1) +				// Proposed axis line width
 	     step_mk->ext.width + mark_length + 	// Y step mark text and line width
-	     5.0; 					// X axis buffer
+	     axis_buf; 					// X axis buffer
 
     	/* Need to adjust if insufficient */
     	if (allocation->width < sz)
     	{
 	    axis->x1 = x1 + unit->ext.height + mark_length;
-	    axis->x2 = allocation->width - mark_length - step_mk->ext.width - 5.0;
+	    axis->x2 = allocation->width - mark_length - step_mk->ext.width - axis_buf;
     	}
 
-    	if ((allocation->height - y1) < (mark_length + step_mk->ext.height + 5.0))
+    	if ((allocation->height - y1) < (mark_length + step_mk->ext.height + axis_buf))
     	{
-	    axis->y1 = y1 - mark_length - step_mk->ext.height - 5.0;
+	    axis->y1 = y1 - mark_length - step_mk->ext.height - axis_buf;
 	    axis->y2 = axis->y1;
     	}
     }
@@ -1017,7 +1014,7 @@ int draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     	if (bc->x_axis->x1 == -1)
 	{
 	    bc_axis_coords(cr, bc, bc->x_axis, &x1, &y1, &x2, &y2);
-	    draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
+	    //draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
 	}
     }
 
@@ -1026,7 +1023,7 @@ int draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     	if (bc->x_axis->x1 == -1)
 	{
 	    bc_axis_coords(cr, bc, bc->y_axis, &x1, &y1, &x2, &y2);
-	    draw_axis(cr, bc->y_axis, x1, y1, x2, y2);
+	    //draw_axis(cr, bc->y_axis, x1, y1, x2, y2);
 	}
     }
 

@@ -65,7 +65,7 @@ typedef struct _pie_chart
 } PieChart;
 
 
-/* Chart slice details */Convert a string to
+/* Chart slice details */
 
 typedef struct _pie_slice
 {
