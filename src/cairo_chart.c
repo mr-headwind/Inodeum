@@ -78,7 +78,7 @@ int draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 void draw_bar(cairo_t *, BarChart *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
-void bc_axis_coords(cairo_t *, BarChart *, Axis *, double *, double *, double *, double *);
+void axes_auto_fit(cairo_t *, Axis *, Axis *, GtkAllocation *);
 CText * new_chart_text(char *, const GdkRGBA *, int);
 CText * label_text(int, CText *);
 CText * percent_ctext(int, char *, const GdkRGBA *, int, CText *);
@@ -1009,23 +1009,8 @@ int draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     const int buf1 = 15;
 
     /* Draw axes if required */
-    if (bc->x_axis != NULL)
-    {
-    	if (bc->x_axis->x1 == -1)
-	{
-	    bc_axis_coords(cr, bc, bc->x_axis, &x1, &y1, &x2, &y2);
-	    //draw_axis(cr, bc->x_axis, x1, y1, x2, y2);
-	}
-    }
-
-    if (bc->y_axis != NULL)
-    {
-    	if (bc->x_axis->x1 == -1)
-	{
-	    bc_axis_coords(cr, bc, bc->y_axis, &x1, &y1, &x2, &y2);
-	    //draw_axis(cr, bc->y_axis, x1, y1, x2, y2);
-	}
-    }
+    if ((bc->x_axis != NULL || bc->y_axis != NULL) && (bc->x_axis->x1 == -1))
+	axes_auto_fit(cr, bc->x_axis, bc->y_axis, allocation);
 
     /* Set the bar width allowing for a small buffer between bars and maximum width */
     n = g_list_length (bc->bars);
@@ -1245,10 +1230,27 @@ printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s ext h %0.4f\n",
 }
 
 
-/* Determine the best coordinates for axes, overriding existing attributes if necessary */
+/* Determine the best coordinates for axes as far as possible */
 
-void bc_axis_coords(cairo_t *cr, BarChart *bc, Axis *axis, double *x1, double *y1, double *x2, double *y2)
+void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *allocation)
 {
+    /* If not already set get the space used by axis titles, step mark values and step marks */
+
+    /* Y axis title is placed at top of axis line */
+
+    /* Y axis step values and marks are placed to left of line */
+
+    /* X axis title is placed at centre below axis line */
+
+    /* X axis step values and marks are placed below the line */
+
+    /* X and Y always intersect at 0,0 */
+
+    /* The end step values are rounded up / down for start and end values if required */
+
+    /* Y axis line placement on the X axis determined by proportion of X steps below zero */
+
+    /* X axis line placement on the Y axis determined by proportion of Y steps below zero */
 
     return;
 }
