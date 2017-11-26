@@ -85,6 +85,8 @@ typedef struct _axis
     double start_val;
     double end_val;
     double step;
+    double end_step;
+    double start_step;
     int prec;
     double x1, y1, x2, y2;
 } Axis;
