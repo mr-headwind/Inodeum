@@ -1257,11 +1257,43 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
 
 void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *allocation)
 {
+    double axis_len, zr, bzlen, pad;
     cairo_text_extents_t *ext;
 
     /* If not already set get the space used by axis titles, step mark values and step marks */
     get_ctext_ext(cr, x_axis->unit);
     get_ctext_ext(cr, x_axis->step_mk);
+
+    /* Initial X axis length, this is the current allocation point to the width less a buffer */
+    axis_len = allocation->width - allocation->x - (axis_buf * 2);
+
+    /* Determine proportion of axis below zero */
+    zr = (x_axis->start_step / (x_axis->end_step - x_axis->start_step));
+    bzlen = zr * axis_len;
+
+    /* Check for enough space for step marks and step values */
+    ext = &(y_axis->step_mk.ext);
+    pad = 0;
+
+    if (bzlen < (ext->width + mark_length + axis_buf))
+    {
+	/* Adjust the initial length and recalulate the proportion below zero */
+	pad = (ext->width + mark_length + axis_buf) - bzlen;
+    	axis_len =- pad;
+	bzlen = zr * axis_len;
+    }
+
+    /* Set the x1, zero and x2 points on the axis */
+    x_axis->x1 = allocation->x + pad; 
+    x_axis->x2 = x_axis->x1 + axis_len; 
+    zx = allocation->x + pad + bzlen + 1;
+
+    /* Since X and Y axes always intersect at 0,0 the zero point forms the y axis x1 and x2 points */
+    y_axis->x1 = y_axis->x2 = zx;
+
+    /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
+
+
 
     // X and Y always intersect at 0,0
     // Y axis line placement on the X axis determined by proportion of X steps below zero
