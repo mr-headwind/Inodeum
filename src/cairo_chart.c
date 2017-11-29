@@ -1253,17 +1253,20 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
 }
 
 
-/* Determine the best coordinates for axes as far as possible */
+/* Determine the best coordinates for X and Y axes as far as possible */
 
 void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *allocation)
 {
-    double axis_len, zr, bzlen, pad;
+    double axis_len, zr, xyz, bzlen, pad, xpad;
     cairo_text_extents_t *ext;
 
     /* If not already set get the space used by axis titles, step mark values and step marks */
     get_ctext_ext(cr, x_axis->unit);
     get_ctext_ext(cr, x_axis->step_mk);
+    get_ctext_ext(cr, y_axis->unit);
+    get_ctext_ext(cr, y_axis->step_mk);
 
+    /* X Axis */
     /* Initial X axis length, this is the current allocation point to the width less a buffer */
     axis_len = allocation->width - allocation->x - (axis_buf * 2);
 
@@ -1286,46 +1289,43 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     /* Set the x1, zero and x2 points on the axis */
     x_axis->x1 = allocation->x + pad; 
     x_axis->x2 = x_axis->x1 + axis_len; 
-    zx = allocation->x + pad + bzlen + 1;
+    xyz = allocation->x + pad + bzlen + 1;
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the y axis x1 and x2 points */
     y_axis->x1 = y_axis->x2 = zx;
 
+    /* Y Axis */
     /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
-
-
-
-    // X and Y always intersect at 0,0
-    // Y axis line placement on the X axis determined by proportion of X steps below zero
-    // X axis line placement on the Y axis determined by proportion of Y steps below zero
-    if (x_axis->start_step < 0)
-	y_axis->x1 = (x_axis->start_step / (x_axis->end_step - x_axis->start_step)) * allocation->width;
-    else
-	y_axis->x1 = 1;
-
-    y_axis->x2 = y_axis->x1;
-
-    if (y_axis->start_step < 0)
-	x_axis->y1 = (y_axis->start_step / (y_axis->end_step - y_axis->start_step)) * allocation->height;
-    else
-	x_axis->y1 = 1;
-
-    x_axis->y2 = x_axis->y1;
-
-    // Y axis title is placed at top of axis line
-    // X axis title is placed at centre below axis line
-    // Y axis step values and marks are placed to left of line
-    // X axis step values and marks are placed below the line
     ext = &(y_axis->unit.ext);
-    y_axis->y1 = allocation->y + ext->height + axis_buf;
+    axis_len = allocation->height - allocation->y - ext->height - (axis_buf * 2);
 
-    if (
+    /* Determine proportion of axis below zero */
+    zr = (y_axis->start_step / (y_axis->end_step - y_axis->start_step));
+    bzlen = zr * axis_len;
+
+    /* Check for enough space for X axis title, step marks and step values */
     ext = &(x_axis->unit.ext);
-    y_axis->y2 = allocation->height - ext->height + axis_buf;
+    xpad = ext->height + axis_buf;
+    ext = &(x_axis->step_mk.ext);
+    xpad = xpad + ext->width + mark_length + axis_buf
+    pad = 0;
 
+    if (bzlen < xpad)
+    {
+	/* Adjust the initial length and recalulate the proportion below zero */
+	pad = xpad - bzlen;
+    	axis_len =- pad;
+	bzlen = zr * axis_len;
+    }
 
+    /* Set the y1, zero and y2 points on the axis */
+    ext = &(y_axis->unit.ext);
+    y_axis->y1 = allocation->y + ext->height - axis_buf; 
+    y_axis->y2 = y_axis->y1 + axis_len; 
+    xyz = allocation->y2 - bzlen - 1;
 
-
+    /* Since X and Y axes always intersect at 0,0 the zero point forms the x axis y1 and y2 points */
+    x_axis->y1 = x_axis->y2 = xyz;
 
     return;
 }
