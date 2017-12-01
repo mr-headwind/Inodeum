@@ -66,7 +66,7 @@ int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, 
 void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
 Axis * create_axis(char *, double, double, double, double, const GdkRGBA *, int, const GdkRGBA *, int);
 void free_axis(Axis *);
-int draw_axis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
+int draw_axis(cairo_t *, Axis *, int, GtkAllocation *);
 int axis_space_analysis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 Bar * bar_create(BarChart *);
@@ -1059,30 +1059,19 @@ void free_axis(Axis *axis)
 
 /* Draw an axis */
 
-int draw_axis(cairo_t *cr, Axis *axis, 
-	      double x1, double y1, double x2, double y2,
-	      GtkAllocation *allocation)
+int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocation)
 {
     int i, n_steps;
     double step_dist, tmpx, tmpy;
     CText *unit;
     double x_offset, y_offset, x_mk_offset, y_mk_offset;
     const GdkRGBA *rgba;
-    /*
-    cairo_text_extents_t ext;
-    */
-
-    /* Initial */
-    axis->x1 = x1;
-    axis->y1 = y1;
-    axis->x2 = x2;
-    axis->y2 = y2;
 
     /* Step and axis determination (0.5 is for rounding) */
-    n_steps = (int) (((axis->end_val - axis->start_val) / axis->step) + 0.5);
+    n_steps = (int) (((axis->end_step - axis->start_step) / axis->step) + 0.5);
 
     /* Space analysis */
-    if (axis->unit != NULL)
+    if (check_space == TRUE)
     	if (axis_space_analysis(cr, axis, x1, y1, x2, y2, allocation) == FALSE)
 	    return FALSE;
 
@@ -1274,7 +1263,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     zr = (x_axis->start_step / (x_axis->end_step - x_axis->start_step));
     bzlen = zr * axis_len;
 
-    /* Check for enough space for step marks and step values */
+    /* Check for enough space for Y axis step marks and step values */
     ext = &(y_axis->step_mk.ext);
     pad = 0;
 
@@ -1292,7 +1281,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     xyz = allocation->x + pad + bzlen + 1;
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the y axis x1 and x2 points */
-    y_axis->x1 = y_axis->x2 = zx;
+    y_axis->x1 = y_axis->x2 = xyz;
 
     /* Y Axis */
     /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
@@ -1307,7 +1296,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     ext = &(x_axis->unit.ext);
     xpad = ext->height + axis_buf;
     ext = &(x_axis->step_mk.ext);
-    xpad = xpad + ext->width + mark_length + axis_buf
+    xpad = xpad + ext->height + mark_length + axis_buf
     pad = 0;
 
     if (bzlen < xpad)
@@ -1320,7 +1309,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
 
     /* Set the y1, zero and y2 points on the axis */
     ext = &(y_axis->unit.ext);
-    y_axis->y1 = allocation->y + ext->height - axis_buf; 
+    y_axis->y1 = allocation->y + ext->height + axis_buf; 
     y_axis->y2 = y_axis->y1 + axis_len; 
     xyz = allocation->y2 - bzlen - 1;
 
