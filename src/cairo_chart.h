@@ -53,6 +53,23 @@ typedef struct _chart_text
     cairo_text_extents_t ext;
 } CText;
 
+
+/* Axis */
+
+typedef struct _axis
+{
+    CText *unit;
+    CText *step_mk;
+    double start_val;
+    double end_val;
+    double step;
+    double end_step;
+    double start_step;
+    int prec;
+    double x1, y1, x2, y2;
+} Axis;
+
+
 /* Pie Chart control details */
 
 typedef struct _pie_chart
@@ -74,22 +91,6 @@ typedef struct _pie_slice
     double slice_value;
     const GdkRGBA *colour;
 } PieSlice;
-
-
-/* Axis */
-
-typedef struct _axis
-{
-    CText *unit;
-    CText *step_mk;
-    double start_val;
-    double end_val;
-    double step;
-    double end_step;
-    double start_step;
-    int prec;
-    double x1, y1, x2, y2;
-} Axis;
 
 
 /* Bar Chart control details */
@@ -132,7 +133,7 @@ typedef struct _bar_segment
 
 typedef struct _line_graph
 {
-    CText *unit;
+    CText *title;
     Axis *x_axis;
     Axis *y_axis;
     GList *points;

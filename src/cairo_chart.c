@@ -840,144 +840,59 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 }
 
 
-/* Draw lines of text */
+/* Create and initialise a new line graph */
 
-void draw_text_lines(cairo_t *cr, CText *txt[], int max, int w, double xc, double yc)
+LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
+			      char *x_unit, double x_start_val, double x_end_val, double x_step, double x_prec,
+			      const GdkRGBA *x_txt_colour, int x_txt_sz,
+			      char *y_unit, double y_start_val, double y_end_val, double y_step, double y_prec,
+			      const GdkRGBA *y_txt_colour, int y_txt_sz)
 {
-    int i;
-    double tx, ty;
-    double fsz;
-    CText *ctxt;
-    const GdkRGBA *rgba;
+    LineGraph *lg;
 
-printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d\n", debug_hdr, xc, yc, w);fflush(stdout);
-    /* May need to override the requested font size */
-    for(i = 0; i < max; i++)
+    /* Overall chart */
+    lg = (LineGraph *) malloc(sizeof(LineGraph));
+    memset(lg, 0, sizeof(LineGraph));
+
+    /* Text */
+    lg->title = new_chart_text(title, txt_colour, txt_sz);
+
+    /* Axes */
+    if (lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, x_txt_colour, x_txt_sz) == NULL)
     {
-    	ctxt = txt[i];
-
-    	if (ctxt == NULL)
-	    continue;
-
-	if ((fsz = confirm_font_size(cr, ctxt->txt, w, ctxt->sz)) == FALSE)
-	    return;
-
-	if (fsz != ctxt->sz)
-	{
-	    ctxt->sz = fsz;
-	    cairo_set_font_size (cr, ctxt->sz);
-	    cairo_text_extents (cr, ctxt->txt, &(ctxt->ext));
-	}
-    }
-    
-printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
-    /* Loop thru text lines */
-    ty = yc;
-
-    for(i = 0; i < max; i++)
-    {
-    	ctxt = txt[i];
-
-    	if (ctxt == NULL)
-	    continue;
-
-	cairo_set_font_size (cr, ctxt->sz);
-	rgba = ctxt->colour;
-	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-
-	tx = xc + ((w - ctxt->ext.width) / 2);
-	ty = ty + (ctxt->ext.height / 2);
-printf("%s draw_text_lines 3  tx %0.4f ty %0.4f extw %0.4f exth %0.4f\n", 
-			debug_hdr, tx, ty, ctxt->ext.width, ctxt->ext.height);fflush(stdout);
-	cairo_move_to (cr, tx, ty);
-	cairo_show_text (cr, ctxt->txt);
-	cairo_fill (cr);
-	ty = ty + ctxt->ext.height + 2;
+    	free_line_graph(lg);
+    	return NULL;
     }
 
-    return;
+    if (lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec, y_txt_colour, y_txt_sz) == NULL)
+    {
+    	free_line_graph(lg);
+    	return NULL;
+    }
+
+    return lg;
 }
 
 
-/* Write a chart title */
+/* Free all line graph resources */
 
-// Some notes on titles:
-// The Title functions are designed to be (hopefully at least) quite flexible. 
-// The 'chart_title' function may be called directly to create an overall title on
-// the drawing area. Also each chart has a title function (that calls this).
-// Equally, however, an individual chart title may be used as an overall
-// title if desired. It all depends on what the passed allocation contains.
-
-int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
+void free_line_graph(LineGraph *lg)
 {
-    double xc, yc, fsz;
-    const GdkRGBA *rgba;
-    cairo_text_extents_t *ext;
-    const double ltr_buf = 2.0;
+    if (lg->title != NULL)
+    	free_chart_text(lg->title);
 
-    /* Ignore if no title */
-    if (title == NULL)
-    	return FALSE;
+    if (lg->x_axis != NULL)
+    	free_axis(lg->x_axis);
 
-    /* Appearance */
-    rgba = title->colour;
-    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+    if (lg->y_axis != NULL)
+    	free_axis(lg->y_axis);
 
-    if ((fsz = confirm_font_size(cr, title->txt, allocation->width, title->sz)) == FALSE)
-    	return FALSE;
+    if (lg->points != NULL)
+    	g_list_free_full(lg->y_axis);
 
-    cairo_set_font_size (cr, fsz);
+    free(lg);
 
-    /* Determine space to be consumed by text */
-    ext = &(title->ext);
-    cairo_text_extents (cr, title->txt, ext);
-
-    /* Set alignment */
-    switch (h_align)
-    {
-    	case GTK_ALIGN_START:
-	    xc = allocation->x;
-	    break;
-
-    	case GTK_ALIGN_CENTER:
-	    xc = (((double) allocation->width / 2.0) - (ext->width / 2.0)) + allocation->x;
-	    break;
-
-    	case GTK_ALIGN_END:
-	    xc = ((double) allocation->width - ext->width) + allocation->x;
-	    break;
-
-	default:
-	    xc = allocation->x;
-    }
-
-    switch (v_align)
-    {
-    	case GTK_ALIGN_START:
-	    yc = ext->height + allocation->y;
-	    break;
-
-    	case GTK_ALIGN_CENTER:
-	    yc = (((double) allocation->height / 2.0) - (ext->height / 2.0)) + allocation->y;
-	    break;
-
-    	case GTK_ALIGN_END:
-	    yc = (double) (allocation->height + allocation->y) - ltr_buf;
-	    //yc = (double) (allocation->height + allocation->y) - (ext->height / 2);
-	    break;
-
-	default:
-	    yc = ext->height + allocation->y;
-    }
-
-printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s ext h %0.4f\n", 
-  debug_hdr, xc, yc, fsz, title->txt, ext->height);fflush(stdout);
-    /* Set Title */
-    cairo_move_to (cr, xc, yc);
-    cairo_show_text (cr, title->txt);
-    cairo_fill (cr);
-
-    return TRUE;
+    return;
 }
 
 
@@ -1315,6 +1230,147 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the x axis y1 and y2 points */
     x_axis->y1 = x_axis->y2 = xyz;
+
+    return;
+}
+
+
+/* Write a chart title */
+
+// Some notes on titles:
+// The Title functions are designed to be (hopefully at least) quite flexible. 
+// The 'chart_title' function may be called directly to create an overall title on
+// the drawing area. Also each chart has a title function (that calls this).
+// Equally, however, an individual chart title may be used as an overall
+// title if desired. It all depends on what the passed allocation contains.
+
+int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h_align, GtkAlign v_align)
+{
+    double xc, yc, fsz;
+    const GdkRGBA *rgba;
+    cairo_text_extents_t *ext;
+    const double ltr_buf = 2.0;
+
+    /* Ignore if no title */
+    if (title == NULL)
+    	return FALSE;
+
+    /* Appearance */
+    rgba = title->colour;
+    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+
+    if ((fsz = confirm_font_size(cr, title->txt, allocation->width, title->sz)) == FALSE)
+    	return FALSE;
+
+    cairo_set_font_size (cr, fsz);
+
+    /* Determine space to be consumed by text */
+    ext = &(title->ext);
+    cairo_text_extents (cr, title->txt, ext);
+
+    /* Set alignment */
+    switch (h_align)
+    {
+    	case GTK_ALIGN_START:
+	    xc = allocation->x;
+	    break;
+
+    	case GTK_ALIGN_CENTER:
+	    xc = (((double) allocation->width / 2.0) - (ext->width / 2.0)) + allocation->x;
+	    break;
+
+    	case GTK_ALIGN_END:
+	    xc = ((double) allocation->width - ext->width) + allocation->x;
+	    break;
+
+	default:
+	    xc = allocation->x;
+    }
+
+    switch (v_align)
+    {
+    	case GTK_ALIGN_START:
+	    yc = ext->height + allocation->y;
+	    break;
+
+    	case GTK_ALIGN_CENTER:
+	    yc = (((double) allocation->height / 2.0) - (ext->height / 2.0)) + allocation->y;
+	    break;
+
+    	case GTK_ALIGN_END:
+	    yc = (double) (allocation->height + allocation->y) - ltr_buf;
+	    //yc = (double) (allocation->height + allocation->y) - (ext->height / 2);
+	    break;
+
+	default:
+	    yc = ext->height + allocation->y;
+    }
+
+printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s ext h %0.4f\n", 
+  debug_hdr, xc, yc, fsz, title->txt, ext->height);fflush(stdout);
+    /* Set Title */
+    cairo_move_to (cr, xc, yc);
+    cairo_show_text (cr, title->txt);
+    cairo_fill (cr);
+
+    return TRUE;
+}
+
+
+/* Draw lines of text */
+
+void draw_text_lines(cairo_t *cr, CText *txt[], int max, int w, double xc, double yc)
+{
+    int i;
+    double tx, ty;
+    double fsz;
+    CText *ctxt;
+    const GdkRGBA *rgba;
+
+printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d\n", debug_hdr, xc, yc, w);fflush(stdout);
+    /* May need to override the requested font size */
+    for(i = 0; i < max; i++)
+    {
+    	ctxt = txt[i];
+
+    	if (ctxt == NULL)
+	    continue;
+
+	if ((fsz = confirm_font_size(cr, ctxt->txt, w, ctxt->sz)) == FALSE)
+	    return;
+
+	if (fsz != ctxt->sz)
+	{
+	    ctxt->sz = fsz;
+	    cairo_set_font_size (cr, ctxt->sz);
+	    cairo_text_extents (cr, ctxt->txt, &(ctxt->ext));
+	}
+    }
+    
+printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
+    /* Loop thru text lines */
+    ty = yc;
+
+    for(i = 0; i < max; i++)
+    {
+    	ctxt = txt[i];
+
+    	if (ctxt == NULL)
+	    continue;
+
+	cairo_set_font_size (cr, ctxt->sz);
+	rgba = ctxt->colour;
+	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
+
+	tx = xc + ((w - ctxt->ext.width) / 2);
+	ty = ty + (ctxt->ext.height / 2);
+printf("%s draw_text_lines 3  tx %0.4f ty %0.4f extw %0.4f exth %0.4f\n", 
+			debug_hdr, tx, ty, ctxt->ext.width, ctxt->ext.height);fflush(stdout);
+	cairo_move_to (cr, tx, ty);
+	cairo_show_text (cr, ctxt->txt);
+	cairo_fill (cr);
+	ty = ty + ctxt->ext.height + 2;
+    }
 
     return;
 }
