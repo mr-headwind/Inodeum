@@ -845,8 +845,10 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
 			      char *x_unit, double x_start_val, double x_end_val, double x_step, double x_prec,
 			      const GdkRGBA *x_txt_colour, int x_txt_sz,
+			      const GdkRGBA *x_step_colour, int x_step_txt_sz,
 			      char *y_unit, double y_start_val, double y_end_val, double y_step, double y_prec,
-			      const GdkRGBA *y_txt_colour, int y_txt_sz)
+			      const GdkRGBA *y_txt_colour, int y_txt_sz,
+			      const GdkRGBA *y_step_colour, int y_step_txt_sz)
 {
     LineGraph *lg;
 
@@ -858,17 +860,21 @@ LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz
     lg->title = new_chart_text(title, txt_colour, txt_sz);
 
     /* Axes */
-    if (lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, x_txt_colour, x_txt_sz) == NULL)
+    if (lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, 
+    				 x_txt_colour, x_txt_sz, x_step_colour, x_step_txt_sz) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
     }
 
-    if (lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec, y_txt_colour, y_txt_sz) == NULL)
+    if (lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec,
+    				 y_txt_colour, y_txt_sz, y_step_colour, y_step_txt_sz) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
     }
+
+    lg->points = NULL;
 
     return lg;
 }
@@ -888,9 +894,55 @@ void free_line_graph(LineGraph *lg)
     	free_axis(lg->y_axis);
 
     if (lg->points != NULL)
-    	g_list_free_full(lg->y_axis);
+    	g_list_free_full(lg->y_axis, (GDestroyNotify) free_points);
 
     free(lg);
+
+    return;
+}
+
+
+/* Free a line graph point */
+
+void free_points(gpointer data)
+{  
+    Point *p;
+
+    p = (Point *) data;
+    free(p);
+
+    return;
+}
+
+
+/* Add a line graph point */
+
+void line_graph_add_point(LineGraph *lg, double x, double y)
+{  
+    Point *p;
+
+    p = (Point *) malloc(sizeof(double) * 2);
+    p->x_val = x;
+    p->y_val = y;
+
+    lg->points = g_list_append(lg_points, p);
+
+    return;
+}
+
+
+/* Draw a line graph */
+
+void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
+{  
+    /* Draw the axes first */
+    axes_auto_fit(cr, lg->x_axis, lg->y_axis, allocation);
+    draw_axis(cr, lg->x_axis, FALSE, allocation);
+    draw_axis(cr, lg->y_axis, FALSE, allocation);
+
+    /* Tranform each point value into corresponding graph points */
+    /* Can start point be 0,0 ????????/
+    /* Draw a line to each point */
 
     return;
 }
