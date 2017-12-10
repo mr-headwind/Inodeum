@@ -64,10 +64,14 @@ void ps_labels(cairo_t *, PieChart *, double, double, double, double);
 void text_coords(cairo_t *, char *, double, double, double, double, double, double, double *, double *);
 int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, double *, GtkAllocation *);
 void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
+
 Axis * create_axis(char *, double, double, double, double, const GdkRGBA *, int, const GdkRGBA *, int);
 void free_axis(Axis *);
 int draw_axis(cairo_t *, Axis *, int, GtkAllocation *);
 int axis_space_analysis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
+void axes_auto_fit(cairo_t *, Axis *, Axis *, GtkAllocation *);
+void axis_step_bounds(Axis *);
+
 BarChart * bar_chart_create(char *, const GdkRGBA *, int, int, Axis *, Axis *);
 Bar * bar_create(BarChart *);
 int bar_segment_create(BarChart *, Bar *, char *, const GdkRGBA *, const GdkRGBA *, int, double);
@@ -77,8 +81,18 @@ void free_bar_segment(gpointer);
 int draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 void draw_bar(cairo_t *, BarChart *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
+
+void free_line_graph(LineGraph *);
+void free_points(gpointer);
+void line_graph_add_point(LineGraph *, double, double);
+void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
+LineGraph * line_graph_create(char *, const GdkRGBA *, int, 
+			      char *, double, double, double, double,
+			      const GdkRGBA *, int, const GdkRGBA *, int,
+			      char *, double, double, double, double,
+			      const GdkRGBA *, int, const GdkRGBA *, int);
+
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
-void axes_auto_fit(cairo_t *, Axis *, Axis *, GtkAllocation *);
 CText * label_text(int, CText *);
 CText * percent_ctext(int, char *, const GdkRGBA *, int, CText *);
 CText * percent_text(cairo_t *, CText *, double, double, CText *);
@@ -86,8 +100,7 @@ void draw_text_lines(cairo_t *, CText **, int, int, double, double);
 double confirm_font_size(cairo_t *, char *, int, double);
 CText * new_chart_text(char *, const GdkRGBA *, int);
 void free_chart_text(CText *);
-void axis_step_bounds(Axis *axis)
-void get_ctext_ext(cairo_t *cr, CText *ctext)
+void get_ctext_ext(cairo_t *, CText *);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
 extern int long_chars(long);
@@ -99,7 +112,7 @@ static const char *debug_hdr = "DEBUG-cairo_chart.c ";
 static const double lgd_rect_width = 20.0;
 static const double lgd_buf = 5.0;
 static const double r_rad = 0.7;
-static const long mark_length = 5.0;
+static const long mk_length = 5.0;
 static const double axis_buf = 5.0;
 
 
@@ -860,15 +873,15 @@ LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz
     lg->title = new_chart_text(title, txt_colour, txt_sz);
 
     /* Axes */
-    if (lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, 
-    				 x_txt_colour, x_txt_sz, x_step_colour, x_step_txt_sz) == NULL)
+    if ((lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, 
+    				 x_txt_colour, x_txt_sz, x_step_colour, x_step_txt_sz)) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
     }
 
-    if (lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec,
-    				 y_txt_colour, y_txt_sz, y_step_colour, y_step_txt_sz) == NULL)
+    if ((lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec,
+    				 y_txt_colour, y_txt_sz, y_step_colour, y_step_txt_sz)) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
@@ -894,7 +907,7 @@ void free_line_graph(LineGraph *lg)
     	free_axis(lg->y_axis);
 
     if (lg->points != NULL)
-    	g_list_free_full(lg->y_axis, (GDestroyNotify) free_points);
+    	g_list_free_full(lg->points, (GDestroyNotify) free_points);
 
     free(lg);
 
@@ -925,7 +938,7 @@ void line_graph_add_point(LineGraph *lg, double x, double y)
     p->x_val = x;
     p->y_val = y;
 
-    lg->points = g_list_append(lg_points, p);
+    lg->points = g_list_append(lg->points, p);
 
     return;
 }
@@ -941,7 +954,7 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
     draw_axis(cr, lg->y_axis, FALSE, allocation);
 
     /* Tranform each point value into corresponding graph points */
-    /* Can start point be 0,0 ????????/
+    /* Can start point be 0,0 ???????*/
     /* Draw a line to each point */
 
     return;
@@ -1039,25 +1052,27 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
 
     /* Space analysis */
     if (check_space == TRUE)
+    /*
     	if (axis_space_analysis(cr, axis, x1, y1, x2, y2, allocation) == FALSE)
 	    return FALSE;
+    */
 
     /* Set drawing offsets */
-    if (x1 == x2)				 // Y axis
+    if (axis->x1 == axis->x2)				 // Y axis
     {
 	step_dist = (axis->y2 - axis->y1) / n_steps;	
 	x_offset = 0;
 	y_offset = step_dist;
-	x_mk_offset = mark_length * -1.0;
+	x_mk_offset = mk_length * -1.0;
 	y_mk_offset = 0;
     }
-    else if (y1 == y2)				 // X axis
+    else if (axis->y1 == axis->y2)			 // X axis
     {
 	step_dist = (axis->x2 - axis->x1) / n_steps;	
 	x_offset = step_dist;
 	y_offset = 0;
 	x_mk_offset = 0;
-	y_mk_offset = mark_length;
+	y_mk_offset = mk_length;
     }
 
     /* Draw axis line */
@@ -1076,7 +1091,7 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
 	cairo_line_to (cr, tmpx + x_mk_offset, tmpy + y_mk_offset);
 
 	/* Move to next step mark */
-	cairo_move_to (cr, tmpx + (x_offset * i), tmpy + (y_offset * i));
+	cairo_move_to (cr, tmpx - (x_offset * (i + 1)), tmpy + (y_offset * (i + 1)));
 
 	/*
 	cairo_move_to (cr, x1 + (step_x * i), y1 + (step_y * i));
@@ -1112,14 +1127,14 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
 	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 	cairo_set_font_size (cr, unit->sz);
 
-	if (x1 == x2)				 // Y axis
+	if (axis->x1 == axis->x2)		// Y axis
 	{
-	    cairo_move_to (cr, axis->x1 - (unit->ext.width / 2), axis->y1 - mark_length);
+	    cairo_move_to (cr, axis->x1 - (unit->ext.width / 2), axis->y1 - axis_buf);
 	}
-	else					 // X axis
+	else					// X axis
 	{
 	    cairo_move_to (cr, axis->x1 + ((axis->x2 -axis->x1) / 2) - (unit->ext.width / 2), 
-			       axis->y1 + mark_length + unit->ext.height + axis_buf);
+			       axis->y1 + mk_length + unit->ext.height + axis_buf);
 	}
 
 	cairo_show_text (cr, unit->txt);
@@ -1164,39 +1179,39 @@ int axis_space_analysis(cairo_t *cr, Axis *axis,
     if (x1 == x2)					// Y axis
     {
 	sz = (y2 - y1) +				// Proposed axis line height
-	     (unit->ext.height * 2.0) + mark_length + 	// X and Y unit text height
-	     mark_length + 				// X axis step mark line height
+	     (unit->ext.height * 2.0) + mk_length + 	// X and Y unit text height
+	     mk_length + 				// X axis step mark line height
 	     step_mk->ext.height + axis_buf; 		// X axis Step mark text height plus a buffer
 
     	/* Need to adjust if insufficient */
     	if (allocation->height < sz)
     	{
-	    axis->y1 = y1 + unit->ext.height + mark_length;
-	    axis->y2 = y2 - (unit->ext.height + mark_length) - step_mk->ext.height + axis_buf;
+	    axis->y1 = y1 + unit->ext.height + mk_length;
+	    axis->y2 = y2 - (unit->ext.height + mk_length) - step_mk->ext.height + axis_buf;
     	}
 
-    	if ((allocation->x - x1) < (mark_length + step_mk->ext.width) + axis_buf)
+    	if ((allocation->x - x1) < (mk_length + step_mk->ext.width) + axis_buf)
     	{
-	    axis->x1 = x1 + mark_length + step_mk->ext.width + axis_buf;
+	    axis->x1 = x1 + mk_length + step_mk->ext.width + axis_buf;
 	    axis->x2 = axis->x1;
     	}
     }
     else if (y1 == y2)				 	// X axis
     {
 	sz = (x2 - x1) +				// Proposed axis line width
-	     step_mk->ext.width + mark_length + 	// Y step mark text and line width
+	     step_mk->ext.width + mk_length + 	// Y step mark text and line width
 	     axis_buf; 					// X axis buffer
 
     	/* Need to adjust if insufficient */
     	if (allocation->width < sz)
     	{
-	    axis->x1 = x1 + unit->ext.height + mark_length;
-	    axis->x2 = allocation->width - mark_length - step_mk->ext.width - axis_buf;
+	    axis->x1 = x1 + unit->ext.height + mk_length;
+	    axis->x2 = allocation->width - mk_length - step_mk->ext.width - axis_buf;
     	}
 
-    	if ((allocation->height - y1) < (mark_length + step_mk->ext.height + axis_buf))
+    	if ((allocation->height - y1) < (mk_length + step_mk->ext.height + axis_buf))
     	{
-	    axis->y1 = y1 - mark_length - step_mk->ext.height - axis_buf;
+	    axis->y1 = y1 - mk_length - step_mk->ext.height - axis_buf;
 	    axis->y2 = axis->y1;
     	}
     }
@@ -1215,6 +1230,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
 {
     double axis_len, zr, xyz, bzlen, pad, xpad;
     cairo_text_extents_t *ext;
+    CText *txt;
 
     /* If not already set get the space used by axis titles, step mark values and step marks */
     get_ctext_ext(cr, x_axis->unit);
@@ -1231,13 +1247,13 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     bzlen = zr * axis_len;
 
     /* Check for enough space for Y axis step marks and step values */
-    ext = &(y_axis->step_mk.ext);
+    ext = &(y_axis->step_mk->ext);
     pad = 0;
 
-    if (bzlen < (ext->width + mark_length + axis_buf))
+    if (bzlen < (ext->width + mk_length + axis_buf))
     {
 	/* Adjust the initial length and recalulate the proportion below zero */
-	pad = (ext->width + mark_length + axis_buf) - bzlen;
+	pad = (ext->width + mk_length + axis_buf) - bzlen;
     	axis_len =- pad;
 	bzlen = zr * axis_len;
     }
@@ -1252,7 +1268,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
 
     /* Y Axis */
     /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
-    ext = &(y_axis->unit.ext);
+    ext = &(y_axis->unit->ext);
     axis_len = allocation->height - allocation->y - ext->height - (axis_buf * 2);
 
     /* Determine proportion of axis below zero */
@@ -1260,10 +1276,10 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     bzlen = zr * axis_len;
 
     /* Check for enough space for X axis title, step marks and step values */
-    ext = &(x_axis->unit.ext);
+    ext = &(x_axis->unit->ext);
     xpad = ext->height + axis_buf;
-    ext = &(x_axis->step_mk.ext);
-    xpad = xpad + ext->height + mark_length + axis_buf
+    ext = &(x_axis->step_mk->ext);
+    xpad = xpad + ext->height + mk_length + axis_buf;
     pad = 0;
 
     if (bzlen < xpad)
@@ -1275,10 +1291,10 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     }
 
     /* Set the y1, zero and y2 points on the axis */
-    ext = &(y_axis->unit.ext);
+    ext = &(y_axis->unit->ext);
     y_axis->y1 = allocation->y + ext->height + axis_buf; 
     y_axis->y2 = y_axis->y1 + axis_len; 
-    xyz = allocation->y2 - bzlen - 1;
+    xyz = y_axis->y2 - bzlen - 1;
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the x axis y1 and y2 points */
     x_axis->y1 = x_axis->y2 = xyz;
