@@ -67,6 +67,7 @@ int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
 void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
 gboolean OnOvExpose(GtkWidget *, cairo_t *, gpointer);
+gboolean OnHistExpose(GtkWidget *, cairo_t *, gpointer);
 void OnQuit(GtkWidget*, gpointer);
 
 void OnOK(GtkWidget*, gpointer);
@@ -79,7 +80,7 @@ extern int about_main(GtkWidget *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void user_login_main(IspData *, GtkWidget *);
 extern int delete_user_creds(IspData *, MainUi *);
-extern void display_overview(IspData *isp_data, MainUi *m_ui);
+extern void load_history(IspData *isp_data, MainUi *m_ui);
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
@@ -185,7 +186,8 @@ void OnHistory(GtkWidget *btn, gpointer user_data)
     isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display usage history */
-    printf("%s History not available yet\n", debug_hdr); fflush(stdout);
+    load_history(isp_data, m_ui);
+    show_panel(m_ui->hist_cntr, m_ui);
 
     return;
 }  
@@ -196,11 +198,9 @@ void OnHistory(GtkWidget *btn, gpointer user_data)
 void OnPref(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
-    IspData *isp_data;
 
     /* Get details */
     m_ui = (MainUi *) user_data;
-    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display About details */
     show_panel(m_ui->pref_cntr, m_ui);
@@ -563,6 +563,25 @@ printf("%s OnExpose 9\n", debug_hdr); fflush(stdout);
 
     return TRUE;
 }
+
+
+/* Callback - Cairo charts displaying usage history information */
+
+gboolean OnHistExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
+{  
+    MainUi *m_ui;
+    GtkAllocation allocation, pseudo_alloc;
+
+    /* Get user data, the drawing area and adjust if necessary */
+    m_ui = (MainUi *) user_data;
+
+    GdkWindow *window = gtk_widget_get_window (widget);
+    gtk_widget_get_allocation (widget, &allocation);
+    memcpy(&pseudo_alloc, &allocation, sizeof(allocation));
+
+    return TRUE;
+}
+
 
 
 

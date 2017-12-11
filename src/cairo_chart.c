@@ -82,15 +82,15 @@ int draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 void draw_bar(cairo_t *, BarChart *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 
-void free_line_graph(LineGraph *);
-void free_points(gpointer);
-void line_graph_add_point(LineGraph *, double, double);
-void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
 LineGraph * line_graph_create(char *, const GdkRGBA *, int, 
 			      char *, double, double, double, double,
 			      const GdkRGBA *, int, const GdkRGBA *, int,
 			      char *, double, double, double, double,
 			      const GdkRGBA *, int, const GdkRGBA *, int);
+void free_line_graph(LineGraph *);
+void free_points(gpointer);
+void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
+void line_graph_add_point(LineGraph *, double, double);
 
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 CText * label_text(int, CText *);

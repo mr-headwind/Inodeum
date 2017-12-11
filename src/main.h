@@ -103,6 +103,12 @@ typedef struct _main_ui
     PieChart *pie_chart;
     BarChart *bar_chart;
 
+    /* Widgets - history */
+    GtkWidget *start_dt_lbl, *end_dt_lbl, *hist_total;
+    GtkWidget *hist_start_dt, *hist_end_dt, *hist_search_btn;
+    GtkWidget *hist_ctrl_cntr, *hist_graph_area;
+    LineGraph *hist_usg_graph;
+
     /* Widgets - about */
     GtkWidget *hdr_box, *misc_box, *tab_nb;
     GtkWidget *app_icon, *home_page;
