@@ -436,7 +436,15 @@ fflush(stdout);
 }  
 
 
-/* Keep a list of the history usage days */
+/* Keep a list of the history usage days
+**
+** Build a dynamic array for the history period thus:
+** 
+**          metered up   metered down   total
+**  Day 1
+**  Day 2
+**  ...
+*/
 
 int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
