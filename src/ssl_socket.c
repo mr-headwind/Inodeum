@@ -87,8 +87,10 @@ extern IspListObj * default_srv_type(IspData *, MainUi *);
 extern int load_usage(char *, IspData *, MainUi *);
 extern int load_service(char *, IspData *, MainUi *);
 extern int load_usage_hist(char *, IspData *, MainUi *);
+extern ServUsage * get_service_usage();
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void date_tm_add(struct tm *, char *, int);
+extern time_t string2tm(char *, struct tm *);
 extern char * next_rollover_dt();
 extern int check_http_status(char *, int *, MainUi *);
 
@@ -707,21 +709,29 @@ void set_param(int param_type, char *s_param)
     size_t sz;
     char s[20], s_dt[20];
     char *dt;
+    ServUsage *srv_usg;
 
     *s_param = '\0';
     current_tm = time(NULL);
     tm = localtime(&current_tm);
     sz = strftime(s_dt, 11, "%Y-%m-%d", tm);
+    srv_usg = get_service_usage();
 
     switch(param_type)
     {
     	case 1:						// Total all for month to date
 	    sz = strftime(s, 11, "%Y-%m-01", tm);
 	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
+
+	    strcpy(srv_usg->hist_start_dt, s);
+	    strcpy(srv_usg->hist_end_dt, s_dt);
+
 	    break;
 
     	case 2:						// Total all for period to date
 	    dt = next_rollover_dt();			// Next Rollover date
+	    string2tm(dt, &p_tm);
+	    /*
 	    memset((void *) &p_tm, 0, sizeof(p_tm));
 
 	    memcpy(s, dt, 4);
@@ -740,10 +750,14 @@ void set_param(int param_type, char *s_param)
 	    p_tm.tm_mday = atoi(s);
 
 	    mktime(&p_tm);
+	    */
 
 	    date_tm_add(&p_tm, "Month", -1);
 	    sz = strftime(s, 11, "%Y-%m-%d", &p_tm);
 	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
+
+	    strcpy(srv_usg->hist_start_dt, s);
+	    strcpy(srv_usg->hist_end_dt, s_dt);
 
 	    break;
 

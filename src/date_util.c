@@ -54,6 +54,7 @@ int64_t msec_time();
 void cur_date_str(char *, int, char *);
 time_t date_tm_add(struct tm *, char *, int);
 time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
+time_t string2tm(char *, struct tm *);
 double difftime_days(time_t, time_t);
 
 
@@ -176,6 +177,33 @@ time_t strdt2tmt(char *yyyy, char *mm, char *dd, char *hh, char *min, char *sec)
     tm_t = mktime(&dtm);
 
     return tm_t;
+}
+
+
+/* Convert a string date (yyyy-mm-dd) to a struct tm */
+
+time_t string2tm(char *dt, struct tm *tm)
+{
+    char s[20];
+
+    memset((void *) tm, 0, sizeof(struct tm));
+
+    memcpy(s, dt, 4);
+    s[4] = '\0';
+    tm->tm_year = atoi(s) - 1900;
+
+    s[0] = *(dt + 5);
+    s[1] = *(dt + 6);
+    s[2] = '\0';
+    tm->tm_mon = atoi(s) - 1;
+
+
+    s[0] = *(dt + 8);
+    s[1] = *(dt + 9);
+    s[2] = '\0';
+    tm->tm_mday = atoi(s);
+
+    return mktime(tm);
 }
 
 
