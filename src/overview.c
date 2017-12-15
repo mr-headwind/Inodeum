@@ -55,7 +55,6 @@
 void overview_panel(MainUi *m_ui);
 void load_overview(IspData *, MainUi *);
 char * format_usg(char *, char *);
-char * format_dt(char *, time_t *, struct tm **);
 char * format_remdays(time_t, double *);
 void create_charts(ServUsage *, IspData *, MainUi *);
 
@@ -63,6 +62,7 @@ extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, in
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
+extern char * format_dt(char *, time_t *, struct tm **);
 extern ServUsage * get_service_usage();
 extern gboolean OnOvExpose (GtkWidget*, cairo_t *, gpointer);
 extern PieChart * pie_chart_create(char *, double, int, const GdkRGBA *, int, int);
@@ -261,40 +261,6 @@ char * format_usg(char *amt, char *unit)
 
     s = (char *) malloc(j + 5);
     sprintf(s, "%0.2f %s", qnt, abbrev[i]);
-
-    return s;
-}
-
-
-/* Return a date in yyyy-mm-dd as dd-mmm-yyyy format along with its actual time and time components */
-
-char * format_dt(char *dt, time_t *time_rovr, struct tm **dtm)
-{  
-    char yyyy[5];
-    char mm[3];
-    char dd[3];
-    char *s;
-    time_t tm_t;
-
-    /* Get a numeric time */
-    strncpy(yyyy, dt, 4);
-    yyyy[4] = '\0';
-
-    mm[0] = *(dt + 5);
-    mm[1] = *(dt + 6);
-    mm[2] = '\0';
-
-    dd[0] = *(dt + 8);
-    dd[1] = *(dt + 9);
-    dd[2] = '\0';
-
-    tm_t = strdt2tmt(yyyy, mm, dd, "1", "0", "0");
-    *dtm = localtime(&tm_t);
-
-    /* Set the new date */
-    s = (char *) malloc(12);
-    strftime(s, 12, "%d-%b-%Y", *dtm);
-    *time_rovr = tm_t;
 
     return s;
 }

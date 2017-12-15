@@ -56,6 +56,7 @@ time_t date_tm_add(struct tm *, char *, int);
 time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 time_t string2tm(char *, struct tm *);
 double difftime_days(time_t, time_t);
+char * format_dt(char *, time_t *, struct tm **);
 
 
 /* Globals */
@@ -217,4 +218,38 @@ double difftime_days(time_t tm_t1, time_t tm_t0)
     ndays /= (24 * 60 * 60);
 
     return ndays;
+}
+
+
+/* Return a date in yyyy-mm-dd as dd-mmm-yyyy format along with its actual time and time components */
+
+char * format_dt(char *dt, time_t *time_out, struct tm **dtm)
+{  
+    char yyyy[5];
+    char mm[3];
+    char dd[3];
+    char *s;
+    time_t tm_t;
+
+    /* Get a numeric time */
+    strncpy(yyyy, dt, 4);
+    yyyy[4] = '\0';
+
+    mm[0] = *(dt + 5);
+    mm[1] = *(dt + 6);
+    mm[2] = '\0';
+
+    dd[0] = *(dt + 8);
+    dd[1] = *(dt + 9);
+    dd[2] = '\0';
+
+    tm_t = strdt2tmt(yyyy, mm, dd, "1", "0", "0");
+    *dtm = localtime(&tm_t);
+
+    /* Set the new date */
+    s = (char *) malloc(12);
+    strftime(s, 12, "%d-%b-%Y", *dtm);
+    *time_out = tm_t;
+
+    return s;
 }

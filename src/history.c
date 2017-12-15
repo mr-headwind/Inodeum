@@ -54,17 +54,19 @@
 
 void history_panel(MainUi *m_ui);
 void load_history(IspData *, MainUi *);
-void create_hist_charts(ServUsage *, IspData *, MainUi *);
+void create_hist_graph(ServUsage *, IspData *, MainUi *);
 
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 
+/*
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
 extern ServUsage * get_service_usage();
 extern time_t date_tm_add(struct tm *, char *, int);
 extern int get_user_pref(char *, char **);
+*/
 
 
 
@@ -152,6 +154,7 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     ServUsage *srv_usg;
 
     /* Show summary details in text */
+    /*
     srv_usg = get_service_usage();
 
     s = (char *) malloc(strlen(srv_usg->plan_interval) + 7);
@@ -180,125 +183,33 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     s = format_usg(srv_usg->total_bytes, srv_usg->unit);
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
     free(s);
+    */
 
     /* Show */
     gtk_widget_show_all(m_ui->window);
 
     /* Set up usage graphs */
-    create_hist_charts(srv_usg, isp_data, m_ui);
+    create_hist_graph(srv_usg, isp_data, m_ui);
 
     return;
 }
 
 
-/* Format a usage value - eg. quota, total usage */
-
-char * format_usg(char *amt, char *unit)
-{  
-    int i, j;
-    double dbl, div, qnt, tmp;
-    char *s;
-    const char *abbrev[] = {"GB", "MB", "KB", "Bytes"};
-    const double divsr = 1000;
-
-    /* If unit is not bytes or the value is not numeric, just return as is */
-    if ((strncmp(unit, "byte", 4) != 0) || (val_str2dbl(amt, &dbl, NULL, NULL) == FALSE))
-    {
-	s = (char *) malloc(strlen(amt) + strlen(unit) + 2);
-	sprintf(s, "%s %s", amt, unit);
-	return s;
-    }
-
-    /* Its a number, format the amount into a GB, MB or KB string */
-    if (dbl == 0)
-    {
-	s = (char *) malloc(8);
-	sprintf(s, "0 Bytes");
-	return s;
-    }
-
-    qnt = 0;
-    i = 0;
-
-    for(div = (double) 1000000000; div >= divsr; div /= divsr)
-    {
-    	qnt = dbl / div;
-
-    	if (qnt >= 1)
-	    break;
-
-	i++;
-    }
-
-    if (div < divsr)
-    	qnt = dbl;
-
-    /* Need to determine significant digits */
-    j = 1;
-    tmp = qnt;
-
-    while(tmp > 1)
-    {
-    	tmp = tmp / 10;
-    	j++;
-    }
-
-    s = (char *) malloc(j + 5);
-    sprintf(s, "%0.2f %s", qnt, abbrev[i]);
-
-    return s;
-}
-
-
-/* Return a date in yyyy-mm-dd as dd-mmm-yyyy format along with its actual time and time components */
-
-char * format_dt(char *dt, time_t *time_rovr, struct tm **dtm)
-{  
-    char yyyy[5];
-    char mm[3];
-    char dd[3];
-    char *s;
-    time_t tm_t;
-
-    /* Get a numeric time */
-    strncpy(yyyy, dt, 4);
-    yyyy[4] = '\0';
-
-    mm[0] = *(dt + 5);
-    mm[1] = *(dt + 6);
-    mm[2] = '\0';
-
-    dd[0] = *(dt + 8);
-    dd[1] = *(dt + 9);
-    dd[2] = '\0';
-
-    tm_t = strdt2tmt(yyyy, mm, dd, "1", "0", "0");
-    *dtm = localtime(&tm_t);
-
-    /* Set the new date */
-    s = (char *) malloc(12);
-    strftime(s, 12, "%d-%b-%Y", *dtm);
-    *time_rovr = tm_t;
-
-    return s;
-}
-
-
 /* Create usage history chart objects, drawing is handled in the 'draw' (OnHistExpose) event */
 
-void create_hist_chart(IspData *isp_data, MainUi *m_ui)
+void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 {  
     /* If nothing changed, return */
-    if (m_ui->hist_graph_list != NULL)
+    //if (m_ui->hist_graph_list != NULL)
     	return;
 
     /* Build the GList for the history line graph */
-    hist_graph_pts(isp_data, m_ui);
+    //hist_graph_pts(isp_data, m_ui);
 
     /* Free old charts */
 
     /* History line graph */
-    m_ui->hist_usg_graph = line_graph_create("Quota Distribution", 0, lgd, &DARK_BLUE, 9, lbl);
+    //m_ui->hist_usg_graph = line_graph_create("Quota Distribution", 0, lgd, &DARK_BLUE, 9, lbl);
 
     return;
 }

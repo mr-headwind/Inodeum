@@ -730,7 +730,9 @@ void set_param(int param_type, char *s_param)
 
     	case 2:						// Total all for period to date
 	    dt = next_rollover_dt();			// Next Rollover date
+printf("%s set_param 1\n", debug_hdr); fflush(stdout);
 	    string2tm(dt, &p_tm);
+printf("%s set_param 2\n", debug_hdr); fflush(stdout);
 	    /*
 	    memset((void *) &p_tm, 0, sizeof(p_tm));
 
@@ -753,11 +755,16 @@ void set_param(int param_type, char *s_param)
 	    */
 
 	    date_tm_add(&p_tm, "Month", -1);
+printf("%s set_param 3\n", debug_hdr); fflush(stdout);
 	    sz = strftime(s, 11, "%Y-%m-%d", &p_tm);
+printf("%s set_param 4\n", debug_hdr); fflush(stdout);
 	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
+printf("%s set_param 5\n", debug_hdr); fflush(stdout);
 
 	    strcpy(srv_usg->hist_start_dt, s);
+printf("%s set_param 6\n", debug_hdr); fflush(stdout);
 	    strcpy(srv_usg->hist_end_dt, s_dt);
+printf("%s set_param 7\n", debug_hdr); fflush(stdout);
 
 	    break;
 
