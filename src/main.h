@@ -104,9 +104,10 @@ typedef struct _main_ui
     BarChart *bar_chart;
 
     /* Widgets - history */
-    GtkWidget *start_dt_lbl, *end_dt_lbl, *hist_total;
-    GtkWidget *hist_start_dt, *hist_end_dt, *hist_search_btn;
-    GtkWidget *hist_ctrl_cntr, *hist_graph_area;
+    GtkWidget *from_dt_lbl, *to_dt_lbl, *hist_total;
+    GtkWidget *hist_from_dt, *hist_to_dt, *hist_search_btn;
+    GtkWidget *hist_search_cntr, *hist_graph_area;
+    GtkWidget *fr_btn, *to_btn;
     LineGraph *hist_usg_graph;
 
     /* Widgets - about */

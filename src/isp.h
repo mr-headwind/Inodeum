@@ -126,7 +126,8 @@ typedef struct _srvusage
     char *unmetered_bytes;			// Total unmetered (up/down) - optional
     char *total_bytes;				// Total used so far in period
     char *unit;					// Unit measure (bytes)
-    char *hist_start_dt, *hist_end_dt;		// History start & end dates (chars)
+    char hist_start_dt[11]; 			// History start date (yyyy-mm-dd)
+    char hist_end_dt[11];			// History end date (yyyy-mm-dd)
 } ServUsage;
 
 

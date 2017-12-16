@@ -221,7 +221,7 @@ double difftime_days(time_t tm_t1, time_t tm_t0)
 }
 
 
-/* Return a date in yyyy-mm-dd as dd-mmm-yyyy format along with its actual time and time components */
+/* Return a new string date in yyyy-mm-dd as dd-mmm-yyyy format along with the system time and components */
 
 char * format_dt(char *dt, time_t *time_out, struct tm **dtm)
 {  

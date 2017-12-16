@@ -58,6 +58,7 @@ void create_hist_graph(ServUsage *, IspData *, MainUi *);
 
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 
 /*
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
@@ -80,7 +81,8 @@ static const char *debug_hdr = "DEBUG-history.c ";
 
 void history_panel(MainUi *m_ui)
 {  
-    int i, j;
+    GtkWidget *sum_grid;
+    GtkWidget *lbl;
 
     /* Create main container grid */
     m_ui->hist_cntr = gtk_grid_new();
@@ -91,50 +93,49 @@ void history_panel(MainUi *m_ui)
     gtk_widget_set_margin_top (m_ui->hist_cntr, 5);
     gtk_widget_set_margin_left (m_ui->hist_cntr, 15);
 
-    /* Create summary container grid */
-    m_ui->hist_ctrl_cntr = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID (m_ui->hist_ctrl_cntr), 2);
-    gtk_grid_set_column_spacing(GTK_GRID (m_ui->hist_ctrl_cntr), 2);
-    gtk_container_set_border_width (GTK_CONTAINER (m_ui->hist_ctrl_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->hist_ctrl_cntr, 5);
-    gtk_widget_set_margin_left (m_ui->hist_ctrl_cntr, 15);
-
-    /* Title labels */
-    i = j = 0;
-    create_label(&(m_ui->start_dt_lbl), "start_dt_lbl", NULL, m_ui->hist_ctrl_cntr, i, j, 1, 1);
-
-    j++;
-    create_label(&(m_ui->end_dt_lbl), "end_dt_lbl", NULL, m_ui->hist_ctrl_cntr, i, j, 1, 1);
-
-    /* Date entry fields */
-    /*
-    j++;
-    create_entry(&(m_ui->search date), "rem_days_lbl", NULL, m_ui->hist_ctrl_cntr, i, j, 1, 1);
-
-    j++;
-    create_entry(&(m_ui->search to date), "usage_lbl", NULL, m_ui->hist_ctrl_cntr, i, j, 1, 1);
-    */
-
-    /* Search button */
-
-    /* Data labels */
-    j = 0;
-    i++;
-    create_label(&(m_ui->hist_total), "data_1", NULL, m_ui->hist_ctrl_cntr, i, j, 1, 1);
-    gtk_widget_set_margin_left (m_ui->hist_total, 15);
-
-    /* Add summary to history container */
-    gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), m_ui->hist_ctrl_cntr, 0, 0, 1, 1);
-
-    /* Create drawing area for line graph and add to history container */
+    /* Create drawing area for line graph */
     m_ui->hist_graph_area = gtk_drawing_area_new();
     gtk_widget_set_margin_top (m_ui->hist_graph_area, 10);
     gtk_widget_set_size_request (m_ui->hist_graph_area, 250, 160);
     gtk_widget_set_halign (m_ui->hist_graph_area, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (m_ui->hist_graph_area, GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), m_ui->graph_area, 0, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), m_ui->hist_graph_area, 0, 0, 1, 1);
 
     g_signal_connect (m_ui->hist_graph_area, "draw", G_CALLBACK (OnHistExpose), m_ui);
+
+    /* Summary total data */
+    sum_grid = gtk_grid_new();
+    create_label(&lbl, "data_1", "Total Usage", sum_grid, 0, 0, 1, 1);
+    gtk_widget_set_margin_left (lbl, 25);
+    create_label(&(m_ui->hist_total), "hist_total", NULL, sum_grid, 1, 0, 1, 1);
+    gtk_widget_set_margin_left (m_ui->hist_total, 15);
+    gtk_widget_set_margin_top (sum_grid, 15);
+    gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), sum_grid, 0, 1, 1, 1);
+
+    /* Create search container grid */
+    m_ui->hist_search_cntr = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID (m_ui->hist_search_cntr), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (m_ui->hist_search_cntr), 2);
+    gtk_container_set_border_width (GTK_CONTAINER (m_ui->hist_search_cntr), 2);
+    gtk_widget_set_margin_top (m_ui->hist_search_cntr, 5);
+    gtk_widget_set_margin_left (m_ui->hist_search_cntr, 15);
+
+    /* Search widgets */
+    create_label(&(m_ui->from_dt_lbl), "from_dt_lbl", "Start date", m_ui->hist_search_cntr, 0, 0, 1, 1);
+    create_entry(&(m_ui->hist_from_dt), "from_dt_ent", m_ui->hist_search_cntr, 1, 0);
+    m_ui->fr_btn = gtk_button_new_with_label(" ... ");
+    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->fr_btn, 2, 0, 1, 1);
+
+    create_label(&(m_ui->to_dt_lbl), "to_dt_lbl", "End date", m_ui->hist_search_cntr, 0, 1, 1, 1);
+    create_entry(&(m_ui->hist_to_dt), "to_dt_ent", m_ui->hist_search_cntr, 1, 1);
+    m_ui->to_btn = gtk_button_new_with_label(" ... ");
+    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->to_btn, 2, 1, 1, 1);
+
+    m_ui->hist_search_btn = gtk_button_new_with_label("Find");
+    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->hist_search_btn, 1, 2, 1, 1);
+
+    /* Add summary to history container */
+    gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), m_ui->hist_search_cntr, 0, 2, 1, 1);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->hist_cntr, "hist_panel");
