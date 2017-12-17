@@ -723,8 +723,8 @@ void set_param(int param_type, char *s_param)
 	    sz = strftime(s, 11, "%Y-%m-01", tm);
 	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
 
-	    strcpy(srv_usg->hist_start_dt, s);
-	    strcpy(srv_usg->hist_end_dt, s_dt);
+	    strcpy(srv_usg->hist_from_dt, s);
+	    strcpy(srv_usg->hist_to_dt, s_dt);
 
 	    break;
 
@@ -736,8 +736,8 @@ void set_param(int param_type, char *s_param)
 	    sz = strftime(s, 11, "%Y-%m-%d", &p_tm);
 	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
 
-	    strcpy(srv_usg->hist_start_dt, s);
-	    strcpy(srv_usg->hist_end_dt, s_dt);
+	    strcpy(srv_usg->hist_from_dt, s);
+	    strcpy(srv_usg->hist_to_dt, s_dt);
 
 	    break;
 

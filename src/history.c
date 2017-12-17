@@ -59,6 +59,7 @@ void create_hist_graph(ServUsage *, IspData *, MainUi *);
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
+extern ServUsage * get_service_usage();
 
 /*
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
@@ -110,6 +111,7 @@ void history_panel(MainUi *m_ui)
     create_label(&(m_ui->hist_total), "hist_total", NULL, sum_grid, 1, 0, 1, 1);
     gtk_widget_set_margin_left (m_ui->hist_total, 15);
     gtk_widget_set_margin_top (sum_grid, 15);
+    gtk_widget_set_valign(GTK_WIDGET (sum_grid), GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), sum_grid, 0, 1, 1, 1);
 
     /* Create search container grid */
@@ -119,20 +121,35 @@ void history_panel(MainUi *m_ui)
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->hist_search_cntr), 2);
     gtk_widget_set_margin_top (m_ui->hist_search_cntr, 5);
     gtk_widget_set_margin_left (m_ui->hist_search_cntr, 15);
+    gtk_widget_set_valign(GTK_WIDGET (m_ui->hist_search_cntr), GTK_ALIGN_CENTER);
 
     /* Search widgets */
-    create_label(&(m_ui->from_dt_lbl), "from_dt_lbl", "Start date", m_ui->hist_search_cntr, 0, 0, 1, 1);
+    create_label(&(m_ui->from_dt_lbl), "from_dt_lbl", "Date From ", m_ui->hist_search_cntr, 0, 0, 1, 1);
     create_entry(&(m_ui->hist_from_dt), "from_dt_ent", m_ui->hist_search_cntr, 1, 0);
-    m_ui->fr_btn = gtk_button_new_with_label(" ... ");
+    gtk_entry_set_width_chars (GTK_ENTRY(m_ui->hist_from_dt), 12);
+    gtk_entry_set_max_width_chars (GTK_ENTRY(m_ui->hist_from_dt), 12);
+    gtk_entry_set_max_length (GTK_ENTRY(m_ui->hist_from_dt), 12);
+    m_ui->fr_btn = gtk_button_new_with_label("...");
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->fr_btn, 2, 0, 1, 1);
 
-    create_label(&(m_ui->to_dt_lbl), "to_dt_lbl", "End date", m_ui->hist_search_cntr, 0, 1, 1, 1);
+    create_label(&(m_ui->to_dt_lbl), "to_dt_lbl", "Date To ", m_ui->hist_search_cntr, 0, 1, 1, 1);
     create_entry(&(m_ui->hist_to_dt), "to_dt_ent", m_ui->hist_search_cntr, 1, 1);
-    m_ui->to_btn = gtk_button_new_with_label(" ... ");
+    gtk_entry_set_width_chars (GTK_ENTRY(m_ui->hist_to_dt), 12);
+    gtk_entry_set_max_width_chars (GTK_ENTRY(m_ui->hist_to_dt), 12);
+    gtk_entry_set_max_length (GTK_ENTRY(m_ui->hist_to_dt), 12);
+    m_ui->to_btn = gtk_button_new_with_label("...");
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->to_btn, 2, 1, 1, 1);
 
+    create_label(&(m_ui->cat_lbl), "cat_lbl", "Category", m_ui->hist_search_cntr, 0, 2, 1, 1);
+    m_ui->category_cbox = gtk_combo_box_new();
+    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->category_cbox, 1, 2, 1, 1);
+
     m_ui->hist_search_btn = gtk_button_new_with_label("Find");
-    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->hist_search_btn, 1, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->hist_search_btn, 1, 3, 1, 1);
+
+    m_ui->search_frame = gtk_frame_new ("Search");
+
+    /* Set up calendar popup */
 
     /* Add summary to history container */
     gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), m_ui->hist_search_cntr, 0, 2, 1, 1);
@@ -154,10 +171,12 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     time_t tm_t;
     ServUsage *srv_usg;
 
-    /* Show summary details in text */
-    /*
+    /* Set current search values */
     srv_usg = get_service_usage();
+    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), srv_usg->hist_from_dt);
+    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), srv_usg->hist_to_dt);
 
+    /*
     s = (char *) malloc(strlen(srv_usg->plan_interval) + 7);
     sprintf(s, "%s Quota:", srv_usg->plan_interval);
     gtk_label_set_text (GTK_LABEL (m_ui->quota_lbl), s);
