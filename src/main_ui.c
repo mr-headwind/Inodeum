@@ -61,6 +61,7 @@ void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int)
 void create_label2(GtkWidget **, char *, char *, GtkWidget *);
 void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, char *, char *);
+void create_cbox(GtkWidget **, char *, const char *[], int, GtkWidget *, int, int, int, int);
 void show_panel(GtkWidget *, MainUi *); 
 void disable_login(MainUi *);
 void add_main_loop(MainUi *);
@@ -472,6 +473,23 @@ void create_radio(GtkWidget **rad, GtkWidget *grp, char *txt, char *nm, GtkWidge
 
     if (obj_nm != NULL && obj_data_str != NULL)
 	g_object_set_data_full (G_OBJECT (*rad), obj_nm, g_strdup (obj_data_str), (GDestroyNotify) g_free);
+
+    return;
+}
+
+
+/* Create standard combobox */
+
+void create_cbox(GtkWidget **cbox, char *nm, const char *arr[], int max, GtkWidget *cntr, 
+		  int col, int row, int c_spn, int r_spn)
+{  
+    *cbox = gtk_combo_box_text_new();  
+    gtk_widget_set_name(*cbox, nm);
+
+    gtk_widget_set_halign(*cbox, GTK_ALIGN_START);
+    gtk_widget_set_valign(*cbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top (*cbox, 5);
+    gtk_grid_attach(GTK_GRID (cntr), *cbox, col, row, c_spn, r_spn);
 
     return;
 }

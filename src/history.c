@@ -59,6 +59,7 @@ void create_hist_graph(ServUsage *, IspData *, MainUi *);
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
+extern void create_cbox(GtkWidget **, char *, const char *[], int, GtkWidget *, int, int, int, int);
 extern ServUsage * get_service_usage();
 
 /*
@@ -84,6 +85,9 @@ void history_panel(MainUi *m_ui)
 {  
     GtkWidget *sum_grid;
     GtkWidget *lbl;
+    GtkWidget *frame;
+    const char *usg_cats[] = { "Total", "Metered up", "Metered down", "Unmetered up", "Unmetered down" };
+    const int usg_cat_max = 5;
 
     /* Create main container grid */
     m_ui->hist_cntr = gtk_grid_new();
@@ -141,13 +145,15 @@ void history_panel(MainUi *m_ui)
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->to_btn, 2, 1, 1, 1);
 
     create_label(&(m_ui->cat_lbl), "cat_lbl", "Category", m_ui->hist_search_cntr, 0, 2, 1, 1);
-    m_ui->category_cbox = gtk_combo_box_new();
-    gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->category_cbox, 1, 2, 1, 1);
+    //m_ui->category_cbox = gtk_combo_box_new();
+    create_cbox(&(m_ui->usgcat_cbox), "usg_cat", usg_cats, usg_cat_max, m_ui->hist_search_cntr, 1, 2, 1, 1);
+    //gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->category_cbox, 1, 2, 1, 1);
 
     m_ui->hist_search_btn = gtk_button_new_with_label("Find");
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->hist_search_btn, 1, 3, 1, 1);
 
-    m_ui->search_frame = gtk_frame_new ("Search");
+    frame = gtk_frame_new (NULL);
+    gtk_container_add(GTK_CONTAINER (frame), m_ui->hist_search_cntr);
 
     /* Set up calendar popup */
 
