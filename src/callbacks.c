@@ -63,6 +63,7 @@ void OnPrefSave(GtkWidget*, gpointer);
 void OnPrefPieLbl(GtkToggleButton*, gpointer);
 void OnPrefPieLgd(GtkToggleButton*, gpointer);
 void OnPrefBarLbl(GtkToggleButton*, gpointer);
+void OnHistFind(GtkWidget *, gpointer);
 int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
 void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
@@ -358,6 +359,26 @@ void OnPrefBarLbl(GtkToggleButton *rad, gpointer user_data)
     /* Determine which radio toggled and set the preference */
     idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
     set_user_pref(OV_BAR_LBL, idx);
+
+    return;
+}  
+
+
+/* Callback - Refined history search */
+
+void OnHistFind(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Get the service usage class */
+    srv_usg = get_service_usage();
+    srv_usg->graph_hist_data = NULL;
+
+    /* Load new history */
+    printf("%s Refined history not available yet\n", debug_hdr); fflush(stdout);
 
     return;
 }  

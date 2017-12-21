@@ -56,6 +56,7 @@ void history_panel(MainUi *m_ui);
 void load_history(IspData *, MainUi *);
 void create_hist_graph(ServUsage *, IspData *, MainUi *);
 
+extern void OnHistFind(GtkWidget *, gpointer); 
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
@@ -109,17 +110,6 @@ void history_panel(MainUi *m_ui)
     g_signal_connect (m_ui->hist_graph_area, "draw", G_CALLBACK (OnHistExpose), m_ui);
 
     /* Summary total data */
-    /*
-    sum_grid = gtk_grid_new();
-    create_label(&lbl, "data_2", "Total Usage: ", sum_grid, 0, 0, 1, 1);
-    gtk_widget_set_margin_left (lbl, 25);
-    gtk_widget_set_margin_bottom (m_ui->hist_search_cntr, 1);
-    create_label(&(m_ui->hist_total), "hist_total", NULL, sum_grid, 1, 0, 1, 1);
-    gtk_widget_set_margin_left (m_ui->hist_total, 15);
-    gtk_widget_set_margin_top (sum_grid, 15);
-    gtk_widget_set_valign(GTK_WIDGET (sum_grid), GTK_ALIGN_CENTER);
-    gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), sum_grid, 0, 1, 1, 1);
-    */
     create_label(&(m_ui->hist_total), "data_2", "Total Usage: ", m_ui->hist_cntr, 0, 1, 1, 1);
     gtk_widget_set_margin_bottom (m_ui->hist_total, 10);
     gtk_widget_set_halign(GTK_WIDGET (m_ui->hist_total), GTK_ALIGN_CENTER);
@@ -156,9 +146,10 @@ void history_panel(MainUi *m_ui)
     create_cbox(&(m_ui->usgcat_cbox), "usg_cat", usg_cats, usg_cat_max, 0, m_ui->hist_search_cntr, 1, 2);
 
     m_ui->hist_search_btn = gtk_button_new_with_label("Find");
-    gtk_widget_set_name ( m_ui->hist_search_btn, "myButton");
+    gtk_widget_set_name ( m_ui->hist_search_btn, "button_1");
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->hist_search_btn, 1, 3, 1, 1);
     gtk_widget_set_margin_top (m_ui->hist_search_btn, 2);
+    g_signal_connect (m_ui->hist_search_btn, "clicked", G_CALLBACK (OnHistFind), m_ui);
 
     frame = gtk_frame_new (NULL);
     gtk_container_add(GTK_CONTAINER (frame), m_ui->hist_search_cntr);
@@ -185,39 +176,26 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     time_t tm_t;
     ServUsage *srv_usg;
 
-    /* Set current search values */
+    /* Get the service usage class */
     srv_usg = get_service_usage();
+
+    /* If a graph glist is present no action is required */
+    if (srv_usg->graph_hist_data != NULL)
+    	return;
+
+    /* Clear existing graph object if it exists */
+
+    /* Load new data for glist */
+
+    /* Set current search values */
     gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), srv_usg->hist_from_dt);
     gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), srv_usg->hist_to_dt);
 
-    /*
-    s = (char *) malloc(strlen(srv_usg->plan_interval) + 7);
-    sprintf(s, "%s Quota:", srv_usg->plan_interval);
-    gtk_label_set_text (GTK_LABEL (m_ui->quota_lbl), s);
-    free(s);
-
-    s = format_usg(srv_usg->quota, srv_usg->unit);
-    gtk_label_set_text (GTK_LABEL (m_ui->quota), s);
-    free(s);
-
-    gtk_label_set_text (GTK_LABEL (m_ui->next_dt_lbl), "Next Rollover:");
-    s = format_dt(srv_usg->rollover_dt, &time_rovr, &dtm);
-    gtk_label_set_text (GTK_LABEL (m_ui->rollover_dt), s);
-    free(s);
-
-    gtk_label_set_text (GTK_LABEL (m_ui->rem_days_lbl), "Days remaining:");
-    s = format_remdays(time_rovr, &(m_ui->days_rem));
-    gtk_label_set_text (GTK_LABEL (m_ui->rem_days), s);
-    free(s);
-
-    tm_t = date_tm_add(dtm, "month", -1);
-    m_ui->days_quota = difftime_days(time_rovr, tm_t);
-
-    gtk_label_set_text (GTK_LABEL (m_ui->usage_lbl), "Total Usage:");
+    /* Total usage for selected history */
+    gtk_label_set_text (GTK_LABEL (m_ui->hist_total), "Total Usage:");
     s = format_usg(srv_usg->total_bytes, srv_usg->unit);
     gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
     free(s);
-    */
 
     /* Show */
     gtk_widget_show_all(m_ui->window);
