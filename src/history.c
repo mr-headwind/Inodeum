@@ -55,6 +55,7 @@
 void history_panel(MainUi *m_ui);
 void load_history(IspData *, MainUi *);
 void create_hist_graph(ServUsage *, IspData *, MainUi *);
+void reset_history(MainUi *);
 
 extern void OnHistFind(GtkWidget *, gpointer); 
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
@@ -67,7 +68,6 @@ extern ServUsage * get_service_usage();
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
 extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 extern double difftime_days(time_t, time_t);
-extern ServUsage * get_service_usage();
 extern time_t date_tm_add(struct tm *, char *, int);
 extern int get_user_pref(char *, char **);
 */
@@ -222,6 +222,19 @@ void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 
     /* History line graph */
     //m_ui->hist_usg_graph = line_graph_create("Quota Distribution", 0, lgd, &DARK_BLUE, 9, lbl);
+
+    return;
+}
+
+
+/* Reset history for new search criteria */
+
+void reset_history(MainUi *m_ui)
+{  
+    ServUsage *srv_usg;
+
+    srv_usg = get_service_usage();
+    srv_usg->graph_hist_data = NULL;
 
     return;
 }

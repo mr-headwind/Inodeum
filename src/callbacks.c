@@ -82,6 +82,7 @@ extern int ssl_service_details(IspData *, MainUi *);
 extern void user_login_main(IspData *, GtkWidget *);
 extern int delete_user_creds(IspData *, MainUi *);
 extern void load_history(IspData *isp_data, MainUi *m_ui);
+extern void reset_history(MainUi *);
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
@@ -373,15 +374,11 @@ void OnHistFind(GtkWidget *btn, gpointer user_data)
     /* Get data */
     m_ui = (MainUi *) user_data;
 
-    /* Get the service usage class */
-    srv_usg = get_service_usage();
-    srv_usg->graph_hist_data = NULL;
-
-    /* Load new history */
-    printf("%s Refined history not available yet\n", debug_hdr); fflush(stdout);
+    /* Reset history for new criteria */
+    reset_history(m_ui);
 
     return;
-}  
+}
 
 
 /* Callback - User preference (Data Refresh) set */
