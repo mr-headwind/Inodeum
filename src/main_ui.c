@@ -600,7 +600,6 @@ void * timer_thread(void *arg)
     ref_tmr = &(m_ui->RefTmr);
     ref_t = ref_tmr->start_t + ref_tmr->ref_interval;
 
-printf("%s timer thread start\n", debug_hdr); fflush(stdout);
     /* Get time */
     while(1)
     {
@@ -622,13 +621,17 @@ printf("%s timer thread start\n", debug_hdr); fflush(stdout);
 		sprintf(ref_tmr->info_txt, "Next refresh due in %d minutes", mins);
 	}
 
-printf("%s timer thread start: %ld, current: %ld, interval %ld\n", 
-    debug_hdr, ref_tmr->start_t, ref_tmr->curr_t, ref_tmr->ref_interval); fflush(stdout);
 	sleep(15);
     }
     
-printf("%s timer thread exit\n", debug_hdr); fflush(stdout);
     pthread_exit(&ret_mon);
+
+/* Debug
+printf("%s timer thread start\n", debug_hdr); fflush(stdout);
+printf("%s timer thread start: %ld, current: %ld, interval %ld\n", 
+    debug_hdr, ref_tmr->start_t, ref_tmr->curr_t, ref_tmr->ref_interval); fflush(stdout);
+printf("%s timer thread exit\n", debug_hdr); fflush(stdout);
+*/
 }
 
 

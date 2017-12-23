@@ -231,10 +231,28 @@ void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
 
 void reset_history(MainUi *m_ui)
 {  
+    int cat_idx;
+    const gchar *dt_fr, *dt_to;
+    IspData *isp_data;
     ServUsage *srv_usg;
 
+    /* Initial */
     srv_usg = get_service_usage();
+    isp_data = (IspData *) g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+
+    /* Date changes force a new Isp query */
+    dt_fr = gtk_entry_get_text (GTK_ENTRY(m_ui->hist_from_dt));
+    dt_to = gtk_entry_get_text (GTK_ENTRY(m_ui->hist_to_dt));
+    cat_idx = gtk_combo_box_get_active (GTK_COMBO_BOX(m_ui->usgcat_cbox));
+
+    if ((strcmp(dt_fr, srv_usg->hist_from_dt) != 0) || (strcmp(dt_to, srv_usg->hist_to_dt) != 0))
+    	get_hist_service_usage();
+
+    else if (srv_usg->last_cat_idx == cat_idx)
+    	return;
+
     srv_usg->graph_hist_data = NULL;
+    load_history(isp_data, m_ui);
 
     return;
 }
