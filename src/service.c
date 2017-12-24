@@ -81,6 +81,8 @@ ServUsage * get_service_usage();
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
+extern time_t string2tm(char *, struct tm *);
+extern double difftime_days(time_t, time_t);
 
 
 /* Globals */
@@ -440,7 +442,8 @@ fflush(stdout);
 **
 ** Build a dynamic array for the history period thus:
 ** 
-**          metered up   metered down   total
+**           total  metered up  metered down  un-metered up  un-metered down  
+**  Day 0
 **  Day 1
 **  Day 2
 **  ...
@@ -448,11 +451,34 @@ fflush(stdout);
 
 int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
+    long days;
+    struct tm tm_fr, tm_to;
+    time_t tmt_fr, tmt_to;
+    
     int r, i;
     char *p, *attr, *tag, *val;
     UsageDay *usg_day;
     TrafficData *traffic;
     const int max_traffic_attr = 3;		// direction, name & unit
+
+    /* Clear history if necessary */
+    srv_usage.hist_usg_arr = NULL;
+    srv_usage.last_cat_idx = 0;
+
+    /* Determine the size of the array */
+    tmt_fr = string2tm(srv_usage.hist_from_dt, &tm_fr);
+    tmt_to = string2tm(srv_usage.hist_to_dt, &tm_to);
+
+    days = (long) difftime_days(tmt_to, tmt_fr);
+    days += 2;
+    srv_usage.hist_days = days;
+    long (*arr)[days] = malloc(sizeof(long[days][5]));
+    memset(arr, 0, sizeof(long[days][5]));
+
+
+
+
+
 
     /* Clear history if necessary */
     if (isp_data->usg_hist_list != NULL)

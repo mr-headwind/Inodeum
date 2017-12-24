@@ -63,6 +63,8 @@ extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, in
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void create_cbox(GtkWidget **, char *, const char *[], int, int, GtkWidget *, int, int);
 extern ServUsage * get_service_usage();
+extern char * format_usg(char *, char *);
+extern int long_chars(long);
 
 /*
 extern int val_str2dbl(char *, double *, char *, GtkWidget *);
@@ -170,7 +172,9 @@ void history_panel(MainUi *m_ui)
 
 void load_history(IspData *isp_data, MainUi *m_ui)
 {  
-    char *s;
+    long ll;
+    int i;
+    char *s, *s2, *amt;
     time_t time_rovr;
     struct tm *dtm;
     time_t tm_t;
@@ -179,23 +183,33 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     /* Get the service usage class */
     srv_usg = get_service_usage();
 
-    /* If a graph glist is present no action is required */
-    if (srv_usg->graph_hist_data != NULL)
+    /* If a graph data array is present no action is required */
+    if (srv_usg->hist_usg_arr != NULL)
     	return;
 
     /* Clear existing graph object if it exists */
 
-    /* Load new data for glist */
+    /* Load new data for graph points glist ??? should really be with chart create */
 
-    /* Set current search values */
+    /* Show current search values */
     gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), srv_usg->hist_from_dt);
     gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), srv_usg->hist_to_dt);
+    gtk_combo_box_set_active (GTK_COMBO_BOX(m_ui->usgcat_cbox), srv_usg->last_cat_idx);
 
     /* Total usage for selected history */
-    gtk_label_set_text (GTK_LABEL (m_ui->hist_total), "Total Usage:");
-    s = format_usg(srv_usg->total_bytes, srv_usg->unit);
-    gtk_label_set_text (GTK_LABEL (m_ui->usage), s);
+    ll = srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx];
+    i = long_chars(ll);
+    amt = (char *) malloc(ll + 1);
+    sprintf(amt, "%ld", ll);
+
+    s = format_usg(amt, srv_usg->unit);
+    s2 = (char *) malloc(strlen(s) + 14);
+    sprintf(s2, "Total Usage: %s", s);
+    gtk_label_set_text (GTK_LABEL (m_ui->usage), s2);
+
     free(s);
+    free(s2);
+    free(amt);
 
     /* Show */
     gtk_widget_show_all(m_ui->window);
@@ -246,12 +260,13 @@ void reset_history(MainUi *m_ui)
     cat_idx = gtk_combo_box_get_active (GTK_COMBO_BOX(m_ui->usgcat_cbox));
 
     if ((strcmp(dt_fr, srv_usg->hist_from_dt) != 0) || (strcmp(dt_to, srv_usg->hist_to_dt) != 0))
-    	get_hist_service_usage();
+    	get_hist_service_usage(dt_fr, dt_to);
 
     else if (srv_usg->last_cat_idx == cat_idx)
     	return;
 
-    srv_usg->graph_hist_data = NULL;
+    free(srv_usg->hist_usg_arr);
+    srv_usg->hist_usg_arr = NULL;
     load_history(isp_data, m_ui);
 
     return;
