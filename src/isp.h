@@ -129,8 +129,8 @@ typedef struct _srvusage
     char hist_from_dt[11]; 			// History start date (yyyy-mm-dd)
     char hist_to_dt[11];			// History end date (yyyy-mm-dd)
     int last_cat_idx;				// Most recent usage category
-    int *hist_usg_arr;				// Data array for the history chart
     long hist_days;				// Rows in history data array
+    long **hist_usg_arr;			// Data (array) for the history chart
 } ServUsage;
 
 
@@ -203,5 +203,4 @@ typedef struct _isp_data
     int srv_cnt;
     GList *srv_list;
     GList *srv_list_head;
-    GList *usg_hist_list;
 } IspData;

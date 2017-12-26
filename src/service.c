@@ -451,19 +451,25 @@ fflush(stdout);
 
 int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
+    int i, hday, usgcat;
     long days;
     struct tm tm_fr, tm_to;
     time_t tmt_fr, tmt_to;
     
-    int r, i;
+    int r;
     char *p, *attr, *tag, *val;
     UsageDay *usg_day;
     TrafficData *traffic;
     const int max_traffic_attr = 3;		// direction, name & unit
 
     /* Clear history if necessary */
+    for(i = 0; i < srv_usage.hist_days; i++)
+    	free(srv_usage.hist_usg_arr[i]);
+
+    free(srv_usage.hist_usg_arr);
     srv_usage.hist_usg_arr = NULL;
     srv_usage.last_cat_idx = 0;
+    hday = 0;
 
     /* Determine the size of the array */
     tmt_fr = string2tm(srv_usage.hist_from_dt, &tm_fr);
@@ -472,19 +478,16 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     days = (long) difftime_days(tmt_to, tmt_fr);
     days += 2;
     srv_usage.hist_days = days;
-    long (*arr)[days] = malloc(sizeof(long[days][5]));
-    memset(arr, 0, sizeof(long[days][5]));
 
+    //long (*arr)[days] = malloc(sizeof(long[days][5]));	// Elegant but problematic to point to
+    //memset(arr, 0, sizeof(long[days][5]));
 
+    srv_usage.hist_usg_arr = malloc(days * sizeof(long));
 
-
-
-
-    /* Clear history if necessary */
-    if (isp_data->usg_hist_list != NULL)
+    for(i = 0; i < days; i++)
     {
-    	g_list_free_full (isp_data->usg_hist_list, (GDestroyNotify) free_hist_list);
-	isp_data->usg_hist_list = NULL;
+    	srv_usage.hist_usg_arr[i] = malloc(5 * sizeof(long));
+	memset(srv_usage.hist_usg_arr[i], 0, 5 * sizeof(long));
     }
 
     /* Process all the '<usage tags' */
@@ -497,9 +500,10 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    break;
 
 	/* New usage day */
+	hday++;
 	p += 6;
-	usg_day = malloc(sizeof(UsageDay));
-	memset(usg_day, 0, sizeof(UsageDay));
+	//usg_day = malloc(sizeof(UsageDay));
+	//memset(usg_day, 0, sizeof(UsageDay));
 
 	/* Date */
 	if ((p = get_named_tag_attr(p, "day", &val, m_ui)) == NULL)
@@ -509,9 +513,9 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    break;
 	}
 
-	usg_day->usg_dt = malloc(strlen(val) + 1);
-	strcpy(usg_day->usg_dt, val);
-	free(val);
+	//usg_day->usg_dt = malloc(strlen(val) + 1);
+	//strcpy(usg_day->usg_dt, val);
+	//free(val);
 
     	/* Process the traffic tags (metered, unmetered, up, down) */
     	while((p = get_next_tag(p, &tag, m_ui)) != NULL)
@@ -522,8 +526,8 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    	break;
 	    }
 
-	    traffic = malloc(sizeof(TrafficData));
-	    memset(traffic, 0, sizeof(TrafficData));
+	    //traffic = malloc(sizeof(TrafficData));
+	    //memset(traffic, 0, sizeof(TrafficData));
 
 	    for(i = 0; i < max_traffic_attr; i++)
 	    {
