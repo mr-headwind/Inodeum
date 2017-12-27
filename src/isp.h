@@ -163,6 +163,7 @@ typedef struct _service_plan
 
 /* Structures to contain Usage (History) Day Data */
 
+/*
 typedef struct _traffic_data
 {
     int direction;			// 0 - up, 1 - down
@@ -176,6 +177,7 @@ typedef struct _usage_day
     char *usg_dt;
     GList *traffic_list;
 } UsageDay;
+*/
 
 
 /* Structure to contain isp related details, connection fields & results */
