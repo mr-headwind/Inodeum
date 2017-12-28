@@ -451,26 +451,27 @@ fflush(stdout);
 
 int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 {  
-    int i, hday, dir, cat, idx;
-    long days;
+    int i, j, hday, dir, cat, idx, r;
+    long days, total;
+    char *p, *attr, *tag, *val;
     struct tm tm_fr, tm_to;
     time_t tmt_fr, tmt_to;
+    const int max_traffic_attr = 3;		// direction, name & unit
 
     const int traffic[3][3] = { {0, 0, 0},
     				{0, 1, 2},
     				{0, 3, 4} };
     
-    int r;
-    char *p, *attr, *tag, *val;
     //UsageDay *usg_day;
     //TrafficData *traffic;
-    const int max_traffic_attr = 3;		// direction, name & unit
 
     /* Clear history if necessary */
     for(i = 0; i < srv_usage.hist_days; i++)
     	free(srv_usage.hist_usg_arr[i]);
 
-    free(srv_usage.hist_usg_arr);
+    if (srv_usage.hist_days > 0)
+	free(srv_usage.hist_usg_arr);
+
     srv_usage.hist_usg_arr = NULL;
     srv_usage.last_cat_idx = 0;
     hday = 0;
@@ -596,6 +597,17 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	/* Add to history list */
 	//usg_day->traffic_list = g_list_reverse (usg_day->traffic_list);
 	//isp_data->usg_hist_list = g_list_prepend (isp_data->usg_hist_list, usg_day);
+    }
+
+    /* Calulate column totals */
+    for(i = 0; i < 5; i++)
+    {
+    	total = 0;
+
+    	for(j = 0; j < days - 1; j++)
+	    total += srv_usage.hist_usg_arr[i][j];
+
+	srv_usage.hist_usg_arr[i][j] = total;
     }
 
     /* Reset the list */
