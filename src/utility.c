@@ -145,10 +145,11 @@ static const char *app_messages[][2] =
     { "ERR0042", "File error %s "},
     { "ERR0043", "Failed to create file: %s "},
     { "ERR0044", "Failed to create data refresh timer. "},
+    { "MSG0044", "Warning: Inconsistent 'Unit' encountered - %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 48;
+static const int Msg_Count = 49;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;

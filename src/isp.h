@@ -161,25 +161,6 @@ typedef struct _service_plan
 } SrvPlan;
 
 
-/* Structures to contain Usage (History) Day Data */
-
-/*
-typedef struct _traffic_data
-{
-    int direction;			// 0 - up, 1 - down
-    int tr_name;			// 0 - metered, 1 - unmetered, 2 - total
-    char *unit;
-    long traffic_amt;
-} TrafficData;
-
-typedef struct _usage_day
-{
-    char *usg_dt;
-    GList *traffic_list;
-} UsageDay;
-*/
-
-
 /* Structure to contain isp related details, connection fields & results */
 
 typedef struct _isp_data

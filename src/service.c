@@ -72,8 +72,6 @@ int get_tag_val(char *, char **, MainUi *);
 char * next_rollover_dt();
 void clean_up(IspData *);
 void free_srv_list(gpointer);
-void free_hist_list(gpointer);
-void free_traffic_list(gpointer);
 int check_http_status(char *, int *, MainUi *);
 char * resp_status_desc(char *, MainUi *);
 ServUsage * get_service_usage();
@@ -462,9 +460,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     				{0, 1, 2},
     				{0, 3, 4} };
     
-    //UsageDay *usg_day;
-    //TrafficData *traffic;
-
     /* Clear history if necessary */
     for(i = 0; i < srv_usage.hist_days; i++)
     	free(srv_usage.hist_usg_arr[i]);
@@ -507,8 +502,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	/* New usage day */
 	hday++;
 	p += 6;
-	//usg_day = malloc(sizeof(UsageDay));
-	//memset(usg_day, 0, sizeof(UsageDay));
 
 	/* Date */
 	if ((p = get_named_tag_attr(p, "day", &val, m_ui)) == NULL)
@@ -517,10 +510,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
 	    break;
 	}
-
-	//usg_day->usg_dt = malloc(strlen(val) + 1);
-	//strcpy(usg_day->usg_dt, val);
-	//free(val);
 
     	/* Process the traffic tags (metered, unmetered, up, down) */
     	while((p = get_next_tag(p, &tag, m_ui)) != NULL)
@@ -531,8 +520,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    	break;
 	    }
 
-	    //traffic = malloc(sizeof(TrafficData));
-	    //memset(traffic, 0, sizeof(TrafficData));
 	    dir = 0;
 
 	    for(i = 0; i < max_traffic_attr; i++)
@@ -545,10 +532,8 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 		    /* Direction is 'up' or 'down' */
 		    if (strcmp(val, "up") == 0)
 			dir = 1;
-			//traffic->direction = 0;
 		    else if (strcmp(val, "down") == 0)
 		    	dir = 2;
-			//traffic->direction = 1;
 		}
 		else if (strcmp(attr, "name") == 0)
 		{
@@ -556,27 +541,22 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 		    if (strcmp(val, "metered") == 0)
 		    {
 			cat = 1;
-			//traffic->tr_name = 0;
 		    }
 		    else if (strcmp(val, "total") == 0)
 		    {
 			cat = 0;
-			//traffic->tr_name = 2;
 			i++;
 		    }
 		    else
 		    {
 			cat = 2;
-			//traffic->tr_name = 1;
 		    }
 		}
 		else if (strcmp(attr, "unit") == 0)
 		{
 		    /* Unit of measurement */
 		    if (strcmp(val, srv_usage.unit) != 0)
-		    	log_msg();
-		    //traffic->unit = malloc(strlen(val) + 1);
-		    //strcpy(traffic->unit, val);
+			log_msg("MSG0044", val, NULL, NULL);
 		}
 
 		free(attr);
@@ -587,16 +567,8 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    get_tag_val(p, &val, m_ui);
 	    idx = traffic[dir][cat];
 	    srv_usage.hist_usg_arr[hday][idx] = atol(val);
-	    //traffic->traffic_amt = atol(val);
 	    free(val);
-
-	    /* Add to traffic list */
-	    //usg_day->traffic_list = g_list_prepend (usg_day->traffic_list, traffic);
 	}
-
-	/* Add to history list */
-	//usg_day->traffic_list = g_list_reverse (usg_day->traffic_list);
-	//isp_data->usg_hist_list = g_list_prepend (isp_data->usg_hist_list, usg_day);
     }
 
     /* Calulate column totals */
@@ -609,18 +581,6 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
 	srv_usage.hist_usg_arr[i][j] = total;
     }
-
-    /* Reset the list */
-    //isp_data->usg_hist_list = g_list_reverse (isp_data->usg_hist_list);
-
-    /* Clear if error */
-    /*
-    if (r == FALSE)
-    {
-    	g_list_free_full (isp_data->usg_hist_list, (GDestroyNotify) free_hist_list);
-	isp_data->usg_hist_list = NULL;
-    }
-    */
 
 /* Test debug
 printf("%s\nUsage History\n", debug_hdr); fflush(stdout);
@@ -1020,41 +980,6 @@ void free_srv_list(gpointer data)
 
     return;
 }  
-
-
-/* Free a history list item */
-
-void free_hist_list(gpointer data)
-{  
-    int i;
-    UsageDay *usg_day;
-    TrafficData traffic_data;
-
-    usg_day = (UsageDay *) data;
-    
-    if (usg_day->usg_dt)
-	free(usg_day->usg_dt);
-
-    g_list_free_full (usg_day->traffic_list, (GDestroyNotify) free_traffic_list);
-    free(usg_day);
-
-    return;
-}
-
-
-/* Free a traffic list item */
-
-void free_traffic_list(gpointer data)
-{  
-    int i;
-    TrafficData *traffic;
-
-    traffic = (TrafficData *) data;
-    free(traffic->unit);
-    free(traffic);
-
-    return;
-}
 
 
 // Check http status 

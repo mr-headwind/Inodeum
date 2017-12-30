@@ -550,6 +550,16 @@ printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 }
 
 
+/* Get the usage day history details for a requested date range */
+
+int get_hist_service_usage(char *dt_fr, char *dt_to, IspData *isp_data, MainUi *m_ui)
+{  
+    r = get_history(rsrc, 3, isp_data, m_ui);
+
+    return r;
+}
+
+
 /* Encode the username and password in base64 */
 
 void encode_un_pw(IspData *isp_data, MainUi *m_ui)
