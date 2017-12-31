@@ -456,9 +456,9 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     time_t tmt_fr, tmt_to;
     const int max_traffic_attr = 3;		// direction, name & unit
 
-    const int traffic[3][3] = { {0, 0, 0},
-    				{0, 1, 2},
-    				{0, 3, 4} };
+    const int traffic[3][3] = { {0, 0, 0},		// total met'd unmet'd
+    				{0, 1, 3},		// up
+    				{0, 2, 4} };		// down
     
     /* Clear history if necessary */
     for(i = 0; i < srv_usage.hist_days; i++)
@@ -476,7 +476,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     tmt_to = string2tm(srv_usage.hist_to_dt, &tm_to);
 
     days = (long) difftime_days(tmt_to, tmt_fr);
-    days += 2;
+    days += 3;
     srv_usage.hist_days = days;
 
     //long (*arr)[days] = malloc(sizeof(long[days][5]));	// Elegant but problematic to point to
@@ -547,7 +547,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 			cat = 0;
 			i++;
 		    }
-		    else
+		    else 
 		    {
 			cat = 2;
 		    }
@@ -568,32 +568,20 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    idx = traffic[dir][cat];
 	    srv_usage.hist_usg_arr[hday][idx] = atol(val);
 	    free(val);
+
+	    /* Add to column total */
+	    srv_usage.hist_usg_arr[days - 1][idx] += srv_usage.hist_usg_arr[hday][idx];
 	}
     }
 
-    /* Calulate column totals */
-    for(i = 0; i < 5; i++)
-    {
-    	total = 0;
-
-    	for(j = 0; j < days - 1; j++)
-	    total += srv_usage.hist_usg_arr[i][j];
-
-	srv_usage.hist_usg_arr[i][j] = total;
-    }
-
 /* Test debug
-printf("%s\nUsage History\n", debug_hdr); fflush(stdout);
-for(GList *l = usg_hist_list; l != NULL; l = l->next)
+for(i = 0; i < days; i++)
 {
-usg_day = (UsageDay *) l->data;
-printf("Date: %s\n", usg_day->usg_dt); fflush(stdout);
-for(i = 0; i < 5; i++)
+    for(j = 0; j < 5; j++)
     {
-    printf("Dir: %d Name: %d Unit: %s, Amt %ld\n", 
-	    usg_day->traffic[i].direction, usg_day->traffic[i].tr_name,
-	    usg_day->traffic[i].unit, usg_day->traffic[i].traffic_amt); fflush(stdout);
+    printf(" arr[%d][%d] =%ld  ", i, j, srv_usage.hist_usg_arr[i][j]); fflush(stdout);
     }
+    printf("\n"); fflush(stdout);
 }
 printf("\n");
 */

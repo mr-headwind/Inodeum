@@ -71,9 +71,11 @@ int get_serv_list(BIO *, IspData *, MainUi *);
 int srv_resource_list(IspData *, MainUi *);
 int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
 int get_default_service(IspData *, MainUi *);
+IspListObj * get_resource(char *, IspData *, MainUi *);
 int get_usage(IspListObj *, IspData *, MainUi *);
 int get_service(IspListObj *, IspData *, MainUi *);
 int get_history(IspListObj *, int, IspData *, MainUi *);
+int get_hist_service_usage(IspData *, MainUi *);
 void encode_un_pw(IspData *, MainUi *);
 char * setup_get(char *, IspData *);
 char * setup_get_param(char *, char *, IspData *);
@@ -437,6 +439,30 @@ int get_default_service(IspData *isp_data, MainUi *m_ui)
 }  
 
 
+/* Get a specific resource for the default service */
+
+IspListObj * get_resource(char *rsrc_type, IspData *isp_data, MainUi *m_ui)
+{  
+    IspListObj *srv_type, *rsrc;
+    GList *l;
+
+    /* Determine the appropriate default */
+    if ((srv_type = default_srv_type(isp_data, m_ui)) == NULL)
+    	return FALSE;
+
+    /* Find resource */
+    for(l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
+    {
+    	rsrc = (IspListObj *) l->data;
+    	
+	if (strcmp(rsrc->type, rsrc_type) == 0)
+	    return rsrc;
+    }
+
+    return NULL;
+}  
+
+
 /* Get the current period usage */
 
 int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
@@ -552,8 +578,20 @@ printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
 /* Get the usage day history details for a requested date range */
 
-int get_hist_service_usage(char *dt_fr, char *dt_to, IspData *isp_data, MainUi *m_ui)
+int get_hist_service_usage(IspData *isp_data, MainUi *m_ui)
 {  
+    int r;
+    IspListObj *rsrc;
+
+    /* Set up a connection to retrieve history */
+    if (ssl_service_init(isp_data, m_ui) == FALSE)
+	return FALSE;
+
+    if (ssl_isp_connect(isp_data, m_ui) == FALSE)
+	return FALSE;
+
+    /* Set up History resource and get */
+    rsrc = get_resource(HISTORY, isp_data, m_ui);
     r = get_history(rsrc, 3, isp_data, m_ui);
 
     return r;
@@ -749,6 +787,10 @@ void set_param(int param_type, char *s_param)
 	    strcpy(srv_usg->hist_from_dt, s);
 	    strcpy(srv_usg->hist_to_dt, s_dt);
 
+	    break;
+
+    	case 3:						// History for a specified period
+	    sprintf(s_param, "start=%s&stop=%s&verbose=1", srv_usg->hist_from_dt, srv_usg->hist_to_dt);
 	    break;
 
     	default:

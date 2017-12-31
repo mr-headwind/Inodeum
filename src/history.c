@@ -63,6 +63,7 @@ extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, in
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void create_cbox(GtkWidget **, char *, const char *[], int, int, GtkWidget *, int, int);
 extern ServUsage * get_service_usage();
+extern int get_hist_service_usage(IspData *, MainUi *);
 extern char * format_usg(char *, char *);
 extern int long_chars(long);
 
@@ -184,8 +185,10 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     srv_usg = get_service_usage();
 
     /* If a graph data array is present no action is required */
+    /*
     if (srv_usg->hist_usg_arr != NULL)
     	return;
+    */
 
     /* Clear existing graph object if it exists */
 
@@ -260,13 +263,16 @@ void reset_history(MainUi *m_ui)
     cat_idx = gtk_combo_box_get_active (GTK_COMBO_BOX(m_ui->usgcat_cbox));
 
     if ((strcmp(dt_fr, srv_usg->hist_from_dt) != 0) || (strcmp(dt_to, srv_usg->hist_to_dt) != 0))
-    	get_hist_service_usage(dt_fr, dt_to);
-
+    {
+    	strcpy(srv_usg->hist_from_dt, dt_fr);
+	strcpy(srv_usg->hist_to_dt, dt_to);
+    	get_hist_service_usage(isp_data, m_ui);
+    }
     else if (srv_usg->last_cat_idx == cat_idx)
+    {
     	return;
+    }
 
-    free(srv_usg->hist_usg_arr);
-    srv_usg->hist_usg_arr = NULL;
     load_history(isp_data, m_ui);
 
     return;
