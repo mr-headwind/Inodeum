@@ -52,8 +52,10 @@
 
 /* Prototypes */
 
-void history_panel(MainUi *m_ui);
+void history_panel(MainUi *);
+void init_history(MainUi *);
 void load_history(IspData *, MainUi *);
+void chart_total(ServUsage *, MainUi *);
 void create_hist_graph(ServUsage *, IspData *, MainUi *);
 void reset_history(MainUi *);
 
@@ -66,15 +68,6 @@ extern ServUsage * get_service_usage();
 extern int get_hist_service_usage(IspData *, MainUi *);
 extern char * format_usg(char *, char *);
 extern int long_chars(long);
-
-/*
-extern int val_str2dbl(char *, double *, char *, GtkWidget *);
-extern time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
-extern double difftime_days(time_t, time_t);
-extern time_t date_tm_add(struct tm *, char *, int);
-extern int get_user_pref(char *, char **);
-*/
-
 
 
 /* Globals */
@@ -169,76 +162,46 @@ void history_panel(MainUi *m_ui)
 }
 
 
+/* Initialise date fields */
+
+void init_history(MainUi *m_ui)
+{  
+    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), NULL);
+    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), NULL);
+
+    return;
+}
+
+
 /* Load usage details */
 
 void load_history(IspData *isp_data, MainUi *m_ui)
 {  
-    long ll;
-    int i;
-    char *s, *s2, *amt;
-    time_t time_rovr;
-    struct tm *dtm;
-    time_t tm_t;
+    const gchar *txt;
     ServUsage *srv_usg;
+
+    /* Populate text if search fields are empty */
+    txt = gtk_entry_get_text (GTK_ENTRY(m_ui->hist_from_dt));
+
+    if (txt != NULL)
+    	return;
 
     /* Get the service usage class */
     srv_usg = get_service_usage();
-
-    /* If a graph data array is present no action is required */
-    /*
-    if (srv_usg->hist_usg_arr != NULL)
-    	return;
-    */
-
-    /* Clear existing graph object if it exists */
-
-    /* Load new data for graph points glist ??? should really be with chart create */
 
     /* Show current search values */
     gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), srv_usg->hist_from_dt);
     gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), srv_usg->hist_to_dt);
     gtk_combo_box_set_active (GTK_COMBO_BOX(m_ui->usgcat_cbox), srv_usg->last_cat_idx);
 
-    /* Total usage for selected history */
-    ll = srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx];
-    i = long_chars(ll);
-    amt = (char *) malloc(ll + 1);
-    sprintf(amt, "%ld", ll);
-
-    s = format_usg(amt, srv_usg->unit);
-    s2 = (char *) malloc(strlen(s) + 14);
-    sprintf(s2, "Total Usage: %s", s);
-    gtk_label_set_text (GTK_LABEL (m_ui->usage), s2);
-
-    free(s);
-    free(s2);
-    free(amt);
+    /* Set total bytes */
+    chart_total(srv_usg, m_ui)
 
     /* Show */
     gtk_widget_show_all(m_ui->window);
 
     /* Set up usage graphs */
-    create_hist_graph(srv_usg, isp_data, m_ui);
-
-    return;
-}
-
-
-/* Create usage history chart objects, drawing is handled in the 'draw' (OnHistExpose) event */
-
-void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
-{  
-    /* If nothing changed, return */
-    //if (m_ui->hist_graph_list != NULL)
-    	return;
-
-    /* Build the GList for the history line graph */
-    //hist_graph_pts(isp_data, m_ui);
-
-    /* Free old charts */
-
-    /* History line graph */
-    //m_ui->hist_usg_graph = line_graph_create("Quota Distribution", 0, lgd, &DARK_BLUE, 9, lbl);
+    create_hist_graph(srv_usg, m_ui);
 
     return;
 }
@@ -268,12 +231,73 @@ void reset_history(MainUi *m_ui)
 	strcpy(srv_usg->hist_to_dt, dt_to);
     	get_hist_service_usage(isp_data, m_ui);
     }
-    else if (srv_usg->last_cat_idx == cat_idx)
+    else if (srv_usg->last_cat_idx != cat_idx)
+    {
+    	srv_usg->last_cat_idx = cat_idx;
+    }
+    else
     {
     	return;
     }
 
-    load_history(isp_data, m_ui);
+    /* Set total bytes */
+    chart_total(srv_usg, m_ui)
+
+    /* Set up usage graphs */
+    create_hist_graph(srv_usg, m_ui);
+
+    return;
+}
+
+
+/* Show the total bytes for the period */
+
+void chart_total(ServUsage *srv_usg, MainUi *m_ui)
+{  
+    long ll;
+    int i;
+    char *s, *s2, *amt;
+
+    ll = srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx];
+    i = long_chars(ll);
+    amt = (char *) malloc(ll + 1);
+    sprintf(amt, "%ld", ll);
+
+    s = format_usg(amt, srv_usg->unit);
+    s2 = (char *) malloc(strlen(s) + 14);
+    sprintf(s2, "Total Usage: %s", s);
+    gtk_label_set_text (GTK_LABEL (m_ui->usage), s2);
+
+    free(s);
+    free(s2);
+    free(amt);
+
+    return;
+}
+
+
+/* Create usage history chart objects, drawing is handled in the 'draw' (OnHistExpose) event */
+
+void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
+{  
+    int i;
+
+    /* Reset any existing graph */
+    if (m_ui->hist_usg_graph != NULL)
+    	free_line_graph(m_ui->hist_usg_graph);
+
+    /* Build the list of graph points - use actual values: they are adjusted on drawing */
+    /* Day forms the X axis and data usage forms the Y axis */
+    for(i = 0; i < srv_usg->hist_days; i++)
+    	line_graph_add_point(m_ui->hist_usg_graph, (double) i, srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]); 
+
+    /* History line graph */
+    m_ui->hist_usg_graph = line_graph_create(
+    		NULL, NULL, 0,
+		"Day", 0, srv_usg->hist_days, 1, 0,
+		&DARK_BLUE, 9, &DARK_BLUE, 8,
+		"MB", 0, srv_usg->hist_usg_arr[srv_usg_hist_days - 1][srv_usg->last_cat_idx], 100, 2,
+		&DARK_BLUE, 9, &DARK_BLUE, 8);
 
     return;
 }

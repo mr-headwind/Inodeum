@@ -80,6 +80,7 @@ extern void history_panel(MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
 extern void monitor_panel(MainUi *);
+extern void init_history(MainUi *);
 extern void set_css();
 extern int get_user_pref(char *, char **);
 
@@ -554,6 +555,7 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return FALSE;
 
+    init_history(m_ui);
     load_overview(isp_data, m_ui);
     refresh_thread(m_ui);
 

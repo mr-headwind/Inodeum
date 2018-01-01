@@ -934,7 +934,7 @@ void line_graph_add_point(LineGraph *lg, double x, double y)
 {  
     Point *p;
 
-    p = (Point *) malloc(sizeof(double) * 2);
+    p = (Point *) malloc(sizeof(Point));
     p->x_val = x;
     p->y_val = y;
 
