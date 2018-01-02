@@ -574,6 +574,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	}
     }
 
+
 /* Test debug
 for(i = 0; i < days; i++)
 {

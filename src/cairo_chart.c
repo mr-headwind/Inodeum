@@ -874,14 +874,14 @@ LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz
 
     /* Axes */
     if ((lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, 
-    				 x_txt_colour, x_txt_sz, x_step_colour, x_step_txt_sz)) == NULL)
+    				  x_txt_colour, x_txt_sz, x_step_colour, x_step_txt_sz)) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
     }
 
     if ((lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec,
-    				 y_txt_colour, y_txt_sz, y_step_colour, y_step_txt_sz)) == NULL)
+    				  y_txt_colour, y_txt_sz, y_step_colour, y_step_txt_sz)) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
@@ -1029,7 +1029,7 @@ void free_axis(Axis *axis)
     	free_chart_text(axis->unit);
 
     if (axis->step_mk != NULL)
-    	free_chart_text(axis->unit);
+    	free_chart_text(axis->step_mk);
 
     free(axis);
 

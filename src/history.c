@@ -56,7 +56,7 @@ void history_panel(MainUi *);
 void init_history(MainUi *);
 void load_history(IspData *, MainUi *);
 void chart_total(ServUsage *, MainUi *);
-void create_hist_graph(ServUsage *, IspData *, MainUi *);
+void create_hist_graph(ServUsage *, MainUi *);
 void reset_history(MainUi *);
 
 extern void OnHistFind(GtkWidget *, gpointer); 
@@ -68,6 +68,13 @@ extern ServUsage * get_service_usage();
 extern int get_hist_service_usage(IspData *, MainUi *);
 extern char * format_usg(char *, char *);
 extern int long_chars(long);
+extern LineGraph * line_graph_create(char *, const GdkRGBA *, int, 
+				     char *, double, double, double, double,
+				     const GdkRGBA *, int, const GdkRGBA *, int,
+				     char *, double, double, double, double,
+				     const GdkRGBA *, int, const GdkRGBA *, int);
+extern void line_graph_add_point(LineGraph *, double, double);
+extern void free_line_graph(LineGraph *);
 
 
 /* Globals */
@@ -183,7 +190,7 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     /* Populate text if search fields are empty */
     txt = gtk_entry_get_text (GTK_ENTRY(m_ui->hist_from_dt));
 
-    if (txt != NULL)
+    if (strlen(txt) != 0)
     	return;
 
     /* Get the service usage class */
@@ -195,7 +202,7 @@ void load_history(IspData *isp_data, MainUi *m_ui)
     gtk_combo_box_set_active (GTK_COMBO_BOX(m_ui->usgcat_cbox), srv_usg->last_cat_idx);
 
     /* Set total bytes */
-    chart_total(srv_usg, m_ui)
+    chart_total(srv_usg, m_ui);
 
     /* Show */
     gtk_widget_show_all(m_ui->window);
@@ -241,10 +248,14 @@ void reset_history(MainUi *m_ui)
     }
 
     /* Set total bytes */
-    chart_total(srv_usg, m_ui)
+    chart_total(srv_usg, m_ui);
 
     /* Set up usage graphs */
     create_hist_graph(srv_usg, m_ui);
+
+    /* Hide and show should force an expose event */
+    gtk_widget_hide(m_ui->hist_graph_area);
+    gtk_widget_show(m_ui->hist_graph_area);
 
     return;
 }
@@ -278,7 +289,7 @@ void chart_total(ServUsage *srv_usg, MainUi *m_ui)
 
 /* Create usage history chart objects, drawing is handled in the 'draw' (OnHistExpose) event */
 
-void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
+void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
 {  
     int i;
 
@@ -286,18 +297,18 @@ void create_hist_graph(ServUsage *srv_usg, IspData *isp_data, MainUi *m_ui)
     if (m_ui->hist_usg_graph != NULL)
     	free_line_graph(m_ui->hist_usg_graph);
 
-    /* Build the list of graph points - use actual values: they are adjusted on drawing */
-    /* Day forms the X axis and data usage forms the Y axis */
-    for(i = 0; i < srv_usg->hist_days; i++)
-    	line_graph_add_point(m_ui->hist_usg_graph, (double) i, srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]); 
-
     /* History line graph */
     m_ui->hist_usg_graph = line_graph_create(
     		NULL, NULL, 0,
 		"Day", 0, srv_usg->hist_days, 1, 0,
 		&DARK_BLUE, 9, &DARK_BLUE, 8,
-		"MB", 0, srv_usg->hist_usg_arr[srv_usg_hist_days - 1][srv_usg->last_cat_idx], 100, 2,
+		"MB", 0, srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx], 100, 2,
 		&DARK_BLUE, 9, &DARK_BLUE, 8);
+
+    /* Build the list of graph points - use actual values: they are adjusted on drawing */
+    /* Day forms the X axis and data usage forms the Y axis */
+    for(i = 0; i < srv_usg->hist_days; i++)
+    	line_graph_add_point(m_ui->hist_usg_graph, (double) i, srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
 
     return;
 }

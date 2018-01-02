@@ -590,6 +590,7 @@ gboolean OnHistExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     MainUi *m_ui;
     GtkAllocation allocation, pseudo_alloc;
 
+printf("%s OnHistExpose 1\n", debug_hdr); fflush(stdout);
     /* Get user data, the drawing area and adjust if necessary */
     m_ui = (MainUi *) user_data;
 
