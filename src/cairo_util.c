@@ -69,7 +69,7 @@ int long_chars(long numb)
     int i;
     long l;
 
-    l = abs(numb);
+    l = labs(numb);
     i = 1;
 
     while(l > 9)

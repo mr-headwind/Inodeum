@@ -277,7 +277,7 @@ void chart_total(ServUsage *srv_usg, MainUi *m_ui)
     s = format_usg(amt, srv_usg->unit);
     s2 = (char *) malloc(strlen(s) + 14);
     sprintf(s2, "Total Usage: %s", s);
-    gtk_label_set_text (GTK_LABEL (m_ui->usage), s2);
+    gtk_label_set_text (GTK_LABEL (m_ui->hist_total), s2);
 
     free(s);
     free(s2);
@@ -302,7 +302,7 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     		NULL, NULL, 0,
 		"Day", 0, srv_usg->hist_days, 1, 0,
 		&DARK_BLUE, 9, &DARK_BLUE, 8,
-		"MB", 0, srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx], 100, 2,
+		"MB", 0, srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx], 1000, 2,
 		&DARK_BLUE, 9, &DARK_BLUE, 8);
 
     /* Build the list of graph points - use actual values: they are adjusted on drawing */

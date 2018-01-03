@@ -953,8 +953,9 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
     draw_axis(cr, lg->x_axis, FALSE, allocation);
     draw_axis(cr, lg->y_axis, FALSE, allocation);
 
-    /* Tranform each point value into corresponding graph points */
-    /* Can start point be 0,0 ???????*/
+    // Tranform each point value into corresponding graph points
+    // This is done by converting values into a new list of proportional virtual values */
+
     /* Draw a line to each point */
 
     return;
@@ -1080,6 +1081,7 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
     cairo_move_to (cr, axis->x1, axis->y1);
     cairo_line_to (cr, axis->x2, axis->y2);
+    cairo_stroke (cr);
 
     /* Save current point (axis end point) */
     cairo_get_current_point (cr, &tmpx, &tmpy);
@@ -1140,6 +1142,17 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
 	cairo_show_text (cr, unit->txt);
 	cairo_fill (cr);
     }
+
+/* Debug axis
+*/
+if (axis->unit != NULL)
+printf("%s Unit: %s\n", debug_hdr, axis->unit->txt); fflush(stdout);
+if (axis->step_mk != NULL)
+printf("%s Step Mk: %s\n", debug_hdr, axis->step_mk->txt); fflush(stdout);
+printf("%s draw_axis  start: %0.3f end: %0.3f step: %0.3f end_step: %0.3f start_step: %0.3f prec %d\n"
+	"\tx1: %0.3f y1: %0.3f x2: %0.3f y2: %0.3f\n",
+	debug_hdr, axis->start_val, axis->end_val, axis->step, axis->end_step, axis->start_step, axis->prec,
+	axis->x1, axis->y1, axis->x2, axis->y2); fflush(stdout);
 
     return TRUE;
 }

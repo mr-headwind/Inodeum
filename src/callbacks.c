@@ -93,6 +93,8 @@ extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
 extern void draw_bar_chart(cairo_t *, BarChart *, GtkAllocation *);
 extern int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, GtkAlign);
 extern int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
+extern void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
+extern int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 extern void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -590,13 +592,22 @@ gboolean OnHistExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     MainUi *m_ui;
     GtkAllocation allocation, pseudo_alloc;
 
-printf("%s OnHistExpose 1\n", debug_hdr); fflush(stdout);
     /* Get user data, the drawing area and adjust if necessary */
     m_ui = (MainUi *) user_data;
 
+    // Drawing area does not require adjustment for history, 
+    // but use a 'pseudo' allocation anyway to keep to a standard approach
     GdkWindow *window = gtk_widget_get_window (widget);
     gtk_widget_get_allocation (widget, &allocation);
     memcpy(&pseudo_alloc, &allocation, sizeof(allocation));
+printf("%s OnHistExpose 1\n", debug_hdr); fflush(stdout);
+show_surface_info(cr, &allocation);	// Info or Debug
+
+    /* Do title (this does nothing if there is no title) */
+    chart_title(cr, m_ui->hist_usg_graph->title, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
+
+    /* Draw the history graph */
+    draw_line_graph(cr, m_ui->hist_usg_graph, &pseudo_alloc);
 
     return TRUE;
 }
