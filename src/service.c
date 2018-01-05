@@ -576,6 +576,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
 
 /* Test debug
+*/
 for(i = 0; i < days; i++)
 {
     for(j = 0; j < 5; j++)
@@ -585,7 +586,6 @@ for(i = 0; i < days; i++)
     printf("\n"); fflush(stdout);
 }
 printf("\n");
-*/
 
     return r;
 }  

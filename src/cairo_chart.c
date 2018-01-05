@@ -1254,6 +1254,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     /* X Axis */
     /* Initial X axis length, this is the current allocation point to the width less a buffer */
     axis_len = allocation->width - allocation->x - (axis_buf * 2);
+printf("1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
 
     /* Determine proportion of axis below zero */
     zr = (x_axis->start_step / (x_axis->end_step - x_axis->start_step));
