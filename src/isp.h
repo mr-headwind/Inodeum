@@ -131,6 +131,7 @@ typedef struct _srvusage
     int last_cat_idx;				// Most recent usage category
     long hist_days;				// Rows in history data array
     long **hist_usg_arr;			// Data (array) for the history chart
+    long long hist_tot_arr[5];			// History totals array
 } ServUsage;
 
 

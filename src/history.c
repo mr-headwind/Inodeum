@@ -67,7 +67,7 @@ extern void create_cbox(GtkWidget **, char *, const char *[], int, int, GtkWidge
 extern ServUsage * get_service_usage();
 extern int get_hist_service_usage(IspData *, MainUi *);
 extern char * format_usg(char *, char *);
-extern int long_chars(long);
+extern int llong_chars(long);
 extern LineGraph * line_graph_create(char *, const GdkRGBA *, int, 
 				     char *, double, double, double, double,
 				     const GdkRGBA *, int, const GdkRGBA *, int,
@@ -265,14 +265,14 @@ void reset_history(MainUi *m_ui)
 
 void chart_total(ServUsage *srv_usg, MainUi *m_ui)
 {  
-    long ll;
+    long long ll;
     int i;
     char *s, *s2, *amt;
 
-    ll = srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx];
-    i = long_chars(ll);
+    ll = srv_usg->hist_tot_arr[srv_usg->last_cat_idx];
+    i = llong_chars(ll);
     amt = (char *) malloc(ll + 1);
-    sprintf(amt, "%ld", ll);
+    sprintf(amt, "%lld", ll);
 
     s = format_usg(amt, srv_usg->unit);
     s2 = (char *) malloc(strlen(s) + 14);
@@ -302,7 +302,7 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     		NULL, NULL, 0,
 		"Day", 0, srv_usg->hist_days, 1, 0,
 		&DARK_BLUE, 9, &DARK_BLUE, 8,
-		"MB", 0, srv_usg->hist_usg_arr[srv_usg->hist_days - 1][srv_usg->last_cat_idx], 1000, 2,
+		"MB", 0, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], 1000, 2,
 		&DARK_BLUE, 9, &DARK_BLUE, 8);
 
     /* Build the list of graph points - use actual values: they are adjusted on drawing */

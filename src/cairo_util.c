@@ -55,6 +55,7 @@
 /* Prototypes */
 
 int long_chars(long);
+int llong_chars(long long);
 
 
 /* Globals */
@@ -76,6 +77,26 @@ int long_chars(long numb)
     {
     	i++;
     	l /= 10;
+    }
+
+    return i;
+}
+
+
+/* Return the length of a long long int */
+
+int llong_chars(long long numb)
+{
+    int i;
+    long long ll;
+
+    ll = llabs(numb);
+    i = 1;
+
+    while(ll > 9)
+    {
+    	i++;
+    	ll /= 10;
     }
 
     return i;

@@ -1254,16 +1254,18 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     /* X Axis */
     /* Initial X axis length, this is the current allocation point to the width less a buffer */
     axis_len = allocation->width - allocation->x - (axis_buf * 2);
-printf("1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
+printf("***AUTO 1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
 
     /* Determine proportion of axis below zero */
     zr = (x_axis->start_step / (x_axis->end_step - x_axis->start_step));
     bzlen = zr * axis_len;
+printf("***AUTO 2 zr: %0.2f st step %0.2f end step %0.2f \n", zr, x_axis->start_step, x_axis->end_step); fflush(stdout);
 
     /* Check for enough space for Y axis step marks and step values */
     ext = &(y_axis->step_mk->ext);
     pad = 0;
 
+printf("***AUTO 3 bzlen: %0.2f ext->width %0.2f mk_length %ld axis_buf %0.2f \n", bzlen, ext->width, mk_length, axis_buf); fflush(stdout);
     if (bzlen < (ext->width + mk_length + axis_buf))
     {
 	/* Adjust the initial length and recalulate the proportion below zero */
@@ -1271,14 +1273,17 @@ printf("1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, alloc
     	axis_len =- pad;
 	bzlen = zr * axis_len;
     }
+printf("***AUTO 4 bzlen: %0.2f mk txt %s\n", bzlen, y_axis->step_mk->txt); fflush(stdout);
 
     /* Set the x1, zero and x2 points on the axis */
     x_axis->x1 = allocation->x + pad; 
     x_axis->x2 = x_axis->x1 + axis_len; 
     xyz = allocation->x + pad + bzlen + 1;
+printf("***AUTO 5 x_axis->x1: %0.2f x_axis->x2 %0.2f xyz %0.2f\n", x_axis->x1, x_axis->x2, xyz); fflush(stdout);
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the y axis x1 and x2 points */
     y_axis->x1 = y_axis->x2 = xyz;
+printf("***AUTO 6 y_axis->x1: %0.2f y_axis->x2 %0.2f\n", y_axis->x1, y_axis->x2); fflush(stdout);
 
     /* Y Axis */
     /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
@@ -1610,9 +1615,9 @@ void axis_step_bounds(Axis *axis)
     rem = fmod(axis->start_val, axis->step);
 
     if (rem == 0)
-    	axis->start_step = axis->end_val;
+    	axis->start_step = axis->start_val;
     else
-    	axis->start_step = (axis->end_val - rem) + axis->step;
+    	axis->start_step = (axis->start_val - rem) + axis->step;
 
     return;
 }

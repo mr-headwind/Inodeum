@@ -461,6 +461,9 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     				{0, 2, 4} };		// down
     
     /* Clear history if necessary */
+    for(i = 0; i < 5; i++)
+    	srv_usage.hist_tot_arr[i] = 0;
+
     for(i = 0; i < srv_usage.hist_days; i++)
     	free(srv_usage.hist_usg_arr[i]);
 
@@ -476,7 +479,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     tmt_to = string2tm(srv_usage.hist_to_dt, &tm_to);
 
     days = (long) difftime_days(tmt_to, tmt_fr);
-    days += 3;
+    days += 2;
     srv_usage.hist_days = days;
 
     //long (*arr)[days] = malloc(sizeof(long[days][5]));	// Elegant but problematic to point to
@@ -570,7 +573,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	    free(val);
 
 	    /* Add to column total */
-	    srv_usage.hist_usg_arr[days - 1][idx] += srv_usage.hist_usg_arr[hday][idx];
+	    srv_usage.hist_tot_arr[idx] += srv_usage.hist_usg_arr[hday][idx];
 	}
     }
 
@@ -585,7 +588,11 @@ for(i = 0; i < days; i++)
     }
     printf("\n"); fflush(stdout);
 }
-printf("\n");
+for(i = 0; i < 5; i++)
+{
+    printf(" tot_arr[%d] =%lld  ", i, srv_usage.hist_tot_arr[i]); fflush(stdout);
+}
+printf("\n\n");
 
     return r;
 }  
