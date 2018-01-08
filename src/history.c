@@ -69,12 +69,13 @@ extern int get_hist_service_usage(IspData *, MainUi *);
 extern char * format_usg(char *, char *);
 extern int llong_chars(long);
 extern LineGraph * line_graph_create(char *, const GdkRGBA *, int, 
-				     char *, double, double, double, double,
+				     char *, double, double,
 				     const GdkRGBA *, int, const GdkRGBA *, int,
-				     char *, double, double, double, double,
+				     char *, double, double,
 				     const GdkRGBA *, int, const GdkRGBA *, int);
 extern void line_graph_add_point(LineGraph *, double, double);
 extern void free_line_graph(LineGraph *);
+extern void set_line_graph_bounds(LineGraph *);
 
 
 /* Globals */
@@ -307,8 +308,12 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
 
     /* Build the list of graph points - use actual values: they are adjusted on drawing */
     /* Day forms the X axis and data usage forms the Y axis */
-    for(i = 0; i < srv_usg->hist_days; i++)
-    	line_graph_add_point(m_ui->hist_usg_graph, (double) i, srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
+    for(i = 0; i <<<<<<!! srv_usg->hist_days; i++)
+    	line_graph_add_point(m_ui->hist_usg_graph, 
+			     (double) i, (double) srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
+
+    /* Set the high and low graph bounds */
+    set_line_graph_bounds(m_ui->hist_usg_graph);
 
     return;
 }

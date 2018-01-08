@@ -60,11 +60,11 @@ typedef struct _axis
 {
     CText *unit;
     CText *step_mk;
-    double start_val;
-    double end_val;
+    double low_val;
+    double high_val;
     double step;
-    double end_step;
-    double start_step;
+    double high_step;
+    double low_step;
     int prec;
     double x1, y1, x2, y2;
 } Axis;

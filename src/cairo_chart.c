@@ -65,7 +65,7 @@ void text_coords(cairo_t *, char *, double, double, double, double, double, doub
 int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, double *, GtkAllocation *);
 void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
 
-Axis * create_axis(char *, double, double, double, double, const GdkRGBA *, int, const GdkRGBA *, int);
+Axis * create_axis(char *, double, double, const GdkRGBA *, int, const GdkRGBA *, int);
 void free_axis(Axis *);
 int draw_axis(cairo_t *, Axis *, int, GtkAllocation *);
 int axis_space_analysis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
@@ -83,14 +83,15 @@ void draw_bar(cairo_t *, BarChart *, Bar *, int, int, double, double);
 int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 
 LineGraph * line_graph_create(char *, const GdkRGBA *, int, 
-			      char *, double, double, double, double,
+			      char *, double, double,
 			      const GdkRGBA *, int, const GdkRGBA *, int,
-			      char *, double, double, double, double,
+			      char *, double, double,
 			      const GdkRGBA *, int, const GdkRGBA *, int);
 void free_line_graph(LineGraph *);
 void free_points(gpointer);
 void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
 void line_graph_add_point(LineGraph *, double, double);
+void set_line_graph_bounds(LineGraph *);
 
 int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 CText * label_text(int, CText *);
@@ -856,10 +857,10 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 /* Create and initialise a new line graph */
 
 LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz, 
-			      char *x_unit, double x_start_val, double x_end_val, double x_step, double x_prec,
+			      char *x_unit, double x_step, double x_prec,
 			      const GdkRGBA *x_txt_colour, int x_txt_sz,
 			      const GdkRGBA *x_step_colour, int x_step_txt_sz,
-			      char *y_unit, double y_start_val, double y_end_val, double y_step, double y_prec,
+			      char *y_unit, double y_step, double y_prec,
 			      const GdkRGBA *y_txt_colour, int y_txt_sz,
 			      const GdkRGBA *y_step_colour, int y_step_txt_sz)
 {
@@ -873,14 +874,14 @@ LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz
     lg->title = new_chart_text(title, txt_colour, txt_sz);
 
     /* Axes */
-    if ((lg->x_axis = create_axis(x_unit, x_start_val, x_end_val, x_step, x_prec, 
+    if ((lg->x_axis = create_axis(x_unit, x_step, x_prec, 
     				  x_txt_colour, x_txt_sz, x_step_colour, x_step_txt_sz)) == NULL)
     {
     	free_line_graph(lg);
     	return NULL;
     }
 
-    if ((lg->y_axis = create_axis(y_unit, y_start_val, y_end_val, y_step, y_prec,
+    if ((lg->y_axis = create_axis(y_unit, y_step, y_prec,
     				  y_txt_colour, y_txt_sz, y_step_colour, y_step_txt_sz)) == NULL)
     {
     	free_line_graph(lg);
@@ -944,6 +945,77 @@ void line_graph_add_point(LineGraph *lg, double x, double y)
 }
 
 
+/* Set the axes high and low points */
+
+void set_line_graph_bounds(LineGraph *lg)
+{  
+    double min_x, max_x, min_y, max_y;
+    GList *l;
+    Point *p;
+
+    /* Data high and low values */
+    l = lg->points;
+    p = (Point *) l->data;
+
+    min_x = max_x = p->x_val;
+    min_y = max_y = p->y_val;
+    l->next;
+
+    while(l != NULL)
+    {
+	p = (Point *) l->data;
+
+	if (p->x_val < min_x)
+	    min_x = p->x_val;
+	else if (p->x_val > max_x)
+	    max_x = p->x_val;
+    	
+
+	if (p->y_val < min_y)
+	    min_y = p->y_val;
+	else if (p->y_val > max_y)
+	    max_y = p->y_val;
+
+	l->next;
+    }
+
+    lg->x_axis.low_val = min_x;
+    lg->x_axis.high_val = max_x;
+    lg->y_axis.low_val = min_y;
+    lg->y_axis.high_val = max_y;
+
+    /* Round out the axes high and low step bounds */
+    axis_step_bounds(lg->x_axis);
+    axis_step_bounds(lg->y_axis);
+
+    return;
+}
+
+
+/* Determine the high and low steps for an axis */
+
+void axis_step_bounds(Axis *axis)
+{
+    double rem;
+
+    rem = fmod(axis->high_val, axis->step);
+
+    if (rem == 0)
+    	axis->high_step = axis->high_val;
+    else
+    	axis->high_step = (axis->high_val - rem) + axis->step;
+
+    rem = fmod(axis->low_val, axis->step);
+
+    if (rem == 0)
+    	axis->low_step = axis->low_val;
+    else
+    	axis->low_step = (axis->low_val - rem) + axis->step;
+
+    return;
+}
+
+
 /* Draw a line graph */
 
 void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
@@ -969,7 +1041,7 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
 // . Other values are mandatory.
 // . If step precision is required (not a whole number), enter the number of decimal places. 
 
-Axis * create_axis(char *unit, double start_val, double end_val, double step, double prec, 
+Axis * create_axis(char *unit, double step, double prec, 
 		   const GdkRGBA *txt_colour, int txt_sz,
 		   const GdkRGBA *step_colour, int step_txt_sz)
 {
@@ -978,9 +1050,6 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step, do
     Axis *axis;
 
     /* Initial */
-    if (end_val < start_val)
-    	return NULL;
-
     if (step == 0)
     	return NULL;
 
@@ -997,13 +1066,8 @@ Axis * create_axis(char *unit, double start_val, double end_val, double step, do
     axis->step_mk = new_chart_text("xy", step_colour, step_txt_sz);
 
     /* Set up */
-    axis->start_val = start_val;
-    axis->end_val = end_val;
     axis->step = step;
     axis->prec = prec;
-
-    /* The start and end step values may need rounding */
-    axis_step_bounds(axis);
 
     /* Text details - use the end step (above) for the step text */
     axis->unit = new_chart_text(unit, txt_colour, txt_sz);
@@ -1594,30 +1658,6 @@ void free_chart_text(CText *ctext)
     	free(ctext->txt);
 
     free(ctext);
-
-    return;
-}
-
-
-/* Determine the start and end steps for an axis */
-
-void axis_step_bounds(Axis *axis)
-{
-    double rem;
-
-    rem = fmod(axis->end_val, axis->step);
-
-    if (rem == 0)
-    	axis->end_step = axis->end_val;
-    else
-    	axis->end_step = (axis->end_val - rem) + axis->step;
-
-    rem = fmod(axis->start_val, axis->step);
-
-    if (rem == 0)
-    	axis->start_step = axis->start_val;
-    else
-    	axis->start_step = (axis->start_val - rem) + axis->step;
 
     return;
 }
