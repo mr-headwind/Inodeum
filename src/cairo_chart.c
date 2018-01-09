@@ -105,6 +105,7 @@ void get_ctext_ext(cairo_t *, CText *);
 void show_surface_info(cairo_t *, GtkAllocation *);
 
 extern int long_chars(long);
+extern int double_chars(double);
 
 
 /* Globals */
@@ -1041,7 +1042,7 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
 // . Other values are mandatory.
 // . If step precision is required (not a whole number), enter the number of decimal places. 
 
-Axis * create_axis(char *unit, double step, double prec, 
+Axis * create_axis(char *unit, double step, int prec, 
 		   const GdkRGBA *txt_colour, int txt_sz,
 		   const GdkRGBA *step_colour, int step_txt_sz)
 {
@@ -1069,16 +1070,16 @@ Axis * create_axis(char *unit, double step, double prec,
     axis->step = step;
     axis->prec = prec;
 
-    /* Text details - use the end step (above) for the step text */
+    /* Text details - use the step and precision for the step text */
     axis->unit = new_chart_text(unit, txt_colour, txt_sz);
 
-    sz = long_chars((long) axis->end_step);
+    sz = double_chars(axis->step);
 
     if (axis->prec > 0)
     	sz = sz + axis->prec + 1;
 
     s = (char *) malloc(sz + 5);
-    sprintf(s, "%*.*f", sz, axis->prec, (double) axis->end_step);
+    sprintf(s, "%*.*f", sz, axis->prec, axis->step);
     axis->step_mk = new_chart_text(s, step_colour, step_txt_sz);
     free(s);
 
@@ -1321,9 +1322,9 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
 printf("***AUTO 1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
 
     /* Determine proportion of axis below zero */
-    zr = (x_axis->start_step / (x_axis->end_step - x_axis->start_step));
+    zr = (x_axis->low_step / (x_axis->high_step - x_axis->low_step));
     bzlen = zr * axis_len;
-printf("***AUTO 2 zr: %0.2f st step %0.2f end step %0.2f \n", zr, x_axis->start_step, x_axis->end_step); fflush(stdout);
+printf("***AUTO 2 zr: %0.2f st step %0.2f end step %0.2f \n", zr, x_axis->low_step, x_axis->high_step); fflush(stdout);
 
     /* Check for enough space for Y axis step marks and step values */
     ext = &(y_axis->step_mk->ext);
@@ -1355,7 +1356,7 @@ printf("***AUTO 6 y_axis->x1: %0.2f y_axis->x2 %0.2f\n", y_axis->x1, y_axis->x2)
     axis_len = allocation->height - allocation->y - ext->height - (axis_buf * 2);
 
     /* Determine proportion of axis below zero */
-    zr = (y_axis->start_step / (y_axis->end_step - y_axis->start_step));
+    zr = (y_axis->low_step / (y_axis->high_step - y_axis->low_step));
     bzlen = zr * axis_len;
 
     /* Check for enough space for X axis title, step marks and step values */

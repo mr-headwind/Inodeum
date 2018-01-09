@@ -76,6 +76,7 @@ extern LineGraph * line_graph_create(char *, const GdkRGBA *, int,
 extern void line_graph_add_point(LineGraph *, double, double);
 extern void free_line_graph(LineGraph *);
 extern void set_line_graph_bounds(LineGraph *);
+extern int long_chars(long);
 
 
 /* Globals */
@@ -293,27 +294,87 @@ void chart_total(ServUsage *srv_usg, MainUi *m_ui)
 void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
 {  
     int i;
+    double x_step, y_step;
 
     /* Reset any existing graph */
     if (m_ui->hist_usg_graph != NULL)
     	free_line_graph(m_ui->hist_usg_graph);
 
+    /* Determine axis step marks interval */
+    set_x_step(srv_usg->hist_days, &x_step);
+    set_y_step(srv_usg->hist_days, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
+
     /* History line graph */
     m_ui->hist_usg_graph = line_graph_create(
     		NULL, NULL, 0,
-		"Day", 0, srv_usg->hist_days, 1, 0,
+		"Days", x_step, 0,
 		&DARK_BLUE, 9, &DARK_BLUE, 8,
-		"MB", 0, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], 1000, 2,
+		"MB", 1000, 2,
 		&DARK_BLUE, 9, &DARK_BLUE, 8);
 
     /* Build the list of graph points - use actual values: they are adjusted on drawing */
     /* Day forms the X axis and data usage forms the Y axis */
-    for(i = 0; i <<<<<<!! srv_usg->hist_days; i++)
+    for(i = 0; i < srv_usg->hist_days; i++)		// ***** NB should this be days + 1?
     	line_graph_add_point(m_ui->hist_usg_graph, 
 			     (double) i, (double) srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
 
     /* Set the high and low graph bounds */
     set_line_graph_bounds(m_ui->hist_usg_graph);
+
+    return;
+}
+
+
+/* Set the X axis step interval: use a sliding scale */
+
+void set_x_step(int days, double *x_step)
+{  
+    int i;
+    const int day_scale[5][2] = { {30, 5}, {50, 10}, {100, 20}, {200, 50}, {300, 100} };
+    const int max_scale = 5;
+
+    *x_step = 200;		// Large default
+
+    for(i = 0; i < max_scale; i++}
+    {
+    	if (days <= day_scale[i][0])
+    	{
+	    *x_step = (double) day_scale[i][1];
+	    break;
+    	}
+    }
+
+    return;
+}
+
+
+/* Set the Y axis step interval: use an average MB value */
+
+void set_y_step(int days, long long total, double *y_step)
+{  
+    int i;
+    long av_day;
+    const double byte_scale[5][2] = { {1.0, 0.2}, {5.0, 1.0}, {10.0, 2.0}, {50.0, 10.0}, {100, 20.0}, 
+    				      {200.0, 50.0}, {500.0, 100.0}, {1000.0, 200.0},  };
+    const int max_scale = 5;
+
+    av_mb_day = (total / days) / 1000000;
+
+
+
+    i = long_chars(av_day);
+
+
+    *x_step = 200;		// Large default
+
+    for(i = 0; i < max_scale; i++}
+    {
+    	if (days <= day_scale[i][0])
+    	{
+	    *x_step = (double) day_scale[i][1];
+	    break;
+    	}
+    }
 
     return;
 }

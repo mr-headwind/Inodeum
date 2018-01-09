@@ -63,8 +63,8 @@ typedef struct _axis
     double low_val;
     double high_val;
     double step;
-    double high_step;
     double low_step;
+    double high_step;
     int prec;
     double x1, y1, x2, y2;
 } Axis;
