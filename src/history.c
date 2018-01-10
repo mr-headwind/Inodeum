@@ -58,6 +58,8 @@ void load_history(IspData *, MainUi *);
 void chart_total(ServUsage *, MainUi *);
 void create_hist_graph(ServUsage *, MainUi *);
 void reset_history(MainUi *);
+void set_x_step(int, double *);
+void set_y_step(int, long long, double *);
 
 extern void OnHistFind(GtkWidget *, gpointer); 
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
@@ -301,26 +303,32 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     	free_line_graph(m_ui->hist_usg_graph);
 
     /* Determine axis step marks interval */
+printf("%s create_hist_graph 1\n", debug_hdr); fflush(stdout);
     set_x_step(srv_usg->hist_days, &x_step);
+printf("%s create_hist_graph 2\n", debug_hdr); fflush(stdout);
     set_y_step(srv_usg->hist_days, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
+printf("%s create_hist_graph 3\n", debug_hdr); fflush(stdout);
 
     /* History line graph */
     m_ui->hist_usg_graph = line_graph_create(
     		NULL, NULL, 0,
 		"Days", x_step, 0,
 		&DARK_BLUE, 9, &DARK_BLUE, 8,
-		"MB", 1000, 2,
+		"MB", y_step, 2,
 		&DARK_BLUE, 9, &DARK_BLUE, 8);
 
+printf("%s create_hist_graph 4\n", debug_hdr); fflush(stdout);
     /* Build the list of graph points - use actual values: they are adjusted on drawing */
     /* Day forms the X axis and data usage forms the Y axis */
     for(i = 0; i < srv_usg->hist_days; i++)		// ***** NB should this be days + 1?
     	line_graph_add_point(m_ui->hist_usg_graph, 
 			     (double) i, (double) srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
 
+printf("%s create_hist_graph 5\n", debug_hdr); fflush(stdout);
     /* Set the high and low graph bounds */
     set_line_graph_bounds(m_ui->hist_usg_graph);
 
+printf("%s create_hist_graph 6\n", debug_hdr); fflush(stdout);
     return;
 }
 
@@ -335,7 +343,7 @@ void set_x_step(int days, double *x_step)
 
     *x_step = 200;		// Large default
 
-    for(i = 0; i < max_scale; i++}
+    for(i = 0; i < max_scale; i++)
     {
     	if (days <= day_scale[i][0])
     	{
@@ -353,25 +361,19 @@ void set_x_step(int days, double *x_step)
 void set_y_step(int days, long long total, double *y_step)
 {  
     int i;
-    long av_day;
-    const double byte_scale[5][2] = { {1.0, 0.2}, {5.0, 1.0}, {10.0, 2.0}, {50.0, 10.0}, {100, 20.0}, 
-    				      {200.0, 50.0}, {500.0, 100.0}, {1000.0, 200.0},  };
-    const int max_scale = 5;
+    double av_mb_day;
+    const double byte_scale[8][2] = { {1.0, 0.2}, {5.0, 1.0}, {10.0, 2.0}, {50.0, 10.0}, {100, 20.0}, 
+    				      {200.0, 50.0}, {500.0, 100.0}, {1000.0, 200.0} };
+    const int max_scale = 8;
 
-    av_mb_day = (total / days) / 1000000;
+    av_mb_day = ((double) total / (double) days) / 1000000.0;
+    *y_step = 2000.0;		// Large default
 
-
-
-    i = long_chars(av_day);
-
-
-    *x_step = 200;		// Large default
-
-    for(i = 0; i < max_scale; i++}
+    for(i = 0; i < max_scale; i++)
     {
-    	if (days <= day_scale[i][0])
+    	if (av_mb_day <= byte_scale[i][0])
     	{
-	    *x_step = (double) day_scale[i][1];
+	    *y_step = (double) byte_scale[i][1];
 	    break;
     	}
     }

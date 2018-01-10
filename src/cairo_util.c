@@ -56,6 +56,7 @@
 
 int long_chars(long);
 int llong_chars(long long);
+int double_chars(double);
 
 
 /* Globals */
@@ -100,4 +101,16 @@ int llong_chars(long long numb)
     }
 
     return i;
+}
+
+
+/* Return the length of a double. Not possible really, due to precision. This discards the mantissa. */
+
+int double_chars(double numb)
+{
+    long long ll;
+
+    ll = (long long) numb;
+
+    return llong_chars(ll);
 }

@@ -65,7 +65,7 @@ void text_coords(cairo_t *, char *, double, double, double, double, double, doub
 int check_legend(cairo_t *, PieChart *, double *, double *, double *, double *, double *, GtkAllocation *);
 void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
 
-Axis * create_axis(char *, double, double, const GdkRGBA *, int, const GdkRGBA *, int);
+Axis * create_axis(char *, double, int, const GdkRGBA *, int, const GdkRGBA *, int);
 void free_axis(Axis *);
 int draw_axis(cairo_t *, Axis *, int, GtkAllocation *);
 int axis_space_analysis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
@@ -960,7 +960,7 @@ void set_line_graph_bounds(LineGraph *lg)
 
     min_x = max_x = p->x_val;
     min_y = max_y = p->y_val;
-    l->next;
+    l = l->next;
 
     while(l != NULL)
     {
@@ -977,13 +977,13 @@ void set_line_graph_bounds(LineGraph *lg)
 	else if (p->y_val > max_y)
 	    max_y = p->y_val;
 
-	l->next;
+	l = l->next;
     }
 
-    lg->x_axis.low_val = min_x;
-    lg->x_axis.high_val = max_x;
-    lg->y_axis.low_val = min_y;
-    lg->y_axis.high_val = max_y;
+    lg->x_axis->low_val = min_x;
+    lg->x_axis->high_val = max_x;
+    lg->y_axis->low_val = min_y;
+    lg->y_axis->high_val = max_y;
 
     /* Round out the axes high and low step bounds */
     axis_step_bounds(lg->x_axis);
@@ -1073,10 +1073,10 @@ Axis * create_axis(char *unit, double step, int prec,
     /* Text details - use the step and precision for the step text */
     axis->unit = new_chart_text(unit, txt_colour, txt_sz);
 
-    sz = double_chars(axis->step);
+    sz = double_chars(axis->step) + 2;
 
     if (axis->prec > 0)
-    	sz = sz + axis->prec + 1;
+    	sz += axis->prec;
 
     s = (char *) malloc(sz + 5);
     sprintf(s, "%*.*f", sz, axis->prec, axis->step);
@@ -1114,7 +1114,7 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
     const GdkRGBA *rgba;
 
     /* Step and axis determination (0.5 is for rounding) */
-    n_steps = (int) (((axis->end_step - axis->start_step) / axis->step) + 0.5);
+    n_steps = (int) (((axis->high_step - axis->low_step) / axis->step) + 0.5);
 
     /* Space analysis */
     if (check_space == TRUE)
@@ -1211,12 +1211,12 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
 /* Debug axis
 */
 if (axis->unit != NULL)
-printf("%s Unit: %s\n", debug_hdr, axis->unit->txt); fflush(stdout);
+printf("\n%s Unit: %s\n", debug_hdr, axis->unit->txt); fflush(stdout);
 if (axis->step_mk != NULL)
 printf("%s Step Mk: %s\n", debug_hdr, axis->step_mk->txt); fflush(stdout);
-printf("%s draw_axis  start: %0.3f end: %0.3f step: %0.3f end_step: %0.3f start_step: %0.3f prec %d\n"
-	"\tx1: %0.3f y1: %0.3f x2: %0.3f y2: %0.3f\n",
-	debug_hdr, axis->start_val, axis->end_val, axis->step, axis->end_step, axis->start_step, axis->prec,
+printf("%s draw_axis  low val: %0.3f high val: %0.3f step: %0.3f high_step: %0.3f low_step: %0.3f prec %d\n"
+	"\tx1: %0.3f y1: %0.3f x2: %0.3f y2: %0.3f\n\n",
+	debug_hdr, axis->low_val, axis->high_val, axis->step, axis->high_step, axis->low_step, axis->prec,
 	axis->x1, axis->y1, axis->x2, axis->y2); fflush(stdout);
 
     return TRUE;
@@ -1338,7 +1338,7 @@ printf("***AUTO 3 bzlen: %0.2f ext->width %0.2f mk_length %ld axis_buf %0.2f \n"
     	axis_len =- pad;
 	bzlen = zr * axis_len;
     }
-printf("***AUTO 4 bzlen: %0.2f mk txt %s\n", bzlen, y_axis->step_mk->txt); fflush(stdout);
+printf("***AUTO 4 bzlen: %0.2f axis_len: %0.2f mk txt %s\n", bzlen, axis_len, y_axis->step_mk->txt); fflush(stdout);
 
     /* Set the x1, zero and x2 points on the axis */
     x_axis->x1 = allocation->x + pad; 
