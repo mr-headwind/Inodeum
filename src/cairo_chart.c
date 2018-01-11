@@ -1317,7 +1317,7 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     get_ctext_ext(cr, y_axis->step_mk);
 
     /* X Axis */
-    /* Initial X axis length, this is the current allocation point to the width less a buffer */
+    /* Initial X axis length,srv_usg->hist_days this is the current allocation point to the width less a buffer */
     axis_len = allocation->width - allocation->x - (axis_buf * 2);
 printf("***AUTO 1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
 
@@ -1335,7 +1335,7 @@ printf("***AUTO 3 bzlen: %0.2f ext->width %0.2f mk_length %ld axis_buf %0.2f \n"
     {
 	/* Adjust the initial length and recalulate the proportion below zero */
 	pad = (ext->width + mk_length + axis_buf) - bzlen;
-    	axis_len =- pad;
+    	axis_len -= pad;
 	bzlen = zr * axis_len;
     }
 printf("***AUTO 4 bzlen: %0.2f axis_len: %0.2f mk txt %s\n", bzlen, axis_len, y_axis->step_mk->txt); fflush(stdout);
@@ -1343,7 +1343,7 @@ printf("***AUTO 4 bzlen: %0.2f axis_len: %0.2f mk txt %s\n", bzlen, axis_len, y_
     /* Set the x1, zero and x2 points on the axis */
     x_axis->x1 = allocation->x + pad; 
     x_axis->x2 = x_axis->x1 + axis_len; 
-    xyz = allocation->x + pad + bzlen + 1;
+    xyz = allocation->x + pad + bzlen;
 printf("***AUTO 5 x_axis->x1: %0.2f x_axis->x2 %0.2f xyz %0.2f\n", x_axis->x1, x_axis->x2, xyz); fflush(stdout);
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the y axis x1 and x2 points */
@@ -1354,10 +1354,13 @@ printf("***AUTO 6 y_axis->x1: %0.2f y_axis->x2 %0.2f\n", y_axis->x1, y_axis->x2)
     /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
     ext = &(y_axis->unit->ext);
     axis_len = allocation->height - allocation->y - ext->height - (axis_buf * 2);
+printf("***AUTO 7 axis_len: %0.2f alloc height %d x %d axis_buf %0.2f\n", axis_len, allocation->height, allocation->y,axis_buf); fflush(stdout);
+printf("***AUTO 7a unit: %s unit height %0.2f\n", y_axis->unit->txt, ext->height); fflush(stdout);
 
     /* Determine proportion of axis below zero */
     zr = (y_axis->low_step / (y_axis->high_step - y_axis->low_step));
     bzlen = zr * axis_len;
+printf("***AUTO 8 zr: %0.2f st step %0.2f end step %0.2f \n", zr, y_axis->low_step, y_axis->high_step); fflush(stdout);
 
     /* Check for enough space for X axis title, step marks and step values */
     ext = &(x_axis->unit->ext);

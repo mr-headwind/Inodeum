@@ -603,6 +603,9 @@ gboolean OnHistExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 printf("%s OnHistExpose 1\n", debug_hdr); fflush(stdout);
 show_surface_info(cr, &allocation);	// Info or Debug
 
+    pseudo_alloc.x = 0;
+    pseudo_alloc.y = 0;
+
     /* Do title (this does nothing if there is no title) */
     chart_title(cr, m_ui->hist_usg_graph->title, &pseudo_alloc, GTK_ALIGN_CENTER, GTK_ALIGN_START);
 

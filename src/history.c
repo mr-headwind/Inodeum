@@ -303,11 +303,9 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     	free_line_graph(m_ui->hist_usg_graph);
 
     /* Determine axis step marks interval */
-printf("%s create_hist_graph 1\n", debug_hdr); fflush(stdout);
     set_x_step(srv_usg->hist_days, &x_step);
-printf("%s create_hist_graph 2\n", debug_hdr); fflush(stdout);
     set_y_step(srv_usg->hist_days, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
-printf("%s create_hist_graph 3\n", debug_hdr); fflush(stdout);
+printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, srv_usg->hist_days, x_step, y_step); fflush(stdout);
 
     /* History line graph */
     m_ui->hist_usg_graph = line_graph_create(
@@ -317,18 +315,15 @@ printf("%s create_hist_graph 3\n", debug_hdr); fflush(stdout);
 		"MB", y_step, 2,
 		&DARK_BLUE, 9, &DARK_BLUE, 8);
 
-printf("%s create_hist_graph 4\n", debug_hdr); fflush(stdout);
     /* Build the list of graph points - use actual values: they are adjusted on drawing */
     /* Day forms the X axis and data usage forms the Y axis */
     for(i = 0; i < srv_usg->hist_days; i++)		// ***** NB should this be days + 1?
     	line_graph_add_point(m_ui->hist_usg_graph, 
 			     (double) i, (double) srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
 
-printf("%s create_hist_graph 5\n", debug_hdr); fflush(stdout);
     /* Set the high and low graph bounds */
     set_line_graph_bounds(m_ui->hist_usg_graph);
 
-printf("%s create_hist_graph 6\n", debug_hdr); fflush(stdout);
     return;
 }
 
