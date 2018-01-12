@@ -108,6 +108,7 @@ void history_panel(MainUi *m_ui)
 
     /* Create drawing area for line graph */
     m_ui->hist_graph_area = gtk_drawing_area_new();
+    gtk_widget_set_name ( m_ui->hist_graph_area, "draw_1");
     gtk_widget_set_margin_top (m_ui->hist_graph_area, 10);
     gtk_widget_set_size_request (m_ui->hist_graph_area, 250, 160);
     gtk_widget_set_halign (m_ui->hist_graph_area, GTK_ALIGN_CENTER);
@@ -275,7 +276,7 @@ void chart_total(ServUsage *srv_usg, MainUi *m_ui)
 
     ll = srv_usg->hist_tot_arr[srv_usg->last_cat_idx];
     i = llong_chars(ll);
-    amt = (char *) malloc(ll + 1);
+    amt = (char *) malloc(i + 1);
     sprintf(amt, "%lld", ll);
 
     s = format_usg(amt, srv_usg->unit);

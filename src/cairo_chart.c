@@ -1360,28 +1360,34 @@ printf("***AUTO 7a unit: %s unit height %0.2f\n", y_axis->unit->txt, ext->height
     /* Determine proportion of axis below zero */
     zr = (y_axis->low_step / (y_axis->high_step - y_axis->low_step));
     bzlen = zr * axis_len;
-printf("***AUTO 8 zr: %0.2f st step %0.2f end step %0.2f \n", zr, y_axis->low_step, y_axis->high_step); fflush(stdout);
+printf("***AUTO 8 zr: %0.2f low step %0.2f high step %0.2f \n", zr, y_axis->low_step, y_axis->high_step); fflush(stdout);
 
     /* Check for enough space for X axis title, step marks and step values */
     ext = &(x_axis->unit->ext);
     xpad = ext->height + axis_buf;
+printf("***AUTO 9 xpad: %0.2f ext->height %0.2f txt %s axis_buf %0.2f \n", xpad, ext->height, x_axis->unit->txt, axis_buf); fflush(stdout);
     ext = &(x_axis->step_mk->ext);
     xpad = xpad + ext->height + mk_length + axis_buf;
     pad = 0;
+printf("***AUTO 9a xpad: %0.2f ext->height %0.2f txt %s mk_length %ld \n", xpad, ext->height, x_axis->unit->txt, mk_length); fflush(stdout);
 
+printf("***AUTO 9b bzlen: %0.2f xpad %0.2f \n", bzlen, xpad); fflush(stdout);
     if (bzlen < xpad)
     {
 	/* Adjust the initial length and recalulate the proportion below zero */
 	pad = xpad - bzlen;
-    	axis_len =- pad;
+    	axis_len -= pad;
 	bzlen = zr * axis_len;
     }
+printf("***AUTO 10 bzlen: %0.2f axis_len: %0.2f pad %0.2f\n", bzlen, axis_len, pad); fflush(stdout);
 
     /* Set the y1, zero and y2 points on the axis */
     ext = &(y_axis->unit->ext);
     y_axis->y1 = allocation->y + ext->height + axis_buf; 
     y_axis->y2 = y_axis->y1 + axis_len; 
     xyz = y_axis->y2 - bzlen - 1;
+printf("***AUTO 11 y_axis->y1: %0.2f y_axis->y2 %0.2f xyz %0.2f\n", y_axis->y1, y_axis->y2, xyz); fflush(stdout);
+printf("***AUTO 11a ext->height: %0.2f txt %s\n", ext->height, y_axis->unit->txt); fflush(stdout);
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the x axis y1 and y2 points */
     x_axis->y1 = x_axis->y2 = xyz;

@@ -66,6 +66,7 @@ static const gchar *css_data =
 	"GtkRadioButton > GtkLabel { color: @DARK_BLUE; font: Sans 8; }"
 	"GtkFrame { background-color: #e6e6fa; border-radius: 5px}"
 	"GtkFrame > GtkLabel { color: #800000; font-weight: 500; }"
+	"GtkDrawingArea#draw_1 { background-color: #fafad2;}"
 	"GtkComboBoxText * { color: @DARK_BLUE; font: Sans 9; }"
 	//"#button_1 * { background-color: #ffe4e1; border-color: #800000; }"
 	"#button_1 * { color: #708090; font-weight: bold; }"
