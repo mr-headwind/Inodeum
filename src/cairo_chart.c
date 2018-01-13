@@ -1117,16 +1117,18 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
     n_steps = (int) (((axis->high_step - axis->low_step) / axis->step) + 0.5);
 
     /* Space analysis */
-    if (check_space == TRUE)
     /*
+    if (check_space == TRUE)
     	if (axis_space_analysis(cr, axis, x1, y1, x2, y2, allocation) == FALSE)
 	    return FALSE;
     */
 
+printf("***draw_axis 0 x1: %0.2f x2 %0.2f y1: %0.2f y2 %0.2f \n", axis->x1, axis->x2, axis->y1, axis->y2); fflush(stdout);
     /* Set drawing offsets */
     if (axis->x1 == axis->x2)				 // Y axis
     {
 	step_dist = (axis->y2 - axis->y1) / n_steps;	
+printf("***draw_axis 1 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush(stdout);
 	x_offset = 0;
 	y_offset = step_dist;
 	x_mk_offset = mk_length * -1.0;
@@ -1135,6 +1137,7 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
     else if (axis->y1 == axis->y2)			 // X axis
     {
 	step_dist = (axis->x2 - axis->x1) / n_steps;	
+printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush(stdout);
 	x_offset = step_dist;
 	y_offset = 0;
 	x_mk_offset = 0;
@@ -1155,7 +1158,9 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
     for(i = 0; i < n_steps; i++)
     {
 	/* Draw step mark line */
+printf("***draw_axis 3 \n"); fflush(stdout);
 	cairo_line_to (cr, tmpx + x_mk_offset, tmpy + y_mk_offset);
+	cairo_stroke (cr);
 
 	/* Move to next step mark */
 	cairo_move_to (cr, tmpx - (x_offset * (i + 1)), tmpy + (y_offset * (i + 1)));

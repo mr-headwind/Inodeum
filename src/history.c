@@ -320,7 +320,8 @@ printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, sr
     /* Day forms the X axis and data usage forms the Y axis */
     for(i = 0; i < srv_usg->hist_days; i++)		// ***** NB should this be days + 1?
     	line_graph_add_point(m_ui->hist_usg_graph, 
-			     (double) i, (double) srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx]);
+			     (double) i, 
+			     (double) srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx] / 1000000.0);
 
     /* Set the high and low graph bounds */
     set_line_graph_bounds(m_ui->hist_usg_graph);
