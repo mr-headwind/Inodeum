@@ -1011,7 +1011,7 @@ void axis_step_bounds(Axis *axis)
     if (rem == 0)
     	axis->low_step = axis->low_val;
     else
-    	axis->low_step = (axis->low_val - rem) + axis->step;
+    	axis->low_step = (axis->low_val - rem) - axis->step;
 
     return;
 }
@@ -1108,13 +1108,17 @@ void free_axis(Axis *axis)
 int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocation)
 {
     int i, n_steps;
-    double step_dist, tmpx, tmpy;
+    double step_dist, tmpx, tmpy, rem;
     CText *unit;
     double x_offset, y_offset, x_mk_offset, y_mk_offset;
     const GdkRGBA *rgba;
 
-    /* Step and axis determination (0.5 is for rounding) */
-    n_steps = (int) (((axis->high_step - axis->low_step) / axis->step) + 0.5);
+    /* Step and axis determination (rounding if required) */
+    n_steps = (int) ((axis->high_step - axis->low_step) / axis->step);
+    rem = fmod((axis->high_step - axis->low_step), axis->step);
+
+    if (rem != 0)
+    	n_steps++;
 
     /* Space analysis */
     /*
@@ -1149,21 +1153,26 @@ printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
     cairo_move_to (cr, axis->x1, axis->y1);
     cairo_line_to (cr, axis->x2, axis->y2);
-    cairo_stroke (cr);
 
     /* Save current point (axis end point) */
-    cairo_get_current_point (cr, &tmpx, &tmpy);
+    tmpx = axis->x2;
+    tmpy = axis->y2; 
+    cairo_move_to (cr, axis->x2, axis->y2);
 
     /* Draw step marks and value text from the axis end backwards */
     for(i = 0; i < n_steps; i++)
     {
 	/* Draw step mark line */
-printf("***draw_axis 3 \n"); fflush(stdout);
+printf("***draw_axis 3 tmpx: %0.2f  x_mk_offset: %0.2f tmpy: %0.2f y_mk_offset: %0.2f\n",
+tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
 	cairo_line_to (cr, tmpx + x_mk_offset, tmpy + y_mk_offset);
-	cairo_stroke (cr);
 
 	/* Move to next step mark */
-	cairo_move_to (cr, tmpx - (x_offset * (i + 1)), tmpy + (y_offset * (i + 1)));
+printf("***draw_axis 4 move to: %0.2f , %0.2f\n", tmpx - (x_offset * (i + 1)), tmpy + (y_offset * (i + 1))); fflush(stdout);
+	tmpx -= x_offset;
+	tmpy -= y_offset;
+	cairo_move_to (cr, tmpx, tmpy);
+	//cairo_move_to (cr, tmpx - (x_offset * (i + 1)), tmpy + (y_offset * (i + 1)));
 
 	/*
 	cairo_move_to (cr, x1 + (step_x * i), y1 + (step_y * i));
@@ -1190,6 +1199,8 @@ printf("***draw_axis 3 \n"); fflush(stdout);
 	cairo_fill (cr);
 	*/
     }
+
+    cairo_stroke (cr);
 
     /* Draw axis unit label text */
     if (axis->unit != NULL)
@@ -1329,7 +1340,7 @@ printf("***AUTO 1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_le
     /* Determine proportion of axis below zero */
     zr = (x_axis->low_step / (x_axis->high_step - x_axis->low_step));
     bzlen = zr * axis_len;
-printf("***AUTO 2 zr: %0.2f st step %0.2f end step %0.2f \n", zr, x_axis->low_step, x_axis->high_step); fflush(stdout);
+printf("***AUTO 2 zr: %0.2f low step %0.2f high step %0.2f \n", zr, x_axis->low_step, x_axis->high_step); fflush(stdout);
 
     /* Check for enough space for Y axis step marks and step values */
     ext = &(y_axis->step_mk->ext);
