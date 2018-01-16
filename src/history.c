@@ -312,9 +312,9 @@ printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, sr
     m_ui->hist_usg_graph = line_graph_create(
     		NULL, NULL, 0,
 		"Days", x_step, 0,
-		&DARK_BLUE, 9, &DARK_BLUE, 8,
-		"MB", y_step, 2,
-		&DARK_BLUE, 9, &DARK_BLUE, 8);
+		&DARK_MAROON, 10, &DARK_BLUE, 8,
+		"MB", y_step, 0,
+		&DARK_MAROON, 10, &DARK_BLUE, 8);
 
     /* Build the list of graph points - use actual values: they are adjusted on drawing */
     /* Day forms the X axis and data usage forms the Y axis */

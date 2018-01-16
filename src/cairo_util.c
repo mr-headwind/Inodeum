@@ -57,6 +57,7 @@
 int long_chars(long);
 int llong_chars(long long);
 int double_chars(double);
+char * dtos(double, int);
 
 
 /* Globals */
@@ -113,4 +114,19 @@ int double_chars(double numb)
     ll = (long long) numb;
 
     return llong_chars(ll);
+}
+
+
+/* Convert a double to a string (kind of) */
+
+char * dtos(double d, int precision)
+{
+    int sz;
+    char *s;
+
+    sz = double_chars(d);
+    s = (char *) malloc(sz + precision + 2);
+    sprintf(s, "%*.*f", sz, precision, d);
+
+    return s;
 }
