@@ -103,13 +103,13 @@ void history_panel(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (m_ui->hist_cntr), 2);
     gtk_grid_set_column_spacing(GTK_GRID (m_ui->hist_cntr), 2);
     gtk_container_set_border_width (GTK_CONTAINER (m_ui->hist_cntr), 2);
-    gtk_widget_set_margin_top (m_ui->hist_cntr, 5);
+    gtk_widget_set_margin_top (m_ui->hist_cntr, 2);
     gtk_widget_set_margin_left (m_ui->hist_cntr, 15);
 
     /* Create drawing area for line graph */
     m_ui->hist_graph_area = gtk_drawing_area_new();
     gtk_widget_set_name ( m_ui->hist_graph_area, "draw_1");
-    gtk_widget_set_margin_top (m_ui->hist_graph_area, 10);
+    gtk_widget_set_margin_top (m_ui->hist_graph_area, 1);
     gtk_widget_set_size_request (m_ui->hist_graph_area, 250, 160);
     gtk_widget_set_halign (m_ui->hist_graph_area, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (m_ui->hist_graph_area, GTK_ALIGN_CENTER);
@@ -120,7 +120,7 @@ void history_panel(MainUi *m_ui)
     /* Summary total data */
     create_label(&(m_ui->hist_total), "data_2", "Total Usage: ", m_ui->hist_cntr, 0, 1, 1, 1);
     gtk_widget_set_margin_bottom (m_ui->hist_total, 10);
-    gtk_widget_set_halign(GTK_WIDGET (m_ui->hist_total), GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(GTK_WIDGET (m_ui->hist_total), GTK_ALIGN_START);
 
     /* Create search container grid */
     m_ui->hist_search_cntr = gtk_grid_new();
