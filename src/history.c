@@ -303,9 +303,9 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     if (m_ui->hist_usg_graph != NULL)
     	free_line_graph(m_ui->hist_usg_graph);
 
-    /* Determine axis step marks interval */
-    set_x_step(srv_usg->hist_days, &x_step);
-    set_y_step(srv_usg->hist_days, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
+    /* Determine axis step marks interval (subtract 1 for day 0) */
+    set_x_step(srv_usg->hist_days - 1, &x_step);
+    set_y_step(srv_usg->hist_days - 1, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
 printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, srv_usg->hist_days, x_step, y_step); fflush(stdout);
 
     /* History line graph */

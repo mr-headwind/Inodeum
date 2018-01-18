@@ -474,12 +474,12 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     srv_usage.last_cat_idx = 0;
     hday = 0;
 
-    /* Determine the size of the array */
+    /* Determine the size of the array, round days up and include day 0 (+2) */
     tmt_fr = string2tm(srv_usage.hist_from_dt, &tm_fr);
     tmt_to = string2tm(srv_usage.hist_to_dt, &tm_to);
 
     days = (long) difftime_days(tmt_to, tmt_fr);
-    days += 2;
+    days += 2;		
     srv_usage.hist_days = days;
 
     //long (*arr)[days] = malloc(sizeof(long[days][5]));	// Elegant but problematic to point to

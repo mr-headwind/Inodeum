@@ -215,7 +215,7 @@ double difftime_days(time_t tm_t1, time_t tm_t0)
     double ndays;
 
     ndays = difftime(tm_t1, tm_t0);
-    ndays /= (24 * 60 * 60);
+    ndays /= (24.0 * 60.0 * 60.0);
 
     return ndays;
 }

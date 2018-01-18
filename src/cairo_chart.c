@@ -1149,6 +1149,7 @@ printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
     cairo_move_to (cr, axis->x1, axis->y1);
     cairo_line_to (cr, axis->x2, axis->y2);
+    cairo_stroke (cr);
 
     /* Temporarily reverse y axis y coordinates for ease of drawing step marks */
     if (axis->x1 == axis->x2)
@@ -1168,7 +1169,7 @@ printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush
     rgba = axis->step_mk->colour;
 
     /* Draw step marks and value text from the axis end backwards */
-    for(i = 0; i < n_steps; i++)
+    for(i = 0; i <= n_steps; i++)
     {
 	/* Draw step mark line */
 printf("***draw_axis 3 tmpx: %0.2f  x_mk_offset: %0.2f tmpy: %0.2f y_mk_offset: %0.2f\n",
@@ -1178,7 +1179,7 @@ tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
 	cairo_stroke_preserve (cr);
 
 	/* Draw the step text */
-	tmp = axis->step * (double) (n_steps - i);
+	tmp = axis->high_step - (axis->step * (double) i);
 	s = dtos(tmp, axis->prec);
 	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 	cairo_text_extents (cr, s, &ext);
@@ -1189,11 +1190,11 @@ tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
 	    cairo_move_to (cr, tmpx - axis_buf - ext.width, tmpy + (ext.height / 2));
 
     	cairo_show_text (cr, s);
-	cairo_fill_preserve (cr);
+	cairo_fill (cr);
 	free(s);
 
 	/* Move to next step mark */
-printf("***draw_axis 4 move to: %0.2f , %0.2f\n", tmpx - (x_offset * (i + 1)), tmpy + (y_offset * (i + 1))); fflush(stdout);
+printf("***draw_axis 4 move to: %0.2f , %0.2f\n", tmpx - x_offset, tmpy + y_offset); fflush(stdout);
 	tmpx -= x_offset;
 	tmpy += y_offset;
 	cairo_move_to (cr, tmpx, tmpy);
@@ -1405,7 +1406,7 @@ printf("***AUTO 10 bzlen: %0.2f axis_len: %0.2f pad %0.2f\n", bzlen, axis_len, p
     y_axis->y1 = allocation->y + ext->height + (axis_buf * 2.0); 
 //y_axis->y1 = allocation->y + ext->height + axis_buf; 
     y_axis->y2 = y_axis->y1 + axis_len; 
-    xyz = y_axis->y2 - bzlen - 1;
+    xyz = y_axis->y2 - bzlen;
 printf("***AUTO 11 y_axis->y1: %0.2f y_axis->y2 %0.2f xyz %0.2f\n", y_axis->y1, y_axis->y2, xyz); fflush(stdout);
 printf("***AUTO 11a ext->height: %0.2f txt %s\n", ext->height, y_axis->unit->txt); fflush(stdout);
 
