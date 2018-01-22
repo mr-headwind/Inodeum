@@ -1022,15 +1022,53 @@ void axis_step_bounds(Axis *axis)
 
 void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
 {  
+    int init;
+    double x, y, prev_x, prev_y;
+    GList *l;
+    Point *pt;
+
     /* Draw the axes first */
     axes_auto_fit(cr, lg->x_axis, lg->y_axis, allocation);
     draw_axis(cr, lg->x_axis, FALSE, allocation);
     draw_axis(cr, lg->y_axis, FALSE, allocation);
 
-    // Tranform each point value into corresponding graph points
-    // This is done by converting values into a new list of proportional virtual values */
+    /* Plot each point */
+    init = TRUE;
 
-    /* Draw a line to each point */
+    for(l = lg->points; l != NULL; l = l->next)
+    {
+	/* Tranform each x,y point value into corresponding graph x,y values */
+    	pt = (Point *) l->data;
+
+	/* Draw a line to each point, except the first */
+	draw_point(cr, x, y);
+
+	if (init == FALSE)
+	    draw_point_line(cr, x, y, prev_x, prev_y);
+	else
+	    init = FALSE;
+
+	prev_x = x;
+	prev_y = y;
+    }
+
+    return;
+}
+
+
+/* Draw a line graph point */
+
+void draw_point(cairo_t *cr, double x, double y)
+{  
+
+    return;
+}
+
+
+/* Draw a line graph line connecting two points */
+
+void draw_point_line(cairo_t *cr, double x, double y, double prev_x, double prev_y)
+{  
 
     return;
 }
@@ -1065,7 +1103,6 @@ Axis * create_axis(char *unit, double step, int prec,
     axis->y2 = -1;
 
     axis->unit = new_chart_text(unit, txt_colour, txt_sz);
-    axis->step_mk = new_chart_text("xy", step_colour, step_txt_sz);
 
     /* Set up */
     axis->step = step;
