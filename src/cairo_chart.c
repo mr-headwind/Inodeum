@@ -90,6 +90,7 @@ LineGraph * line_graph_create(char *, const GdkRGBA *, int,
 void free_line_graph(LineGraph *);
 void free_points(gpointer);
 void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
+void draw_point_line(cairo_t *, double, double, double, double);
 void line_graph_add_point(LineGraph *, double, double);
 void set_line_graph_bounds(LineGraph *);
 
@@ -1023,7 +1024,7 @@ void axis_step_bounds(Axis *axis)
 void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
 {  
     int init;
-    double x, y, prev_x, prev_y;
+    double x, y, prev_x, prev_y, x_factor, y_factor;
     GList *l;
     Point *pt;
 
@@ -1033,20 +1034,29 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
     draw_axis(cr, lg->y_axis, FALSE, allocation);
 
     /* Plot each point */
+    x_factor = (lg->x_axis->x2 - lg->x_axis->x1) / (lg->x_axis->high_step - lg->x_axis->low_step);
+    y_factor = (lg->y_axis->y2 - lg->y_axis->y1) / (lg->y_axis->high_step - lg->y_axis->low_step);
     init = TRUE;
 
     for(l = lg->points; l != NULL; l = l->next)
     {
 	/* Tranform each x,y point value into corresponding graph x,y values */
     	pt = (Point *) l->data;
+    	x = (pt->x_val * x_factor) + lg->x_axis->x1;
+    	y = (pt->y_val * y_factor) + lg->y_axis->y2;
 
 	/* Draw a line to each point, except the first */
-	draw_point(cr, x, y);
+	//draw_point(cr, x, y);
 
 	if (init == FALSE)
+	{
 	    draw_point_line(cr, x, y, prev_x, prev_y);
+	}
 	else
+	{
 	    init = FALSE;
+	    draw_point_line(cr, x, y, x, y);
+	}
 
 	prev_x = x;
 	prev_y = y;
@@ -1069,6 +1079,11 @@ void draw_point(cairo_t *cr, double x, double y)
 
 void draw_point_line(cairo_t *cr, double x, double y, double prev_x, double prev_y)
 {  
+    cairo_set_line_width (cr, 1.0); 
+    cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+    cairo_move_to (cr, x, y);
+    cairo_line_to (cr, prev_x, prev_y);
+    cairo_stroke (cr);
 
     return;
 }
@@ -1221,10 +1236,10 @@ tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
 	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 	cairo_text_extents (cr, s, &ext);
 
-	if (axis->y1 == axis->y2)		// X axis
-	    cairo_move_to (cr, tmpx - (ext.width / 2), tmpy + axis_buf + ext.height);
-	else					// Y axis
-	    cairo_move_to (cr, tmpx - axis_buf - ext.width, tmpy + (ext.height / 2));
+	if (axis->y1 == axis->y2)	// X axis
+	    cairo_move_to (cr, tmpx - (ext.width/2), tmpy + axis_buf + ext.height);
+	else				// Y axis
+	    cairo_move_to (cr, tmpx - axis_buf - ext.width, tmpy + (ext.height/2));
 
     	cairo_show_text (cr, s);
 	cairo_fill (cr);
