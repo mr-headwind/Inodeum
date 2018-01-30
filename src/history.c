@@ -74,7 +74,8 @@ extern LineGraph * line_graph_create(char *, const GdkRGBA *, int,
 				     char *, double, double,
 				     const GdkRGBA *, int, const GdkRGBA *, int,
 				     char *, double, double,
-				     const GdkRGBA *, int, const GdkRGBA *, int);
+				     const GdkRGBA *, int, const GdkRGBA *, int,
+				     const GdkRGBA *);
 extern void line_graph_add_point(LineGraph *, double, double);
 extern void free_line_graph(LineGraph *);
 extern void set_line_graph_bounds(LineGraph *);
@@ -296,7 +297,7 @@ void chart_total(ServUsage *srv_usg, MainUi *m_ui)
 
 void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
 {  
-    int i;
+    int i, zdays;
     double x_step, y_step;
 
     /* Reset any existing graph */
@@ -304,8 +305,16 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     	free_line_graph(m_ui->hist_usg_graph);
 
     /* Determine axis step marks interval (subtract 1 for day 0) */
+    zdays = 0;
+
+    for(i = 1; i < srv_usg->hist_days; i++)		// ***** NB should this be days + 1?
+    {
+    	if (srv_usg->hist_usg_arr[i][srv_usg->last_cat_idx] == 0)
+	    zdays++;
+    }
+
     set_x_step(srv_usg->hist_days - 1, &x_step);
-    set_y_step(srv_usg->hist_days - 1, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
+    set_y_step(srv_usg->hist_days - zdays - 1, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
 printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, srv_usg->hist_days, x_step, y_step); fflush(stdout);
 
     /* History line graph */
@@ -314,7 +323,8 @@ printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, sr
 		"Days", x_step, 0,
 		&DARK_MAROON, 10, &DARK_BLUE, 8,
 		"MB", y_step, 0,
-		&DARK_MAROON, 10, &DARK_BLUE, 8);
+		&DARK_MAROON, 10, &DARK_BLUE, 8,
+		&LIGHT_RED);
 
     /* Build the list of graph points - use actual values: they are adjusted on drawing */
     /* Day forms the X axis and data usage forms the Y axis */

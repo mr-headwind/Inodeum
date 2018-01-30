@@ -86,7 +86,8 @@ LineGraph * line_graph_create(char *, const GdkRGBA *, int,
 			      char *, double, double,
 			      const GdkRGBA *, int, const GdkRGBA *, int,
 			      char *, double, double,
-			      const GdkRGBA *, int, const GdkRGBA *, int);
+			      const GdkRGBA *, int, const GdkRGBA *, int,
+			      const GdkRGBA *);
 void free_line_graph(LineGraph *);
 void free_points(gpointer);
 void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
@@ -865,7 +866,8 @@ LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz
 			      const GdkRGBA *x_step_colour, int x_step_txt_sz,
 			      char *y_unit, double y_step, double y_prec,
 			      const GdkRGBA *y_txt_colour, int y_txt_sz,
-			      const GdkRGBA *y_step_colour, int y_step_txt_sz)
+			      const GdkRGBA *y_step_colour, int y_step_txt_sz,
+			      const GdkRGBA *line_colour)
 {
     LineGraph *lg;
 
@@ -892,6 +894,9 @@ LineGraph * line_graph_create(char *title, const GdkRGBA *txt_colour, int txt_sz
     }
 
     lg->points = NULL;
+
+    /* General */
+    lg->line_colour = line_colour;
 
     return lg;
 }
@@ -1027,6 +1032,7 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
     double x, y, prev_x, prev_y, x_factor, y_factor;
     GList *l;
     Point *pt;
+    const GdkRGBA *rgba;
 
     /* Draw the axes first */
     axes_auto_fit(cr, lg->x_axis, lg->y_axis, allocation);
@@ -1037,13 +1043,16 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
     x_factor = (lg->x_axis->x2 - lg->x_axis->x1) / (lg->x_axis->high_step - lg->x_axis->low_step);
     y_factor = (lg->y_axis->y2 - lg->y_axis->y1) / (lg->y_axis->high_step - lg->y_axis->low_step);
     init = TRUE;
+    cairo_set_line_width (cr, 1.0); 
+    rgba = lg->line_colour;
+    cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 
     for(l = lg->points; l != NULL; l = l->next)
     {
 	/* Tranform each x,y point value into corresponding graph x,y values */
     	pt = (Point *) l->data;
-    	x = (pt->x_val * x_factor) + lg->x_axis->x1;
-    	y = (pt->y_val * y_factor) + lg->y_axis->y2;
+    	x = lg->x_axis->x1 + (pt->x_val * x_factor);
+    	y = lg->y_axis->y2 - (pt->y_val * y_factor);
 
 	/* Draw a line to each point, except the first */
 	//draw_point(cr, x, y);
@@ -1079,8 +1088,6 @@ void draw_point(cairo_t *cr, double x, double y)
 
 void draw_point_line(cairo_t *cr, double x, double y, double prev_x, double prev_y)
 {  
-    cairo_set_line_width (cr, 1.0); 
-    cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
     cairo_move_to (cr, x, y);
     cairo_line_to (cr, prev_x, prev_y);
     cairo_stroke (cr);

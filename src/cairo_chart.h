@@ -137,6 +137,7 @@ typedef struct _line_graph
     Axis *x_axis;
     Axis *y_axis;
     GList *points;
+    const GdkRGBA *line_colour;
 } LineGraph;
 
 
