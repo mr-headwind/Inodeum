@@ -140,7 +140,9 @@ void history_panel(MainUi *m_ui)
     gtk_entry_set_max_length (GTK_ENTRY(m_ui->hist_from_dt), 10);
 
     m_ui->fr_btn = gtk_button_new_with_label("...");
+    gtk_widget_set_name (m_ui->fr_btn, "fr_btn");
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->fr_btn, 2, 0, 1, 1);
+    g_signal_connect (m_ui->fr_btn, "clicked", G_CALLBACK (OnCalendar), m_ui);
 
     create_label(&(m_ui->to_dt_lbl), "to_dt_lbl", "Date To ", m_ui->hist_search_cntr, 0, 1, 1, 1);
     create_entry(&(m_ui->hist_to_dt), "ent_1", m_ui->hist_search_cntr, 1, 1);
@@ -149,7 +151,9 @@ void history_panel(MainUi *m_ui)
     gtk_entry_set_max_length (GTK_ENTRY(m_ui->hist_to_dt), 10);
 
     m_ui->to_btn = gtk_button_new_with_label("...");
+    gtk_widget_set_name (m_ui->to_btn, "to_btn");
     gtk_grid_attach(GTK_GRID (m_ui->hist_search_cntr), m_ui->to_btn, 2, 1, 1, 1);
+    g_signal_connect (m_ui->to_btn, "clicked", G_CALLBACK (OnCalendar), m_ui);
 
     create_label(&(m_ui->cat_lbl), "cat_lbl", "Category", m_ui->hist_search_cntr, 0, 2, 1, 1);
     create_cbox(&(m_ui->usgcat_cbox), "usg_cat", usg_cats, usg_cat_max, 0, m_ui->hist_search_cntr, 1, 2);

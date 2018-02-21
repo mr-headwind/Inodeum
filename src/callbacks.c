@@ -383,6 +383,41 @@ void OnHistFind(GtkWidget *btn, gpointer user_data)
 }
 
 
+/* Callback - Refined history search */
+
+void OnCalendar(GtkWidget *btn, gpointer user_data)
+{  
+    MainUi *m_ui;
+    const gchar *nm;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Set active field for date */
+    nm = gtk_widget_get_name (btn);
+
+    if (strcmp(nm, "fr_btn") == 0)
+	g_object_set_data (G_OBJECT (m_ui->window), "active_fld", m_ui->hist_from_dt);
+
+    else if (strcmp(nm, "to_btn") == 0)
+	g_object_set_data (G_OBJECT (m_ui->window), "active_fld", m_ui->hist_to_dt);
+    else
+	g_object_set_data (G_OBJECT (m_ui->window), "active_fld", NULL);
+
+    /* Check if already open */
+    if (is_ui_reg(CALENDAR_UI, TRUE))
+    {
+    	gtk_window_present (GTK_WINDOW(m_ui->cal_dt_select));
+    	return;
+    }
+
+    /* Open a calendar date selection 'popup' */
+    show_calendar(m_ui);
+
+    return;
+}
+
+
 /* Callback - User preference (Data Refresh) set */
 
 int OnSetRefresh(GtkWidget *refresh_tm, GdkEvent *ev, gpointer user_data)

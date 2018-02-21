@@ -122,6 +122,7 @@ typedef struct _main_ui
 
     /* Other */
     GtkWidget *curr_panel;
+    GtkWidget *cal_dt_select;
 
     /* XML processing (for debug) */
     GtkWidget *txt_view;
