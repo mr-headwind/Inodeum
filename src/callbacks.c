@@ -64,6 +64,7 @@ void OnPrefPieLbl(GtkToggleButton*, gpointer);
 void OnPrefPieLgd(GtkToggleButton*, gpointer);
 void OnPrefBarLbl(GtkToggleButton*, gpointer);
 void OnHistFind(GtkWidget *, gpointer);
+void OnCalendar(GtkWidget *, gpointer);
 int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
 void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
@@ -412,7 +413,7 @@ void OnCalendar(GtkWidget *btn, gpointer user_data)
     }
 
     /* Open a calendar date selection 'popup' */
-    show_calendar(m_ui);
+    calendar_main(m_ui);
 
     return;
 }

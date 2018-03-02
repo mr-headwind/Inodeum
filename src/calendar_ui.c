@@ -45,8 +45,8 @@
 
 /* Prototypes */
 
-GtkWidget* calendar_main(char  *);
-GtkWidget* calendar_ui(char *);
+GtkWidget * calendar_main(GtkWidget *);
+GtkWidget * calendar_ui(char *);
 void OnCalClose(GtkWidget*, gpointer);
 
 extern void register_window(GtkWidget *);
@@ -60,7 +60,7 @@ static const char *debug_hdr = "DEBUG-calendar_ui.c ";
 
 /* Display file contents */
 
-GtkWidget* calendar_main(char *dt_in)
+GtkWidget * calendar_main(char *dt_in)
 {
     char sel_dt;
     GtkWidget *calendar_window;  
@@ -78,7 +78,7 @@ GtkWidget* calendar_main(char *dt_in)
     /* Register the window */
     register_window(calendar_window);
 
-    return;
+    return calendar_window;
 }
 
  
