@@ -34,6 +34,21 @@
 /* Defines */
 
 
+/* Types */
+
+typedef struct _calendar_ui
+{
+    GtkWidget *window;
+    GtkWidget *parent_win;
+    GtkWidget *ok_btn;
+    GtkWidget *cancel_btn;
+    GtkWidget *ctrl_grid;
+    GtkWidget *btn_hbox;
+    GtkWidget *main_vbox;
+    int close_handler;
+} CalUi;
+
+
 /* Includes */
 #include <stdlib.h>  
 #include <string.h>  
@@ -45,8 +60,10 @@
 
 /* Prototypes */
 
-GtkWidget * calendar_main(GtkWidget *);
-GtkWidget * calendar_ui(char *);
+void calendar_main(GtkWidget *, GtkWidget *);
+int cal_init(GtkWidget *, CalUi *);
+CalUi * new_cal_ui();
+void calendar_ui(CalUi *);
 void OnCalClose(GtkWidget*, gpointer);
 
 extern void register_window(GtkWidget *);
@@ -58,42 +75,50 @@ extern void deregister_window(GtkWidget *);
 static const char *debug_hdr = "DEBUG-calendar_ui.c ";
 
 
-/* Display file contents */
+/* Display calendar for date selection */
 
-GtkWidget * calendar_main(char *dt_in)
+void calendar_main(GtkWidget *dt_fld, GtkWidget *parent_win)
 {
-    char sel_dt;
-    GtkWidget *calendar_window;  
+    GtkWidget *calendar_win;  
+    CalUi *ui;
 
-    /* Check and open the file */
-    if (dt_in == NULL)
-    	cal_init(sel_dt);
-    else
-    	sel_dt = dt_in;
+    if (dt_fld == NULL)
+    	return;
 
-    /* Create the interface */
-    calendar_window = calendar_ui(sel_dt);
-    gtk_widget_show_all(calendar_window);
+    ui = new_cal_ui();
+    cal_init(dt_fld, ui);
 
-    /* Register the window */
-    register_window(calendar_window);
+    /* Create the interface and register */
+    calendar_ui(ui);
+    register_window(ui->calendar_win);
 
-    return calendar_window;
+    return;
 }
 
  
-/* Initial processing - get current date */
+/* Initial processing - get passed date if any */
 
-int cal_init(char *sel_dt)
+int cal_init(GtkWidget dt_fld, CalUi *ui)
 {
 
     return TRUE;
 }
 
 
+/* Create new screen data variable */
+
+CalUi * new_cal_ui()
+{
+    CalUi *ui = (CalUi *) malloc(sizeof(CalUi));
+    memset(ui, 0, sizeof(CalUi));
+
+    return ui;
+}
+
+
 /* Create the user interface and set the CallBacks */
 
-GtkWidget* calendar_ui(char *sel_dt)
+void calendar_ui(CalUi *ui)
 {  
     GtkWidget *calendar_window;  
     GtkWidget *mbox, *bbox, *lbox;  
@@ -171,6 +196,8 @@ GtkWidget* calendar_ui(char *sel_dt)
     /* Exit when window closed */
     close_hndlr_id = g_signal_connect(calendar_window, "destroy", G_CALLBACK(OnCalClose), calendar_window);  
     g_object_set_data (G_OBJECT (calendar_window), "close_hndlr_id", GINT_TO_POINTER (close_hndlr_id));
+
+    gtk_widget_show_all(calendar_win);
 
     return calendar_window;
 }

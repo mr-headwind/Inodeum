@@ -88,6 +88,7 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
+extern void calendar_main(GtkWidget *, GtkWidget *);
 extern int write_user_prefs(GtkWidget *);
 extern int set_user_pref(char *, char *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
@@ -390,6 +391,7 @@ void OnCalendar(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
     const gchar *nm;
+    GtkWidget *dt_fld;
 
     /* Get data */
     m_ui = (MainUi *) user_data;
@@ -398,22 +400,19 @@ void OnCalendar(GtkWidget *btn, gpointer user_data)
     nm = gtk_widget_get_name (btn);
 
     if (strcmp(nm, "fr_btn") == 0)
-	g_object_set_data (G_OBJECT (m_ui->window), "active_fld", m_ui->hist_from_dt);
+	dt_fld = m_ui->hist_from_dt;
 
     else if (strcmp(nm, "to_btn") == 0)
-	g_object_set_data (G_OBJECT (m_ui->window), "active_fld", m_ui->hist_to_dt);
+	dt_fld = m_ui->hist_to_dt;
     else
-	g_object_set_data (G_OBJECT (m_ui->window), "active_fld", NULL);
+	return;
 
     /* Check if already open */
     if (is_ui_reg(CALENDAR_UI, TRUE))
-    {
-    	gtk_window_present (GTK_WINDOW(m_ui->cal_dt_select));
     	return;
-    }
 
     /* Open a calendar date selection 'popup' */
-    calendar_main(m_ui);
+    calendar_main(dt_fld, m_ui->window);
 
     return;
 }

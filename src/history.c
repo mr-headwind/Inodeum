@@ -62,6 +62,7 @@ void set_x_step(int, double *);
 void set_y_step(int, long long, double *);
 
 extern void OnHistFind(GtkWidget *, gpointer); 
+extern void OnCalendar(GtkWidget *, gpointer); 
 extern gboolean OnHistExpose (GtkWidget*, cairo_t *, gpointer);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
