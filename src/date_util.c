@@ -57,6 +57,7 @@ time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 time_t string2tm(char *, struct tm *);
 double difftime_days(time_t, time_t);
 char * format_dt(char *, time_t *, struct tm **);
+int set_date_yyyy_mm_dd(char *, unsigned int *, unsigned int *, unsigned int *);
 
 
 /* Globals */
@@ -252,4 +253,47 @@ char * format_dt(char *dt, time_t *time_out, struct tm **dtm)
     *time_out = tm_t;
 
     return s;
+}
+
+
+/* Validate and decompose a date in yyyy-mm-dd to constituent parts */
+
+int set_date_yyyy_mm_dd(char *dt, unsigned int *yr, unsigned int *month, unsigned int *day)
+{  
+    int i, j;
+    char yyyy[5], mm[3], dd[3];
+    const char seps[5] = "-/";
+    const int mseps = 2;
+
+    if (strlen(dt) != 10)
+    	return -1;
+
+    for(i = 0; i < 10; i++)
+    {
+    	if (i == 4 || i == 7)
+	    for(j = 0; j < mseps; j++)
+	    {
+	    	if (dt[i] == seps[j])
+		    break;
+	    }
+	    if (j >= mseps)
+	    	return -2;
+
+    	if (! isdigit(dt[i]))
+	    return -3;
+    }
+
+    strncpy(yyyy, dt, 4);
+    yyyy[4] = '\0';
+    *yr = (unsigned int) atoi(yyyy);
+
+    strncpy(mm, dt + 5, 2);
+    mm[2] = '\0';
+    *month = (unsigned int) atoi(mm);
+
+    strncpy(dd, dt + 8, 2);
+    dd[2] = '\0';
+    *day = (unsigned int) atoi(dd);
+
+    return 1;
 }

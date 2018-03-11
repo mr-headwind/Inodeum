@@ -168,8 +168,6 @@ void history_panel(MainUi *m_ui)
     frame = gtk_frame_new (NULL);
     gtk_container_add(GTK_CONTAINER (frame), m_ui->hist_search_cntr);
 
-    /* Set up calendar popup */
-
     /* Add summary to history container */
     gtk_grid_attach(GTK_GRID (m_ui->hist_cntr), frame, 0, 2, 1, 1);
 
@@ -320,7 +318,12 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
 
     set_x_step(srv_usg->hist_days - 1, &x_step);
     set_y_step(srv_usg->hist_days - zdays - 1, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
-printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", debug_hdr, srv_usg->hist_days, x_step, y_step); fflush(stdout);
+
+/* Debug
+printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", 
+	debug_hdr, srv_usg->hist_days, x_step, y_step); 
+fflush(stdout);
+*/
 
     /* History line graph */
     m_ui->hist_usg_graph = line_graph_create(
