@@ -256,6 +256,27 @@ char * format_dt(char *dt, time_t *time_out, struct tm **dtm)
 }
 
 
+/* Validate and decompose a date to constituent parts according to a given template  */
+
+int set_date_tmpl(char *dt, char *tmpl, unsigned int *yr, unsigned int *month, unsigned int *day)
+{  
+    int i, c;
+    char *p;
+
+    /* Year is denoted by y's */
+    if ((p = strchr(dt, 'y')) == NULL)
+    	return -1;
+
+    for(i = 0; *p == 'y'; i++)
+    {
+    }
+
+    /* Extract the year */
+
+    return 1;
+}
+
+
 /* Validate and decompose a date in yyyy-mm-dd to constituent parts */
 
 int set_date_yyyy_mm_dd(char *dt, unsigned int *yr, unsigned int *month, unsigned int *day)
