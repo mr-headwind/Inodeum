@@ -57,7 +57,11 @@ time_t strdt2tmt(char *, char *, char *, char *, char *, char *);
 time_t string2tm(char *, struct tm *);
 double difftime_days(time_t, time_t);
 char * format_dt(char *, time_t *, struct tm **);
-int set_date_yyyy_mm_dd(char *, unsigned int *, unsigned int *, unsigned int *);
+int set_date_tmpl(char *, char *, unsigned int *, unsigned int *, unsigned int *);
+int get_dt_part(char *, char *, char, int);
+int date_digit(char *);
+int mmm_val(char *);
+int dd_val(unsigned int, unsigned int, unsigned int);
 
 
 /* Globals */
@@ -258,63 +262,124 @@ char * format_dt(char *dt, time_t *time_out, struct tm **dtm)
 
 /* Validate and decompose a date to constituent parts according to a given template  */
 
-int set_date_tmpl(char *dt, char *tmpl, unsigned int *yr, unsigned int *month, unsigned int *day)
+int set_date_tmpl(char *dt, char *tmpl, unsigned int *yyyy, unsigned int *mm, unsigned int *dd)
 {  
-    int i, c;
-    char *p;
+    int n;
+    char yr[5], month[4], day[3];
 
-    /* Year is denoted by y's */
-    if ((p = strchr(dt, 'y')) == NULL)
+    /* Year is denoted by y's, Month by m's and Day by d's - eg. dd-mmm-yyyy or yy/mm/dd */
+    if (get_dt_part(dt, yr, 'y', 4) < 0)
     	return -1;
 
-    for(i = 0; *p == 'y'; i++)
+    if (get_dt_part(dt, month, 'm', 3) < 0)
+    	return -1;
+
+    if (get_dt_part(dt, day, 'd', 2) < 0)
+    	return -1;
+
+    /* Check numeric if appropriate */
+    if ((n = date_digit(yr)) < 0)
+    	return -2;
+
+    *yyyy = (unsigned int) n;
+
+    if (strlen(month) < 3)
     {
+	if ((n = date_digit(month)) < 0)
+	    return -2;
+    }
+    else
+    {
+    	if ((n = mmm_val(month)) < 0)
+	    return -3;
     }
 
-    /* Extract the year */
+    *mm = (unsigned int) n;
+
+    if ((n = date_digit(day)) < 0)
+    	return -2;
+
+    *dd = (unsigned int) n;
+
+    if ((dd_val(*dd, *mm, *yyyy)) < 0)
+	return -4;
 
     return 1;
 }
 
 
-/* Validate and decompose a date in yyyy-mm-dd to constituent parts */
+/* Extract a section of a date: year, month, day (this is not foolproof) */
 
-int set_date_yyyy_mm_dd(char *dt, unsigned int *yr, unsigned int *month, unsigned int *day)
+int get_dt_part(char *dt, char *dest, char part, int max)
 {  
-    int i, j;
-    char yyyy[5], mm[3], dd[3];
-    const char seps[5] = "-/";
-    const int mseps = 2;
+    int i;
+    char *p;
 
-    if (strlen(dt) != 10)
+    if ((p = strchr(dt, part)) == NULL)
     	return -1;
 
-    for(i = 0; i < 10; i++)
-    {
-    	if (i == 4 || i == 7)
-	    for(j = 0; j < mseps; j++)
-	    {
-	    	if (dt[i] == seps[j])
-		    break;
-	    }
-	    if (j >= mseps)
-	    	return -2;
+    for(i = 0; *p == part && i < max; i++)
+    	dest[i] = *p++;
 
-    	if (! isdigit(dt[i]))
-	    return -3;
-    }
+    if (i >= max)
+    	return -1;
 
-    strncpy(yyyy, dt, 4);
-    yyyy[4] = '\0';
-    *yr = (unsigned int) atoi(yyyy);
-
-    strncpy(mm, dt + 5, 2);
-    mm[2] = '\0';
-    *month = (unsigned int) atoi(mm);
-
-    strncpy(dd, dt + 8, 2);
-    dd[2] = '\0';
-    *day = (unsigned int) atoi(dd);
+    dest[i] = '\0';
 
     return 1;
+}
+
+
+/* Check date part being numeric */
+
+int date_digit(char *dt_part)
+{  
+    int i, len;
+    unsigned int ui;
+
+    len = strlen(dt_part);
+
+    for(i = 0; i < len; i++)
+    {
+    	if (! isdigit(dt_part[i]))
+	    return -1;
+    }
+
+    return atoi(dt_part);
+}
+
+
+/* Check 3 character month abbreviation */
+
+int mmm_val(char *dt_mmm)
+{  
+    int i;
+    const char *months[12] = { "jan", "feb", "mar", "apr", "may", "jun",
+    			       "jul", "aug", "sep", "oct", "nov", "dec" };
+
+    for(i = 0; i < 12; i++)
+    {
+    	if (strcasecmp(dt_mmm, months[i]) == 0)
+	    return i + 1;
+    }
+
+    return -1;
+}
+
+
+/* Check day value against month and year */
+
+int dd_val(unsigned int dd, unsigned int mm, unsigned int yyyy)
+{  
+    int rem;
+    int day_month[12][2] = { {1,31}, {2,28}, {3,31}, {4,30}, {5,31}, {6,30},
+    			     {7,31}, {8,31}, {9,30}, {10,31}, {11,30}, {12,31} };
+
+    if((((yyyy % 400) == 0) || ((yyyy % 100) != 0)) && ((yyyy % 4) == 0))
+    	day_month[1][2] = 29;
+
+    if (dd > day_month[mm - 1][1])
+	return 1;
+    else
+	return -1;
 }
