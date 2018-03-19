@@ -62,13 +62,14 @@ typedef struct _calendar_ui
 
 /* Prototypes */
 
-void calendar_main(GtkWidget *, GtkWidget *);
+int calendar_main(GtkWidget *, GtkWidget *);
 int cal_init(GtkWidget *, CalUi *);
 CalUi * new_cal_ui();
 void calendar_ui(CalUi *);
 void OnCalSelect(GtkWidget*, gpointer);
 void OnCalClose(GtkWidget*, gpointer);
 
+extern int set_date_tmpl(char *, char *, unsigned int *, unsigned int *, unsigned int *);
 extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
 
@@ -80,23 +81,26 @@ static const char *debug_hdr = "DEBUG-calendar_ui.c ";
 
 /* Display calendar for date selection */
 
-void calendar_main(GtkWidget *dt_fld, GtkWidget *parent_win)
+int calendar_main(GtkWidget *dt_fld, GtkWidget *parent_win)
 {
+    int r;
     GtkWidget *calendar_win;  
     CalUi *c_ui;
 
     if (dt_fld == NULL)
-    	return;
+    	return FALSE;
 
     c_ui = new_cal_ui();
-    cal_init(dt_fld, c_ui);
+
+    if ((r = cal_init(dt_fld, c_ui)) != TRUE)
+    	return r;
 
     /* Create the interface and register */
     c_ui->parent_win = parent_win;
     calendar_ui(c_ui);
     register_window(c_ui->window);
 
-    return;
+    return TRUE;
 }
 
  
@@ -104,8 +108,14 @@ void calendar_main(GtkWidget *dt_fld, GtkWidget *parent_win)
 
 int cal_init(GtkWidget *dt_fld, CalUi *c_ui)
 {
+    int r;
+
     c_ui->dt_txt = gtk_entry_get_text (GTK_ENTRY(dt_fld));
     c_ui->dt_fld = dt_fld;
+
+    if (strlen(c_ui->dt_txt) > 0)
+	if ((r = set_date_tmpl((char *) c_ui->dt_txt, "yyyy-mm-dd", &c_ui->yyyy, &c_ui->mm, &c_ui->dd)) != TRUE)
+	    return r;
 
     return TRUE;
 }
@@ -168,6 +178,12 @@ void calendar_ui(CalUi *c_ui)
     gtk_widget_show_all(c_ui->window);
     gtk_window_set_modal (GTK_WINDOW(c_ui->window), TRUE);
 
+    /* Set the date if one has been entered */
+    if (strlen(c_ui->dt_txt) > 0)
+    {
+	gtk_calendar_select_month (GTK_CALENDAR (c_ui->calendar), c_ui->mm, c_ui->yyyy);
+	gtk_calendar_select_day (GTK_CALENDAR (c_ui->calendar), c_ui->dd);
+    }
 
     return;
 }

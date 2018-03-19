@@ -389,6 +389,7 @@ void OnHistFind(GtkWidget *btn, gpointer user_data)
 
 void OnCalendar(GtkWidget *btn, gpointer user_data)
 {  
+    int r;
     MainUi *m_ui;
     const gchar *nm;
     GtkWidget *dt_fld;
@@ -412,7 +413,25 @@ void OnCalendar(GtkWidget *btn, gpointer user_data)
     	return;
 
     /* Open a calendar date selection 'popup' */
-    calendar_main(dt_fld, m_ui->window);
+    r = calendar_main(dt_fld, m_ui->window);
+
+    switch(r)
+    {
+    	case 0:
+	    break;
+    	case 1:
+	    break;
+    	case -1:
+	    break;
+    	case -2:
+	    break;
+    	case -3:
+	    break;
+    	case -4:
+	    break;
+    	default:
+	    break;
+    }
 
     return;
 }
