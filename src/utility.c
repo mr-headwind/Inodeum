@@ -145,11 +145,13 @@ static const char *app_messages[][2] =
     { "ERR0042", "File error %s "},
     { "ERR0043", "Failed to create file: %s "},
     { "ERR0044", "Failed to create data refresh timer. "},
+    { "ERR0045", "Date format error. "},
+    { "ERR0046", "Calendar date field cannot be NULL. "},
     { "MSG0044", "Warning: Inconsistent 'Unit' encountered - %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 49;
+static const int Msg_Count = 51;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
@@ -213,7 +215,7 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
     {
     	sprintf(app_msg_extra, "\nLog file (%s) may contain more details.", logfile);
     	app_msg(sys_msg_id, opt_str, window);
-    }
+    }calendar_ui.c
 
     return;
 }
@@ -222,7 +224,7 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
 /* General prupose information dialog */
 
 void info_dialog(GtkWidget *window, char *msg, char *opt)
-{
+{calendar_ui.c
     GtkWidget *dialog;
 
     dialog = gtk_message_dialog_new (GTK_WINDOW (window),

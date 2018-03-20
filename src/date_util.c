@@ -58,7 +58,7 @@ time_t string2tm(char *, struct tm *);
 double difftime_days(time_t, time_t);
 char * format_dt(char *, time_t *, struct tm **);
 int set_date_tmpl(char *, char *, unsigned int *, unsigned int *, unsigned int *);
-int get_dt_part(char *, char *, char, int);
+int get_dt_part(char *, char *, char *, char, int);
 int date_digit(char *);
 int mmm_val(char *);
 int dd_val(unsigned int, unsigned int, unsigned int);
@@ -268,13 +268,13 @@ int set_date_tmpl(char *dt, char *tmpl, unsigned int *yyyy, unsigned int *mm, un
     char yr[5], month[4], day[3];
 
     /* Year is denoted by y's, Month by m's and Day by d's - eg. dd-mmm-yyyy or yy/mm/dd */
-    if (get_dt_part(dt, yr, 'y', 4) < 0)
+    if (get_dt_part(dt, yr, tmpl, 'y', 4) < 0)
     	return -1;
 
-    if (get_dt_part(dt, month, 'm', 3) < 0)
+    if (get_dt_part(dt, month, tmpl, 'm', 3) < 0)
     	return -1;
 
-    if (get_dt_part(dt, day, 'd', 2) < 0)
+    if (get_dt_part(dt, day, tmpl, 'd', 2) < 0)
     	return -1;
 
     /* Check numeric if appropriate */
@@ -310,21 +310,26 @@ int set_date_tmpl(char *dt, char *tmpl, unsigned int *yyyy, unsigned int *mm, un
 
 /* Extract a section of a date: year, month, day (this is not foolproof) */
 
-int get_dt_part(char *dt, char *dest, char part, int max)
+int get_dt_part(char *dt, char *dest, char *tmpl, char part, int max)
 {  
-    int i;
+    int i, j, relp;
     char *p;
 
-    if ((p = strchr(dt, part)) == NULL)
+printf("%s get_dt_part 1 dt %s tmp part %c max %d\n", debug_hdr, dt, tmpl, part, max); fflush(stdout);
+    if ((p = strchr(tmpl, part)) == NULL)
     	return -1;
 
-    for(i = 0; *p == part && i < max; i++)
-    	dest[i] = *p++;
+printf("%s get_dt_part 2 p %s \n", debug_hdr, p); fflush(stdout);
+    for(i = 0; *(p + i) == part && i < max; i++);
 
     if (i >= max)
     	return -1;
 
-    dest[i] = '\0';
+printf("%s get_dt_part 3\n", debug_hdr); fflush(stdout);
+    for(j = 0, relp = p - tmpl; j < i; relp++, j++)
+    	dest[j] = dt[relp];
+
+    dest[j] = '\0';
 
     return 1;
 }
@@ -335,7 +340,6 @@ int get_dt_part(char *dt, char *dest, char part, int max)
 int date_digit(char *dt_part)
 {  
     int i, len;
-    unsigned int ui;
 
     len = strlen(dt_part);
 
@@ -345,7 +349,12 @@ int date_digit(char *dt_part)
 	    return -1;
     }
 
-    return atoi(dt_part);
+    i = atoi(dt_part);
+
+    if (i < 1 || i > 12)
+    	return -1;
+
+    return i;
 }
 
 

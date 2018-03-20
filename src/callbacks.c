@@ -85,10 +85,11 @@ extern int delete_user_creds(IspData *, MainUi *);
 extern void load_history(IspData *isp_data, MainUi *m_ui);
 extern void reset_history(MainUi *);
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void app_msg(char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
 extern char * log_name();
 extern GtkWidget* view_file_main(char  *);
-extern void calendar_main(GtkWidget *, GtkWidget *);
+extern int calendar_main(GtkWidget *, GtkWidget *);
 extern int write_user_prefs(GtkWidget *);
 extern int set_user_pref(char *, char *);
 extern int draw_pie_chart(cairo_t *, PieChart *, GtkAllocation *);
@@ -418,17 +419,25 @@ void OnCalendar(GtkWidget *btn, gpointer user_data)
     switch(r)
     {
     	case 0:
-	    break;
-    	case 1:
+	    app_msg("ERR0046", NULL, m_ui->window);
 	    break;
     	case -1:
+	    sprintf(app_msg_extra, "Unsupported date template.");
+	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case -2:
+	    sprintf(app_msg_extra, "Invalid month number.");
+	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case -3:
+	    sprintf(app_msg_extra, "Invalid 3 letter month abbreviation.");
+	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case -4:
+	    sprintf(app_msg_extra, "Invalid day number.");
+	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
+    	case 1:
     	default:
 	    break;
     }
