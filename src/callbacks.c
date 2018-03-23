@@ -426,15 +426,19 @@ void OnCalendar(GtkWidget *btn, gpointer user_data)
 	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case -2:
-	    sprintf(app_msg_extra, "Invalid month number.");
+	    sprintf(app_msg_extra, "Invalid year.");
 	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case -3:
-	    sprintf(app_msg_extra, "Invalid 3 letter month abbreviation.");
+	    sprintf(app_msg_extra, "Invalid month.");
 	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case -4:
-	    sprintf(app_msg_extra, "Invalid day number.");
+	    sprintf(app_msg_extra, "Invalid 3 letter month abbreviation.");
+	    app_msg("ERR0045", NULL, m_ui->window);
+	    break;
+    	case -5:
+	    sprintf(app_msg_extra, "Invalid day.");
 	    app_msg("ERR0045", NULL, m_ui->window);
 	    break;
     	case 1:

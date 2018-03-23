@@ -277,6 +277,7 @@ int set_date_tmpl(char *dt, char *tmpl, unsigned int *yyyy, unsigned int *mm, un
     if (get_dt_part(dt, day, tmpl, 'd', 2) < 0)
     	return -1;
 
+printf("%s set_date_tmpl 1 yr %s month %s day %s\n", debug_hdr, yr, month, day); fflush(stdout);
     /* Check numeric if appropriate */
     if ((n = date_digit(yr)) < 0)
     	return -2;
@@ -286,23 +287,27 @@ int set_date_tmpl(char *dt, char *tmpl, unsigned int *yyyy, unsigned int *mm, un
     if (strlen(month) < 3)
     {
 	if ((n = date_digit(month)) < 0)
-	    return -2;
+	    return -3;
     }
     else
     {
     	if ((n = mmm_val(month)) < 0)
-	    return -3;
+	    return -4;
     }
+
+    if (n < 1 || n > 12)
+    	return -3;
 
     *mm = (unsigned int) n;
 
     if ((n = date_digit(day)) < 0)
-    	return -2;
+    	return -5;
 
     *dd = (unsigned int) n;
 
+printf("%s set_date_tmpl 2 yr %u month %u day %u\n", debug_hdr, *yyyy, *mm, *dd); fflush(stdout);
     if ((dd_val(*dd, *mm, *yyyy)) < 0)
-	return -4;
+	return -5;
 
     return 1;
 }
@@ -315,15 +320,16 @@ int get_dt_part(char *dt, char *dest, char *tmpl, char part, int max)
     int i, j, relp;
     char *p;
 
-printf("%s get_dt_part 1 dt %s tmp part %c max %d\n", debug_hdr, dt, tmpl, part, max); fflush(stdout);
+printf("%s get_dt_part 1 dt %s tmpl %s part %c max %d\n", debug_hdr, dt, tmpl, part, max); fflush(stdout);
     if ((p = strchr(tmpl, part)) == NULL)
     	return -1;
 
 printf("%s get_dt_part 2 p %s \n", debug_hdr, p); fflush(stdout);
-    for(i = 0; *(p + i) == part && i < max; i++);
-
-    if (i >= max)
-    	return -1;
+    for(i = 0; *(p + i) == part; i++)
+    {
+	if (i >= max)
+	    return -1;
+    }
 
 printf("%s get_dt_part 3\n", debug_hdr); fflush(stdout);
     for(j = 0, relp = p - tmpl; j < i; relp++, j++)
@@ -349,12 +355,7 @@ int date_digit(char *dt_part)
 	    return -1;
     }
 
-    i = atoi(dt_part);
-
-    if (i < 1 || i > 12)
-    	return -1;
-
-    return i;
+    return atoi(dt_part);
 }
 
 
@@ -387,8 +388,8 @@ int dd_val(unsigned int dd, unsigned int mm, unsigned int yyyy)
     if((((yyyy % 400) == 0) || ((yyyy % 100) != 0)) && ((yyyy % 4) == 0))
     	day_month[1][2] = 29;
 
-    if (dd > day_month[mm - 1][1])
-	return 1;
-    else
+    if (dd > day_month[mm - 1][1] || dd == 0)
 	return -1;
+    else
+	return 1;
 }

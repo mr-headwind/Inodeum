@@ -215,7 +215,7 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
     {
     	sprintf(app_msg_extra, "\nLog file (%s) may contain more details.", logfile);
     	app_msg(sys_msg_id, opt_str, window);
-    }calendar_ui.c
+    }
 
     return;
 }
@@ -224,7 +224,7 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
 /* General prupose information dialog */
 
 void info_dialog(GtkWidget *window, char *msg, char *opt)
-{calendar_ui.c
+{
     GtkWidget *dialog;
 
     dialog = gtk_message_dialog_new (GTK_WINDOW (window),
