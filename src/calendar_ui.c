@@ -181,7 +181,8 @@ void calendar_ui(CalUi *c_ui)
     /* Set the date if one has been entered */
     if (strlen(c_ui->dt_txt) > 0)
     {
-	gtk_calendar_select_month (GTK_CALENDAR (c_ui->calendar), c_ui->mm, c_ui->yyyy);
+printf("%s calendar_ui 1 yr %u month %u day %u\n", debug_hdr, c_ui->yyyy,c_ui->mm, c_ui->dd); fflush(stdout);
+	gtk_calendar_select_month (GTK_CALENDAR (c_ui->calendar), c_ui->mm - 1, c_ui->yyyy);
 	gtk_calendar_select_day (GTK_CALENDAR (c_ui->calendar), c_ui->dd);
     }
 
@@ -199,7 +200,7 @@ void OnCalSelect(GtkWidget *btn, gpointer user_data)
     c_ui = (CalUi *) user_data;
 
     gtk_calendar_get_date (GTK_CALENDAR (c_ui->calendar), &(c_ui->yyyy), &(c_ui->mm), &(c_ui->dd));
-    sprintf(s, "%02u-%02u-%02u", c_ui->yyyy, c_ui->mm, c_ui->dd);
+    sprintf(s, "%02u-%02u-%02u", c_ui->yyyy, c_ui->mm + 1, c_ui->dd);
     gtk_entry_set_text (GTK_ENTRY(c_ui->dt_fld), s);
 
     OnCalClose(c_ui->window, btn);
