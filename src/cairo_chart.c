@@ -1210,6 +1210,10 @@ printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush
     cairo_line_to (cr, axis->x2, axis->y2);
     cairo_stroke (cr);
 
+    /* Zero data check */
+    if ((axis->high_step - axis->low_step) == 0)
+    	return TRUE;
+
     /* Temporarily reverse y axis y coordinates for ease of drawing step marks */
     if (axis->x1 == axis->x2)
     {
@@ -1436,8 +1440,15 @@ printf("***AUTO 7 axis_len: %0.2f alloc height %d x %d axis_buf %0.2f\n", axis_l
 printf("***AUTO 7a unit: %s unit height %0.2f\n", y_axis->unit->txt, ext->height); fflush(stdout);
 
     /* Determine proportion of axis below zero */
-    zr = (y_axis->low_step / (y_axis->high_step - y_axis->low_step));
-    bzlen = zr * axis_len;
+    if ((y_axis->high_step - y_axis->low_step) == 0)
+    {
+    	bzlen = 0;
+    }
+    else
+    {
+	zr = (y_axis->low_step / (y_axis->high_step - y_axis->low_step));
+	bzlen = zr * axis_len;
+    }
 printf("***AUTO 8 zr: %0.2f low step %0.2f high step %0.2f \n", zr, y_axis->low_step, y_axis->high_step); fflush(stdout);
 
     /* Check for enough space for X axis title, step marks and step values */

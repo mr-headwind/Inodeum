@@ -277,7 +277,6 @@ int set_date_tmpl(char *dt, char *tmpl, unsigned int *yyyy, unsigned int *mm, un
     if (get_dt_part(dt, day, tmpl, 'd', 2) < 0)
     	return -1;
 
-printf("%s set_date_tmpl 1 yr %s month %s day %s\n", debug_hdr, yr, month, day); fflush(stdout);
     /* Check numeric if appropriate */
     if ((n = date_digit(yr)) < 0)
     	return -2;
@@ -305,7 +304,6 @@ printf("%s set_date_tmpl 1 yr %s month %s day %s\n", debug_hdr, yr, month, day);
 
     *dd = (unsigned int) n;
 
-printf("%s set_date_tmpl 2 yr %u month %u day %u\n", debug_hdr, *yyyy, *mm, *dd); fflush(stdout);
     if ((dd_val(*dd, *mm, *yyyy)) < 0)
 	return -5;
 
@@ -320,18 +318,15 @@ int get_dt_part(char *dt, char *dest, char *tmpl, char part, int max)
     int i, j, relp;
     char *p;
 
-printf("%s get_dt_part 1 dt %s tmpl %s part %c max %d\n", debug_hdr, dt, tmpl, part, max); fflush(stdout);
     if ((p = strchr(tmpl, part)) == NULL)
     	return -1;
 
-printf("%s get_dt_part 2 p %s \n", debug_hdr, p); fflush(stdout);
     for(i = 0; *(p + i) == part; i++)
     {
 	if (i >= max)
 	    return -1;
     }
 
-printf("%s get_dt_part 3\n", debug_hdr); fflush(stdout);
     for(j = 0, relp = p - tmpl; j < i; relp++, j++)
     	dest[j] = dt[relp];
 

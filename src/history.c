@@ -320,8 +320,8 @@ void create_hist_graph(ServUsage *srv_usg, MainUi *m_ui)
     set_y_step(srv_usg->hist_days - zdays - 1, srv_usg->hist_tot_arr[srv_usg->last_cat_idx], &y_step);
 
 /* Debug
-printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f\n", 
-	debug_hdr, srv_usg->hist_days, x_step, y_step); 
+printf("%s create_hist_graph 3 days %d xstep %0.0f ystep %0.2f zdays %d hist_days %d\n", 
+	debug_hdr, srv_usg->hist_days, x_step, y_step, zdays, srv_usg->hist_days); 
 fflush(stdout);
 */
 
@@ -381,6 +381,12 @@ void set_y_step(int days, long long total, double *y_step)
     				      {200.0, 50.0}, {500.0, 100.0}, {1000.0, 200.0} };
     const int max_scale = 8;
 
+    if (days == 0)
+    {
+    	*y_step = 1;
+	return;
+    }
+    
     av_mb_day = ((double) total / (double) days) / 1000000.0;
     *y_step = 2000.0;		// Large default
 
