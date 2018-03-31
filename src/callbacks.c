@@ -533,8 +533,6 @@ gboolean OnOvExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     gtk_widget_get_allocation (widget, &allocation);
     memcpy(&pseudo_alloc, &allocation, sizeof(allocation));
 
-show_surface_info(cr, &allocation);	// Info or Debug
-
     /* Drawing area space needs to be split up for a pie chart and a bar chart */
     pseudo_alloc.width = (double) pseudo_alloc.width * 0.7;
     pseudo_alloc.x = 0;
@@ -565,88 +563,8 @@ show_surface_info(cr, &allocation);	// Info or Debug
     /* Draw the bar chart */
     draw_bar_chart(cr, m_ui->bar_chart, &pseudo_alloc);
 
-/*
-cairo_set_source_rgba (cr, 0.57, 0.24, 0.24, 0.7);
-cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
-cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-cairo_paint (cr);
-*/
-
-
-//cairo_move_to (cr, allocation.x, allocation.y);
-/*
-cairo_move_to (cr, 0, 0);
-cairo_rectangle (cr, 0, 0, allocation.width, allocation.height);
-cairo_line_to (cr, allocation.width, allocation.height);
-printf("%s OnExpose 2  x %d y %d w %d h %d\n", debug_hdr,
-    allocation.x, allocation.y, allocation.width, allocation.height); fflush(stdout);
-cairo_set_line_width (cr, 5.0);
-cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
-cairo_stroke (cr);
-*/
-/*
-cairo_move_to (cr, allocation.x, allocation.y);
-cairo_rel_line_to (cr, allocation.width, 0);
-cairo_rel_line_to (cr, 0, allocation.height);
-cairo_rel_line_to (cr, -allocation.width, 0);
-cairo_close_path (cr);
-cairo_stroke (cr);
-    return TRUE;
-*/
-
-    /* Draw arc */
-    //const double M_PI = 3.14159265;
-/*
-    double xc = 80.0;
-    double yc = 55.0;
-    double radius = 55.0;
-    double angle1 = 45.0  * (M_PI/180.0);  /* angles are specified **
-    double angle2 = 180.0 * (M_PI/180.0);  /* in radians           **
-
-    cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
-    cairo_set_line_width (cr, 2.0);
-    cairo_arc (cr, xc, yc, radius, angle1, angle2);
-    cairo_line_to (cr, xc, yc);
-    cairo_fill (cr);
-    cairo_stroke (cr);
-
-    cairo_set_font_size (cr, 10);
-    cairo_set_source_rgba (cr, 0, 0, 0, 0.5);
-    double lbl_angle = ((angle1 + angle2) / 2);
-    //double label_x = yc * (1 + 0.1 * cos (lbl_angle));
-    //double label_y = yc * (1 + 0.6 * sin (lbl_angle));
-    //double label_x = allocation.height / 2 * (1 + 0.7 * cos (lbl_angle));
-    //double label_y = allocation.height / 2 * (1 + 0.7 * sin (lbl_angle));
-    double label_x = radius * (1 + 0.2 * cos (lbl_angle));
-    double label_y = radius * (1 + 0.7 * sin (lbl_angle));
-printf("%s OnExpose 3  angle %f cos %f sin %f\n", 
-debug_hdr, lbl_angle, cos(lbl_angle), sin(lbl_angle)); fflush(stdout);
-    cairo_move_to (cr, label_x, label_y);
-    cairo_show_text (cr, "90%");
-    cairo_fill (cr);
-*/
-
-
-    /* draw helping lines */
-    //cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
-    //cairo_set_line_width (cr, 2.0);
-
-    //cairo_arc (cr, xc, yc, 10.0, 0, 2*M_PI);
-    //cairo_fill (cr);
-
-    /*
-    cairo_set_source_rgba (cr, 1, 0.2, 0.2, 0.6);
-    cairo_arc (cr, xc, yc, radius, angle1, angle1);
-    cairo_line_to (cr, xc, yc);
-    cairo_arc (cr, xc, yc, radius, angle2, angle2);
-    cairo_line_to (cr, xc, yc);
-    cairo_stroke (cr);
-    */
-
-printf("%s OnExpose 9\n", debug_hdr); fflush(stdout);
-    /* Draw */
-    //cairo_paint (cr);
-    //cairo_destroy (cr);
+//printf("%s OnExpose 9\n", debug_hdr); fflush(stdout);
+    show_surface_info(cr, &allocation);	// Info or Debug
 
     return TRUE;
 }
@@ -667,8 +585,9 @@ gboolean OnHistExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     GdkWindow *window = gtk_widget_get_window (widget);
     gtk_widget_get_allocation (widget, &allocation);
     memcpy(&pseudo_alloc, &allocation, sizeof(allocation));
-printf("%s OnHistExpose 1\n", debug_hdr); fflush(stdout);
-show_surface_info(cr, &allocation);	// Info or Debug
+
+//printf("%s OnHistExpose 1\n", debug_hdr); fflush(stdout);
+    show_surface_info(cr, &allocation);	// Info or Debug
 
     pseudo_alloc.x = 0;
     pseudo_alloc.y = 0;

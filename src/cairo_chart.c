@@ -68,7 +68,6 @@ void draw_pc_legend(cairo_t *, GList *, double, double, double, double);
 Axis * create_axis(char *, double, int, const GdkRGBA *, int, const GdkRGBA *, int);
 void free_axis(Axis *);
 int draw_axis(cairo_t *, Axis *, int, GtkAllocation *);
-int axis_space_analysis(cairo_t *, Axis *, double, double, double, double, GtkAllocation *);
 void axes_auto_fit(cairo_t *, Axis *, Axis *, GtkAllocation *);
 void axis_step_bounds(Axis *);
 
@@ -784,9 +783,12 @@ int draw_bar_chart(cairo_t *cr, BarChart *bc, GtkAllocation *allocation)
     /* Set the bar width allowing for a small buffer between bars and maximum width */
     n = g_list_length (bc->bars);
     bar_width = allocation->width / n;
+
+/*
 printf("%s draw bc 1 alloc x %d y %d w %d h %d\n", debug_hdr, allocation->x, allocation->x,
-							      allocation->width, allocation->height); fflush(stdout);
+						   allocation->width, allocation->height); fflush(stdout);
 printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
+*/
 
     if (bar_width < 1)
 	return FALSE;
@@ -805,15 +807,18 @@ printf("%s draw bc 2 bar width %d\n", debug_hdr, bar_width);fflush(stdout);
     for(l = bc->bars; l != NULL; l = l->next)
     {
     	bar = (Bar *) l->data;
-printf("%s draw bc 3 xc %0.4f\n", debug_hdr, xc);fflush(stdout);
 	xc = xc + bar_width * i;
 	cairo_move_to (cr, xc, yc);
-printf("%s draw bc 3a xc %0.4f\n", debug_hdr, xc);fflush(stdout);
-printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->max_val, 
-							       bar->min_val, bar->abs_val);fflush(stdout);
     	draw_bar(cr, bc, bar, bar_width, (allocation->height - (buf1 * 3)), xc, yc);
     	i++;
     }
+
+/*
+printf("%s draw bc 3 xc %0.4f\n", debug_hdr, xc);fflush(stdout);
+printf("%s draw bc 3a xc %0.4f\n", debug_hdr, xc);fflush(stdout);
+printf("%s draw bc 4 max val %0.4f min val %0.4f abs %0.4f\n", debug_hdr, bar->max_val, 
+							       bar->min_val, bar->abs_val);fflush(stdout);
+*/
 
     return TRUE;
 }
@@ -835,12 +840,10 @@ void draw_bar(cairo_t *cr, BarChart *bc, Bar *bar, int bar_w, int bar_h, double 
     {
 	/* Determine dimensions and draw segment */
     	bar_seg = (BarSegment *) l->data;
-printf("\n%s draw bar 1  seg val %0.4f\n", debug_hdr, bar_seg->segment_value);fflush(stdout);
     	seg_h = (bar_seg->segment_value / bar->abs_val) * (double) bar_h;
     	yc -= seg_h;
     	rgba = bar_seg->colour;
     	cairo_set_source_rgba (cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
-printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, yc, bar_w, seg_h);fflush(stdout);
     	cairo_rectangle (cr, xc, yc, (double) bar_w, seg_h);
 	cairo_fill (cr);
 
@@ -853,6 +856,11 @@ printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, 
 	/* Draw the text line(s) if any */
 	draw_text_lines(cr, txt, 2, bar_w, xc, yc + (seg_h/2));
     }
+
+/*
+printf("\n%s draw bar 1  seg val %0.4f\n", debug_hdr, bar_seg->segment_value);fflush(stdout);
+printf("%s draw bar 2 xc %0.4f yc %0.4f bar_w %d seg_h %0.4f\n", debug_hdr, xc, yc, bar_w, seg_h);fflush(stdout);
+*/
 
     return;
 }
@@ -1055,8 +1063,6 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
     	y = lg->y_axis->y2 - (pt->y_val * y_factor);
 
 	/* Draw a line to each point, except the first */
-	//draw_point(cr, x, y);
-
 	if (init == FALSE)
 	{
 	    draw_point_line(cr, x, y, prev_x, prev_y);
@@ -1070,15 +1076,6 @@ void draw_line_graph(cairo_t *cr, LineGraph *lg, GtkAllocation *allocation)
 	prev_x = x;
 	prev_y = y;
     }
-
-    return;
-}
-
-
-/* Draw a line graph point */
-
-void draw_point(cairo_t *cr, double x, double y)
-{  
 
     return;
 }
@@ -1175,19 +1172,10 @@ int draw_axis(cairo_t *cr, Axis *axis, int check_space, GtkAllocation *allocatio
     if (rem != 0)
     	n_steps++;
 
-    /* Space analysis */
-    /*
-    if (check_space == TRUE)
-    	if (axis_space_analysis(cr, axis, x1, y1, x2, y2, allocation) == FALSE)
-	    return FALSE;
-    */
-
-printf("***draw_axis 0 x1: %0.2f x2 %0.2f y1: %0.2f y2 %0.2f \n", axis->x1, axis->x2, axis->y1, axis->y2); fflush(stdout);
     /* Set drawing offsets */
     if (axis->x1 == axis->x2)				 // Y axis
     {
 	step_dist = (axis->y2 - axis->y1) / n_steps;	
-printf("***draw_axis 1 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush(stdout);
 	x_offset = 0;
 	y_offset = step_dist;
 	x_mk_offset = mk_length * -1.0;
@@ -1196,7 +1184,6 @@ printf("***draw_axis 1 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush
     else if (axis->y1 == axis->y2)			 // X axis
     {
 	step_dist = (axis->x2 - axis->x1) / n_steps;	
-printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush(stdout);
 	x_offset = step_dist;
 	y_offset = 0;
 	x_mk_offset = 0;
@@ -1235,8 +1222,6 @@ printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush
     for(i = 0; i <= n_steps; i++)
     {
 	/* Draw step mark line */
-printf("***draw_axis 3 tmpx: %0.2f  x_mk_offset: %0.2f tmpy: %0.2f y_mk_offset: %0.2f\n",
-tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
 	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
 	cairo_line_to (cr, tmpx - x_mk_offset, tmpy - y_mk_offset);
 	cairo_stroke_preserve (cr);
@@ -1257,7 +1242,6 @@ tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
 	free(s);
 
 	/* Move to next step mark */
-printf("***draw_axis 4 move to: %0.2f , %0.2f\n", tmpx - x_offset, tmpy + y_offset); fflush(stdout);
 	tmpx -= x_offset;
 	tmpy += y_offset;
 	cairo_move_to (cr, tmpx, tmpy);
@@ -1291,94 +1275,23 @@ printf("***draw_axis 4 move to: %0.2f , %0.2f\n", tmpx - x_offset, tmpy + y_offs
     }
 
 /* Debug axis
-*/
+printf("***draw_axis 0 x1: %0.2f x2 %0.2f y1: %0.2f y2 %0.2f \n", 
+		axis->x1, axis->x2, axis->y1, axis->y2); fflush(stdout);
+printf("***draw_axis 1 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush(stdout);
+printf("***draw_axis 2 step_dist: %0.2f steps %d\n", step_dist, n_steps); fflush(stdout);
+printf("***draw_axis 3 tmpx: %0.2f  x_mk_offset: %0.2f tmpy: %0.2f y_mk_offset: %0.2f\n",
+		tmpx, x_mk_offset, tmpy, y_mk_offset); fflush(stdout);
+printf("***draw_axis 4 move to: %0.2f , %0.2f\n", tmpx - x_offset, tmpy + y_offset); fflush(stdout);
+
 if (axis->unit != NULL)
-printf("\n%s Unit: %s\n", debug_hdr, axis->unit->txt); fflush(stdout);
+    printf("\n%s Unit: %s\n", debug_hdr, axis->unit->txt); fflush(stdout);
 if (axis->step_mk != NULL)
-printf("%s Step Mk: %s\n", debug_hdr, axis->step_mk->txt); fflush(stdout);
+    printf("%s Step Mk: %s\n", debug_hdr, axis->step_mk->txt); fflush(stdout);
 printf("%s draw_axis  low val: %0.3f high val: %0.3f step: %0.3f high_step: %0.3f low_step: %0.3f prec %d\n"
 	"\tx1: %0.3f y1: %0.3f x2: %0.3f y2: %0.3f\n\n",
 	debug_hdr, axis->low_val, axis->high_val, axis->step, axis->high_step, axis->low_step, axis->prec,
 	axis->x1, axis->y1, axis->x2, axis->y2); fflush(stdout);
-
-    return TRUE;
-}
-
-
-/* Analyse the axis space requirements */
-
-int axis_space_analysis(cairo_t *cr, Axis *axis, 
-		        double x1, double y1, double x2, double y2,
-		        GtkAllocation *allocation)
-{
-    int i, sz, n_steps;
-    CText *unit, *step_mk;
-    char *s;
-
-    /* Size of axis unit label */
-    unit = axis->unit;
-    cairo_set_font_size (cr, unit->sz);
-    cairo_text_extents (cr, unit->txt, &(unit->ext));
-
-    /* Size of step mark line and value */
-    /* Use last step value (plus a little) for width or height (rather crude, but...) */
-    sz = long_chars((long) axis->step);
-
-    if (axis->prec > 0)
-    	sz = sz + axis->prec + 1;
-
-    s = (char *) malloc(sz + 2);
-
-    step_mk = axis->step_mk;
-    sprintf(s, "%*.*f", sz, axis->prec, (double) n_steps * axis->step);
-    cairo_set_font_size (cr, step_mk->sz);
-    cairo_text_extents (cr, s, &(step_mk->ext));
-    free(s);
-
-    /* Height and Width analysis - have to assume both axes' text is the same */
-    if (x1 == x2)					// Y axis
-    {
-	sz = (y2 - y1) +				// Proposed axis line height
-	     (unit->ext.height * 2.0) + mk_length + 	// X and Y unit text height
-	     mk_length + 				// X axis step mark line height
-	     step_mk->ext.height + axis_buf; 		// X axis Step mark text height plus a buffer
-
-    	/* Need to adjust if insufficient */
-    	if (allocation->height < sz)
-    	{
-	    axis->y1 = y1 + unit->ext.height + mk_length;
-	    axis->y2 = y2 - (unit->ext.height + mk_length) - step_mk->ext.height + axis_buf;
-    	}
-
-    	if ((allocation->x - x1) < (mk_length + step_mk->ext.width) + axis_buf)
-    	{
-	    axis->x1 = x1 + mk_length + step_mk->ext.width + axis_buf;
-	    axis->x2 = axis->x1;
-    	}
-    }
-    else if (y1 == y2)				 	// X axis
-    {
-	sz = (x2 - x1) +				// Proposed axis line width
-	     step_mk->ext.width + mk_length + 	// Y step mark text and line width
-	     axis_buf; 					// X axis buffer
-
-    	/* Need to adjust if insufficient */
-    	if (allocation->width < sz)
-    	{
-	    axis->x1 = x1 + unit->ext.height + mk_length;
-	    axis->x2 = allocation->width - mk_length - step_mk->ext.width - axis_buf;
-    	}
-
-    	if ((allocation->height - y1) < (mk_length + step_mk->ext.height + axis_buf))
-    	{
-	    axis->y1 = y1 - mk_length - step_mk->ext.height - axis_buf;
-	    axis->y2 = axis->y1;
-    	}
-    }
-    else
-    {
-    	return FALSE;
-    }
+*/
 
     return TRUE;
 }
@@ -1401,18 +1314,15 @@ void axes_auto_fit(cairo_t *cr, Axis *x_axis, Axis *y_axis, GtkAllocation *alloc
     /* X Axis */
     /* Initial X axis length,srv_usg->hist_days this is the current allocation point to the width less a buffer */
     axis_len = allocation->width - allocation->x - (axis_buf * 2);
-printf("***AUTO 1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
 
     /* Determine proportion of axis below zero */
     zr = (x_axis->low_step / (x_axis->high_step - x_axis->low_step));
     bzlen = zr * axis_len;
-printf("***AUTO 2 zr: %0.2f low step %0.2f high step %0.2f \n", zr, x_axis->low_step, x_axis->high_step); fflush(stdout);
 
     /* Check for enough space for Y axis step marks and step values */
     ext = &(y_axis->step_mk->ext);
     pad = 0;
 
-printf("***AUTO 3 bzlen: %0.2f ext->width %0.2f mk_length %ld axis_buf %0.2f \n", bzlen, ext->width, mk_length, axis_buf); fflush(stdout);
     if (bzlen < (ext->width + mk_length + axis_buf))
     {
 	/* Adjust the initial length and recalulate the proportion below zero */
@@ -1420,24 +1330,19 @@ printf("***AUTO 3 bzlen: %0.2f ext->width %0.2f mk_length %ld axis_buf %0.2f \n"
     	axis_len -= pad;
 	bzlen = zr * axis_len;
     }
-printf("***AUTO 4 bzlen: %0.2f axis_len: %0.2f mk txt %s\n", bzlen, axis_len, y_axis->step_mk->txt); fflush(stdout);
 
     /* Set the x1, zero and x2 points on the axis */
     x_axis->x1 = allocation->x + pad; 
     x_axis->x2 = x_axis->x1 + axis_len; 
     xyz = allocation->x + pad + bzlen;
-printf("***AUTO 5 x_axis->x1: %0.2f x_axis->x2 %0.2f xyz %0.2f\n", x_axis->x1, x_axis->x2, xyz); fflush(stdout);
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the y axis x1 and x2 points */
     y_axis->x1 = y_axis->x2 = xyz;
-printf("***AUTO 6 y_axis->x1: %0.2f y_axis->x2 %0.2f\n", y_axis->x1, y_axis->x2); fflush(stdout);
 
     /* Y Axis */
     /* Initial Y axis length, this is the current allocation point to the height less a buffer and title */
     ext = &(y_axis->unit->ext);
     axis_len = allocation->height - allocation->y - ext->height - (axis_buf * 2);
-printf("***AUTO 7 axis_len: %0.2f alloc height %d x %d axis_buf %0.2f\n", axis_len, allocation->height, allocation->y,axis_buf); fflush(stdout);
-printf("***AUTO 7a unit: %s unit height %0.2f\n", y_axis->unit->txt, ext->height); fflush(stdout);
 
     /* Determine proportion of axis below zero */
     if ((y_axis->high_step - y_axis->low_step) == 0)
@@ -1449,19 +1354,14 @@ printf("***AUTO 7a unit: %s unit height %0.2f\n", y_axis->unit->txt, ext->height
 	zr = (y_axis->low_step / (y_axis->high_step - y_axis->low_step));
 	bzlen = zr * axis_len;
     }
-printf("***AUTO 8 zr: %0.2f low step %0.2f high step %0.2f \n", zr, y_axis->low_step, y_axis->high_step); fflush(stdout);
 
     /* Check for enough space for X axis title, step marks and step values */
     ext = &(x_axis->unit->ext);
     xpad = ext->height + axis_buf;
-printf("***AUTO 9 xpad: %0.2f ext->height %0.2f txt %s axis_buf %0.2f \n", xpad, ext->height, x_axis->unit->txt, axis_buf); fflush(stdout);
     ext = &(x_axis->step_mk->ext);
     xpad = xpad + ext->height + axis_buf;
-//xpad = xpad + ext->height + mk_length + axis_buf;
     pad = 0;
-printf("***AUTO 9a xpad: %0.2f ext->height %0.2f txt %s mk_length %ld \n", xpad, ext->height, x_axis->unit->txt, mk_length); fflush(stdout);
 
-printf("***AUTO 9b bzlen: %0.2f xpad %0.2f \n", bzlen, xpad); fflush(stdout);
     if (bzlen < xpad)
     {
 	/* Adjust the initial length and recalulate the proportion below zero */
@@ -1469,19 +1369,39 @@ printf("***AUTO 9b bzlen: %0.2f xpad %0.2f \n", bzlen, xpad); fflush(stdout);
     	axis_len -= pad;
 	bzlen = zr * axis_len;
     }
-printf("***AUTO 10 bzlen: %0.2f axis_len: %0.2f pad %0.2f\n", bzlen, axis_len, pad); fflush(stdout);
 
     /* Set the y1, zero and y2 points on the axis */
     ext = &(y_axis->unit->ext);
     y_axis->y1 = allocation->y + ext->height + (axis_buf * 2.0); 
-//y_axis->y1 = allocation->y + ext->height + axis_buf; 
     y_axis->y2 = y_axis->y1 + axis_len; 
     xyz = y_axis->y2 - bzlen;
-printf("***AUTO 11 y_axis->y1: %0.2f y_axis->y2 %0.2f xyz %0.2f\n", y_axis->y1, y_axis->y2, xyz); fflush(stdout);
-printf("***AUTO 11a ext->height: %0.2f txt %s\n", ext->height, y_axis->unit->txt); fflush(stdout);
 
     /* Since X and Y axes always intersect at 0,0 the zero point forms the x axis y1 and y2 points */
     x_axis->y1 = x_axis->y2 = xyz;
+
+/*
+printf("***AUTO 1 axis_len: %0.2f alloc width %d x %d axis_buf %0.2f\n", 
+		axis_len, allocation->width, allocation->x,axis_buf); fflush(stdout);
+printf("***AUTO 2 zr: %0.2f low step %0.2f high step %0.2f \n", zr, x_axis->low_step, x_axis->high_step); fflush(stdout);
+printf("***AUTO 3 bzlen: %0.2f ext->width %0.2f mk_length %ld axis_buf %0.2f \n", 
+		bzlen, ext->width, mk_length, axis_buf); fflush(stdout);
+printf("***AUTO 4 bzlen: %0.2f axis_len: %0.2f mk txt %s\n", bzlen, axis_len, y_axis->step_mk->txt); fflush(stdout);
+printf("***AUTO 5 x_axis->x1: %0.2f x_axis->x2 %0.2f xyz %0.2f\n", x_axis->x1, x_axis->x2, xyz); fflush(stdout);
+printf("***AUTO 6 y_axis->x1: %0.2f y_axis->x2 %0.2f\n", y_axis->x1, y_axis->x2); fflush(stdout);
+printf("***AUTO 7 axis_len: %0.2f alloc height %d x %d axis_buf %0.2f\n", 
+		axis_len, allocation->height, allocation->y,axis_buf); fflush(stdout);
+printf("***AUTO 7a unit: %s unit height %0.2f\n", y_axis->unit->txt, ext->height); fflush(stdout);
+
+printf("***AUTO 8 zr: %0.2f low step %0.2f high step %0.2f \n", zr, y_axis->low_step, y_axis->high_step); fflush(stdout);
+printf("***AUTO 9 xpad: %0.2f ext->height %0.2f txt %s axis_buf %0.2f \n", 
+		xpad, ext->height, x_axis->unit->txt, axis_buf); fflush(stdout);
+printf("***AUTO 9a xpad: %0.2f ext->height %0.2f txt %s mk_length %ld \n", 
+		xpad, ext->height, x_axis->unit->txt, mk_length); fflush(stdout);
+printf("***AUTO 9b bzlen: %0.2f xpad %0.2f \n", bzlen, xpad); fflush(stdout);
+printf("***AUTO 10 bzlen: %0.2f axis_len: %0.2f pad %0.2f\n", bzlen, axis_len, pad); fflush(stdout);
+printf("***AUTO 11 y_axis->y1: %0.2f y_axis->y2 %0.2f xyz %0.2f\n", y_axis->y1, y_axis->y2, xyz); fflush(stdout);
+printf("***AUTO 11a ext->height: %0.2f txt %s\n", ext->height, y_axis->unit->txt); fflush(stdout);
+*/
 
     return;
 }
@@ -1551,19 +1471,21 @@ int chart_title(cairo_t *cr, CText *title, GtkAllocation *allocation, GtkAlign h
 
     	case GTK_ALIGN_END:
 	    yc = (double) (allocation->height + allocation->y) - ltr_buf;
-	    //yc = (double) (allocation->height + allocation->y) - (ext->height / 2);
 	    break;
 
 	default:
 	    yc = ext->height + allocation->y;
     }
 
-printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s ext h %0.4f\n", 
-  debug_hdr, xc, yc, fsz, title->txt, ext->height);fflush(stdout);
     /* Set Title */
     cairo_move_to (cr, xc, yc);
     cairo_show_text (cr, title->txt);
     cairo_fill (cr);
+
+/*
+printf("%s chart title xc %0.4f yc %0.4f font sz %0.2f txt %s ext h %0.4f\n", 
+	  debug_hdr, xc, yc, fsz, title->txt, ext->height);fflush(stdout);
+*/
 
     return TRUE;
 }
@@ -1579,7 +1501,6 @@ void draw_text_lines(cairo_t *cr, CText *txt[], int max, int w, double xc, doubl
     CText *ctxt;
     const GdkRGBA *rgba;
 
-printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d\n", debug_hdr, xc, yc, w);fflush(stdout);
     /* May need to override the requested font size */
     for(i = 0; i < max; i++)
     {
@@ -1599,7 +1520,6 @@ printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d\n", debug_hdr, xc, yc, w);
 	}
     }
     
-printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
     /* Loop thru text lines */
     ty = yc;
 
@@ -1616,13 +1536,18 @@ printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
 
 	tx = xc + ((w - ctxt->ext.width) / 2);
 	ty = ty + (ctxt->ext.height / 2);
-printf("%s draw_text_lines 3  tx %0.4f ty %0.4f extw %0.4f exth %0.4f\n", 
-			debug_hdr, tx, ty, ctxt->ext.width, ctxt->ext.height);fflush(stdout);
 	cairo_move_to (cr, tx, ty);
 	cairo_show_text (cr, ctxt->txt);
 	cairo_fill (cr);
 	ty = ty + ctxt->ext.height + 2;
     }
+
+/*
+printf("\n%s draw_text_lines 0 xc %0.4f yc %0.4f w %d\n", debug_hdr, xc, yc, w);fflush(stdout);
+printf("%s draw_text_lines 2  fsz %0.2f\n", debug_hdr, fsz);fflush(stdout);
+printf("%s draw_text_lines 3  tx %0.4f ty %0.4f extw %0.4f exth %0.4f\n", 
+		debug_hdr, tx, ty, ctxt->ext.width, ctxt->ext.height);fflush(stdout);
+*/
 
     return;
 }

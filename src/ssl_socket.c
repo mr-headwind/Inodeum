@@ -561,7 +561,7 @@ printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
     free(get_qry);
 
     xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+//printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
