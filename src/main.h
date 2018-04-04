@@ -114,7 +114,7 @@ typedef struct _main_ui
     GtkWidget *app_icon, *home_page;
 
     /* Widgets - monitor */
-    GtkWidget *log_cntr;
+    GtkWidget *log_cntr, *net_cntr;
 
     /* Widgets - preferences */
     GtkWidget *reset_pw_btn;

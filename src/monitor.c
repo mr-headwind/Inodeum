@@ -53,6 +53,7 @@
 
 void monitor_panel(MainUi *m_ui);
 GtkWidget * monitor_log(MainUi *m_ui);
+GtkWidget * monitor_net(MainUi *m_ui);
 
 extern char * log_name();
 extern void OnViewLog(GtkWidget*, gpointer);
@@ -72,7 +73,7 @@ void monitor_panel(MainUi *m_ui)
     m_ui->log_cntr = monitor_log(m_ui);
 
     /* Network information */
-    // TODO
+    m_ui->net_cntr = monitor_net(m_ui);
     
     /* Combine everything for display */
     m_ui->mon_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
@@ -81,6 +82,7 @@ void monitor_panel(MainUi *m_ui)
     gtk_widget_set_margin_left (m_ui->mon_cntr, 5);
 
     gtk_box_pack_start (GTK_BOX (m_ui->mon_cntr), m_ui->log_cntr, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->mon_cntr), m_ui->net_cntr, FALSE, FALSE, 0);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->mon_cntr, "monitor_panel");
@@ -124,6 +126,19 @@ GtkWidget * monitor_log(MainUi *m_ui)
 
     /* Callback */
     g_signal_connect(view_btn, "clicked", G_CALLBACK(OnViewLog), m_ui);
+
+    return frame;
+}
+
+
+/* Network traffic details and monitoring */
+
+GtkWidget * monitor_net(MainUi *m_ui)
+{  
+    GtkWidget *frame;
+
+    /* Containers */
+    frame = gtk_frame_new("Network");
 
     return frame;
 }
