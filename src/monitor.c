@@ -142,3 +142,162 @@ GtkWidget * monitor_net(MainUi *m_ui)
 
     return frame;
 }
+
+
+
+
+/* ldev_all.c
+   To compile:
+   >cc -o ldev_all ldev_all.c -lpcap
+
+   Looks for all interfaces, and lists the network ip
+   and mask associated with that interface.
+*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pcap.h>  /* GIMME a libpcap plz! */
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+
+
+int net_address(char *);
+int ip_address(char *);
+
+
+int main(int argc, char **argv)
+{
+    int r;   /* return code */
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_if_t *alldevs, *dev;
+
+    /* ask pcap to find a valid device for use to sniff on */
+    r = pcap_findalldevs(&alldevs, errbuf);
+
+    /* error checking */
+    if (r == -1)
+    {
+	printf("Error: %s\n",errbuf);
+	exit(1);
+    }
+
+    if (alldevs == NULL)
+    {
+	printf("Error: No devices found\n");
+	exit(1);
+    }
+
+    /* print out devices */
+    for(dev = alldevs; dev != NULL; dev = dev->next)
+    {
+	if (dev->flags & PCAP_IF_LOOPBACK)
+	    continue;
+
+	if (!(dev->flags & PCAP_IF_RUNNING))
+	    continue;
+
+	if (!(dev->flags & PCAP_IF_UP))
+	    continue;
+
+	printf("DEV: %s", dev->name);
+
+	if (dev->description != NULL)
+	    printf("  %s", dev->description);
+
+	printf("\n");
+	net_address(dev->name);
+	ip_address(dev->name);
+	printf("\n");
+    }
+
+    pcap_freealldevs(alldevs);
+
+    exit(0);
+}
+
+
+int net_address(char *dev)
+{
+    char *net; /* dot notation of the network address */
+    char *mask;/* dot notation of the network mask    */
+    char errbuf[PCAP_ERRBUF_SIZE];
+    int r;   /* return code */
+    bpf_u_int32 netp; /* ip          */
+    bpf_u_int32 maskp;/* subnet mask */
+    struct in_addr addr;
+
+    /* ask pcap for the network address and mask of the device */
+    r = pcap_lookupnet(dev, &netp, &maskp,errbuf);
+
+    if (r == -1)
+    {
+	printf("Error: %s\n",errbuf);
+	return -1;
+    }
+
+    /* get the network address in a human readable form */
+    addr.s_addr = netp;
+    net = inet_ntoa(addr);
+
+    if (net == NULL)/* thanks Scott :-P */
+    {
+	perror("inet_ntoa");
+	return -1;
+    }
+
+    printf("NET: %s\n",net);
+
+    /* do the same as above for the device's mask */
+    addr.s_addr = maskp;
+    mask = inet_ntoa(addr);
+
+    if(mask == NULL)
+    {
+	perror("inet_ntoa");
+	return -1;
+    }
+
+    printf("MASK: %s\n",mask);
+
+    return 0;
+}
+
+
+int ip_address(char *dev)
+{
+    int fd;
+    struct ifreq ifr;
+    int r;   /* return code */
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    /* I want to get an IPv4 IP address */
+    ifr.ifr_addr.sa_family = AF_INET;
+
+    /* I want IP address attached to dev */
+    strncpy(ifr.ifr_name, dev, IFNAMSIZ-1);
+
+    r = ioctl(fd, SIOCGIFADDR, &ifr);
+
+    if (r < 0)
+    {
+	close(fd);
+	printf("Error: (%d) %s\n",  errno, strerror(errno));
+	return -1;
+    }
+
+    close(fd);
+
+    /* display result */
+    printf("%s\n", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+
+    return 0;
+}
