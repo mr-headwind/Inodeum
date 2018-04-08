@@ -37,6 +37,7 @@
 
 #include <stdio.h>  
 #include <stdlib.h>  
+#include <unistd.h>  
 #include <string.h>  
 #include <libgen.h>  
 #include <gtk/gtk.h>  
@@ -44,10 +45,14 @@
 #include <isp.h>
 #include <defs.h>
 #include <version.h>
+#include <errno.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
 #include <resolv.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <arpa/inet.h>
 
 
@@ -60,6 +65,7 @@ int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
 int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
+int ip_address(char *, char *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern char * setup_get(char *, IspData *);
@@ -266,3 +272,37 @@ int recv_data(IspData *isp_data, MainUi *m_ui)
 
     return TRUE;
 }  
+
+
+int ip_address(char *dev, char *ip)
+{
+    int fd;
+    struct ifreq ifr;
+    int r; 
+    char *s;
+    const int min_ip_len = 16;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    ifr.ifr_addr.sa_family = AF_INET;		 /* IPv4 IP address */
+    strncpy(ifr.ifr_name, dev, IFNAMSIZ-1);
+
+    r = ioctl(fd, SIOCGIFADDR, &ifr);
+
+    if (r < 0)
+    {
+	printf("Error: (%d) %s\n",  errno, strerror(errno));
+	close(fd);
+	return -1;
+    }
+
+    close(fd);
+
+    if (strlen(ip) < min_ip_len)
+    	return -2;
+
+    s = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+    strcpy(ip, s);
+
+    return 0;
+}
