@@ -271,33 +271,16 @@ int net_address(char *dev)
 }
 
 
-int ip_address(char *dev)
-{
-    int fd;
-    struct ifreq ifr;
-    int r;   /* return code */
-
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    /* I want to get an IPv4 IP address */
-    ifr.ifr_addr.sa_family = AF_INET;
-
-    /* I want IP address attached to dev */
-    strncpy(ifr.ifr_name, dev, IFNAMSIZ-1);
-
-    r = ioctl(fd, SIOCGIFADDR, &ifr);
-
-    if (r < 0)
-    {
-	close(fd);
-	printf("Error: (%d) %s\n",  errno, strerror(errno));
-	return -1;
-    }
-
-    close(fd);
-
-    /* display result */
-    printf("%s\n", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
-
-    return 0;
-}
+while true
+do
+        R1=`cat /sys/class/net/$1/statistics/rx_bytes`
+        T1=`cat /sys/class/net/$1/statistics/tx_bytes`
+        sleep $INTERVAL
+        R2=`cat /sys/class/net/$1/statistics/rx_bytes`
+        T2=`cat /sys/class/net/$1/statistics/tx_bytes`
+        TBPS=`expr $T2 - $T1`
+        RBPS=`expr $R2 - $R1`
+        TKBPS=`expr $TBPS / 1024`
+        RKBPS=`expr $RBPS / 1024`
+        echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
+done
