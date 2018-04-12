@@ -301,8 +301,7 @@ int ip_address(char *dev, char *ip)
     if (strlen(ip) < min_ip_len)
     	return -2;
 
-    s = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
-    strcpy(ip, s);
+    ip = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
 
     return 0;
 }

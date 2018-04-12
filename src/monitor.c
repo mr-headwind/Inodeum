@@ -48,6 +48,12 @@
 
 /* Types */
 
+struct net_device {
+    char *name;
+    char *ip;
+    char *mac;
+};
+
 
 /* Prototypes */
 
@@ -56,7 +62,9 @@ GtkWidget * monitor_log(MainUi *m_ui);
 GtkWidget * monitor_net(MainUi *m_ui);
 
 extern char * log_name();
+extern int ip_address(char *, char *);
 extern void OnViewLog(GtkWidget*, gpointer);
+extern void OnSetNetDev(GtkWidget*, gpointer);
 
 
 /* Globals */
@@ -136,11 +144,110 @@ GtkWidget * monitor_log(MainUi *m_ui)
 GtkWidget * monitor_net(MainUi *m_ui)
 {  
     GtkWidget *frame;
+    GtkWidget *nbox;
+    GList *ndevs
 
     /* Containers */
     frame = gtk_frame_new("Network");
 
+    /* Box for interface details and network monitoring */
+    nbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+
+    /* Build a list and ComboBox for each interface found */
+    m_ui->ndevs_cbox = gtk_combo_box_text_new();
+    ndevs = get_netdevices();
+
+    /* Pack */
+    //gtk_container_add(GTK_CONTAINER (frame), log_grid);
+
+    /* Callback */
+    g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
+
     return frame;
+}
+
+
+/* Find network devices */
+
+GList * get_netdevices(MainUi *m_ui)
+{  
+    int r;
+    char *ip;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_if_t *alldevs, *dev;
+    struct net_device *ndev;
+
+    /* Ask pcap to find all devices for use */
+    r = pcap_findalldevs(&alldevs, errbuf);
+
+    /* Error checking */
+    if (r == -1)
+    {
+	memcpy(app_msg_extra, '\0', sizeof(app_msg_extra));
+	strncpy(app_msg_extra, errbuf, sizeof(app_msg_extra));
+	log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
+	return FALSE;
+    }
+
+    if (alldevs == NULL)
+    {
+	sprintf(app_msg_extra, "No active, working devices found.");
+	log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
+	return FALSE;
+    }
+
+    /* Save devices */
+    for(dev = alldevs; dev != NULL; dev = dev->next)
+    {
+	/* Select valid devices */
+	if (dev->flags & PCAP_IF_LOOPBACK)
+	    continue;
+
+	if (!(dev->flags & PCAP_IF_RUNNING))
+	    continue;
+
+	if (!(dev->flags & PCAP_IF_UP))
+	    continue;
+
+	if (strcmp(dev->name, "any") == 0)
+	    continue;
+	
+	/* Device name (eg. eth0) */
+	ndev->name = (char *) malloc(strlen(dev->name) + 1);
+	strcpy(ndev->name, dev->name);
+
+	/* IP Address */
+	if (ip_address(dev->name, ip) < 0)
+	{
+	    sprintf(app_msg_extra, "%s\n", strerror(errno));
+	    log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
+	    return FALSE;
+	}
+
+	ndev->ip = (char *) malloc(strlen(ip) + 1);
+	strcpy(ndev->ip, ip);
+
+	/* Mac Address */
+
+
+
+	printf("DEV: %s", dev->name);
+
+	if (dev->description != NULL)
+	    printf("  %s", dev->description);
+
+	printf("\n");
+	net_address(dev->name);
+	ip_address(dev->name);
+	printf("\n");
+    }
+
+    pcap_freealldevs(alldevs);
+
+    exit(0);
+}
+
+    return l;
 }
 
 

@@ -147,11 +147,12 @@ static const char *app_messages[][2] =
     { "ERR0044", "Failed to create data refresh timer. "},
     { "ERR0045", "Date format error. "},
     { "ERR0046", "Calendar date field cannot be NULL. "},
+    { "ERR0047", "Error determining Network devices. "},
     { "MSG0044", "Warning: Inconsistent 'Unit' encountered - %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 51;
+static const int Msg_Count = 52;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
