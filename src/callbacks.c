@@ -68,6 +68,7 @@ void OnCalendar(GtkWidget *, gpointer);
 int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
 void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 void OnViewLog(GtkWidget*, gpointer);
+void OnSetNetDev(GtkWidget*, gpointer);
 gboolean OnOvExpose(GtkWidget *, cairo_t *, gpointer);
 gboolean OnHistExpose(GtkWidget *, cairo_t *, gpointer);
 void OnQuit(GtkWidget*, gpointer);
@@ -98,6 +99,7 @@ extern int pie_chart_title(cairo_t *, PieChart *, GtkAllocation *, GtkAlign, Gtk
 extern int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, GtkAlign);
 extern void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
 extern int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
+extern void get_net_details(MainUi *);
 extern void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -167,14 +169,12 @@ void OnService(GtkWidget *btn, gpointer user_data)
 void OnMonitor(GtkWidget *btn, gpointer user_data)
 {  
     MainUi *m_ui;
-    IspData *isp_data;
 
     /* Get details */
     m_ui = (MainUi *) user_data;
-    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display current network information */
-    printf("%s Network monitor not complete yet\n", debug_hdr); fflush(stdout);
+    get_net_details(m_ui);
     show_panel(m_ui->mon_cntr, m_ui);
 
     return;
@@ -514,6 +514,19 @@ void OnViewLog(GtkWidget *view_log, gpointer user_data)
 
     if (view_file_main(log_fn) == NULL)
     	log_msg("ERR0041", log_fn, "ERR0041", m_ui->window);
+
+    return;
+}  
+
+
+/* Callback - Set network device */
+
+void OnSetNetDev(GtkWidget *cbx, gpointer user_data)
+{  
+    MainUi *m_ui;
+
+    /* Get details */
+    m_ui = (MainUi *) user_data;
 
     return;
 }  

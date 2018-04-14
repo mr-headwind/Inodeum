@@ -115,6 +115,8 @@ typedef struct _main_ui
 
     /* Widgets - monitor */
     GtkWidget *log_cntr, *net_cntr;
+    GtkWidget *ip_addr, *mac_addr, *tx_bytes, *rx_bytes, *ndevs_cbox;
+    GList *ndevs;
 
     /* Widgets - preferences */
     GtkWidget *reset_pw_btn;

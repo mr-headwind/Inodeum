@@ -65,7 +65,7 @@ int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
 int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
-int ip_address(char *, char *);
+int ip_address(char *, char *, unsigned char [18]);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern char * setup_get(char *, IspData *);
@@ -274,13 +274,13 @@ int recv_data(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-int ip_address(char *dev, char *ip)
+/* Get the IP and MAC address for network device */
+
+int ip_address(char *dev, char *ip, unsigned char mac[18])
 {
-    int fd;
+    int i, r, fd;
     struct ifreq ifr;
-    int r; 
-    char *s;
-    const int min_ip_len = 16;
+    const int hwaddr_len = 6;
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -296,12 +296,23 @@ int ip_address(char *dev, char *ip)
 	return -1;
     }
 
-    close(fd);
-
-    if (strlen(ip) < min_ip_len)
-    	return -2;
-
     ip = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+
+    r = ioctl(fd, SIOCGIFHWADDR, &ifr);
+
+    if (r < 0)
+    {
+	printf("Error: (%d) %s\n",  errno, strerror(errno));
+	close(fd);
+	return -1;
+    }
+
+    for(i = 0; i < hwaddr_len; i++)
+        sprintf(&mac[i * 3], "%02X", ((unsigned char *) ifr.ifr_hwaddr.sa_data)[i]);
+
+    mac[18] = '\0';
+
+    close(fd);
 
     return 0;
 }

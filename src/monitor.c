@@ -41,6 +41,10 @@
 #include <libgen.h>  
 #include <stdio.h>
 #include <gtk/gtk.h>  
+#include <unistd.h>
+#include <sys/types.h>
+#include <pcap.h> 
+#include <errno.h>
 #include <main.h>
 #include <defs.h>
 #include <version.h>
@@ -48,11 +52,11 @@
 
 /* Types */
 
-struct net_device {
+typedef struct _net_device {
     char *name;
     char *ip;
-    char *mac;
-};
+    unsigned char mac[18];
+} NetDevice;
 
 
 /* Prototypes */
@@ -60,9 +64,16 @@ struct net_device {
 void monitor_panel(MainUi *m_ui);
 GtkWidget * monitor_log(MainUi *m_ui);
 GtkWidget * monitor_net(MainUi *m_ui);
+GList * get_netdevices(MainUi *);
+void get_net_details(MainUi *);
+NetDevice * new_dev();
+void free_dev(NetDevice *);
 
 extern char * log_name();
-extern int ip_address(char *, char *);
+extern void log_msg(char*, char*, char*, GtkWidget*);
+extern int ip_address(char *, char *, unsigned char [13]);
+extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void OnViewLog(GtkWidget*, gpointer);
 extern void OnSetNetDev(GtkWidget*, gpointer);
 
@@ -144,8 +155,8 @@ GtkWidget * monitor_log(MainUi *m_ui)
 GtkWidget * monitor_net(MainUi *m_ui)
 {  
     GtkWidget *frame;
-    GtkWidget *nbox;
-    GList *ndevs
+    GtkWidget *nbox, *dev_grid, *stat_grid;
+    GtkWidget *lbl;
 
     /* Containers */
     frame = gtk_frame_new("Network");
@@ -153,17 +164,66 @@ GtkWidget * monitor_net(MainUi *m_ui)
     /* Box for interface details and network monitoring */
     nbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
 
-    /* Build a list and ComboBox for each interface found */
+    /* ComboBox for interfaces, but only populate each time the panel is activated */
     m_ui->ndevs_cbox = gtk_combo_box_text_new();
-    ndevs = get_netdevices();
+
+    /* Grid for device details */
+    dev_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID (dev_grid), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (dev_grid), 2);
+
+    create_label(&lbl, "iplbl", "IP Address", dev_grid, 0, 0, 1, 1);
+    create_entry(&(m_ui->ip_addr), "ip", dev_grid, 1, 0);
+    create_label(&lbl, "maclbl", "MAC Address", dev_grid, 0, 1, 1, 1);
+    create_entry(&(m_ui->mac_addr), "mac", dev_grid, 1, 1);
+
+    /* Grid for stats */
+    stat_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID (stat_grid), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (stat_grid), 2);
+
+    create_label(&lbl, "txlbl", "TX bytes this session", stat_grid, 0, 0, 1, 1);
+    create_entry(&(m_ui->tx_bytes), "tx", stat_grid, 1, 0);
+    create_label(&lbl, "rxlbl", "RX bytes this session", stat_grid, 0, 1, 1, 1);
+    create_entry(&(m_ui->rx_bytes), "rx", stat_grid, 1, 1);
 
     /* Pack */
-    //gtk_container_add(GTK_CONTAINER (frame), log_grid);
+    gtk_box_pack_start (GTK_BOX (nbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (nbox), dev_grid, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (nbox), stat_grid, FALSE, FALSE, 0);
+    gtk_container_add(GTK_CONTAINER (frame), nbox);
 
     /* Callback */
     g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
 
     return frame;
+}
+
+
+/* Set all the monitoring details */
+
+void get_net_details(MainUi *m_ui)
+{  
+    GList *l;
+    NetDevice *dev;
+    
+    /* Device list can be dynamic so reset every time */
+    gtk_combo_box_text_remove_all (GTK_COMBOBOX_TEXT (m_ui->ndevs_cbox));
+    g_list_free_full (m_ui->ndevs, (GDestroyNotify) free_dev);
+
+    /* New list */
+    m_ui->ndevs = get_netdevices(m_ui);
+
+    /* Set combo box */
+    for(l = m_ui->ndevs; l != NULL; l = l->next)
+    {
+    	dev = (NetDevice *) l->data;
+    	gtk_combo_box_text_append (GTK_COMBOBOX_TEXT (m_ui->ndevs_cbox), dev->name, dev->name);
+    }
+
+    gtk_combo_box_set_active (GTK_COMBOBOX_TEXT (m_ui->ndevs_cbox), 1);
+
+    return;
 }
 
 
@@ -175,7 +235,8 @@ GList * get_netdevices(MainUi *m_ui)
     char *ip;
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *alldevs, *dev;
-    struct net_device *ndev;
+    NetDevice *ndev;
+    GList *l;
 
     /* Ask pcap to find all devices for use */
     r = pcap_findalldevs(&alldevs, errbuf);
@@ -183,7 +244,7 @@ GList * get_netdevices(MainUi *m_ui)
     /* Error checking */
     if (r == -1)
     {
-	memcpy(app_msg_extra, '\0', sizeof(app_msg_extra));
+	memset(app_msg_extra, '\0', sizeof(app_msg_extra));
 	strncpy(app_msg_extra, errbuf, sizeof(app_msg_extra));
 	log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
 	return FALSE;
@@ -191,12 +252,14 @@ GList * get_netdevices(MainUi *m_ui)
 
     if (alldevs == NULL)
     {
-	sprintf(app_msg_extra, "No active, working devices found.");
+	sprintf(app_msg_extra, "No active, working dMAC_strevices found.");
 	log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
 	return FALSE;
     }
 
     /* Save devices */
+    l = NULL;
+
     for(dev = alldevs; dev != NULL; dev = dev->next)
     {
 	/* Select valid devices */
@@ -212,12 +275,14 @@ GList * get_netdevices(MainUi *m_ui)
 	if (strcmp(dev->name, "any") == 0)
 	    continue;
 	
+	ndev = new_dev();
+
 	/* Device name (eg. eth0) */
 	ndev->name = (char *) malloc(strlen(dev->name) + 1);
 	strcpy(ndev->name, dev->name);
 
-	/* IP Address */
-	if (ip_address(dev->name, ip) < 0)
+	/* IP & MAC Address */
+	if (ip_address(dev->name, ip, ndev->mac) < 0)
 	{
 	    sprintf(app_msg_extra, "%s\n", strerror(errno));
 	    log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
@@ -227,157 +292,40 @@ GList * get_netdevices(MainUi *m_ui)
 	ndev->ip = (char *) malloc(strlen(ip) + 1);
 	strcpy(ndev->ip, ip);
 
-	/* Mac Address */
-
-
-
-	printf("DEV: %s", dev->name);
-
-	if (dev->description != NULL)
-	    printf("  %s", dev->description);
-
-	printf("\n");
-	net_address(dev->name);
-	ip_address(dev->name);
-	printf("\n");
+	/* Add to list */
+	l = g_list_prepend(l, ndev);
     }
 
+    l = g_list_reverse(l);
     pcap_freealldevs(alldevs);
-
-    exit(0);
-}
 
     return l;
 }
 
 
+/* Create new network device */
 
+NetDevice * new_dev()
+{  
+    NetDevice *dev = (NetDevice *) malloc(sizeof(NetDevice));
 
-/* ldev_all.c
-   To compile:
-   >cc -o ldev_all ldev_all.c -lpcap
-
-   Looks for all interfaces, and lists the network ip
-   and mask associated with that interface.
-*/
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pcap.h>  /* GIMME a libpcap plz! */
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-
-
-int net_address(char *);
-int ip_address(char *);
-
-
-int main(int argc, char **argv)
-{
-    int r;   /* return code */
-    char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_if_t *alldevs, *dev;
-
-    /* ask pcap to find a valid device for use to sniff on */
-    r = pcap_findalldevs(&alldevs, errbuf);
-
-    /* error checking */
-    if (r == -1)
-    {
-	printf("Error: %s\n",errbuf);
-	exit(1);
-    }
-
-    if (alldevs == NULL)
-    {
-	printf("Error: No devices found\n");
-	exit(1);
-    }
-
-    /* print out devices */
-    for(dev = alldevs; dev != NULL; dev = dev->next)
-    {
-	if (dev->flags & PCAP_IF_LOOPBACK)
-	    continue;
-
-	if (!(dev->flags & PCAP_IF_RUNNING))
-	    continue;
-
-	if (!(dev->flags & PCAP_IF_UP))
-	    continue;
-
-	printf("DEV: %s", dev->name);
-
-	if (dev->description != NULL)
-	    printf("  %s", dev->description);
-
-	printf("\n");
-	net_address(dev->name);
-	ip_address(dev->name);
-	printf("\n");
-    }
-
-    pcap_freealldevs(alldevs);
-
-    exit(0);
+    return dev;
 }
 
 
-int net_address(char *dev)
-{
-    char *net; /* dot notation of the network address */
-    char *mask;/* dot notation of the network mask    */
-    char errbuf[PCAP_ERRBUF_SIZE];
-    int r;   /* return code */
-    bpf_u_int32 netp; /* ip          */
-    bpf_u_int32 maskp;/* subnet mask */
-    struct in_addr addr;
+/* Free network device */
 
-    /* ask pcap for the network address and mask of the device */
-    r = pcap_lookupnet(dev, &netp, &maskp,errbuf);
+void free_dev(NetDevice *dev)
+{  
+    free(dev->name);
+    free(dev->ip);
+    free dev;
 
-    if (r == -1)
-    {
-	printf("Error: %s\n",errbuf);
-	return -1;
-    }
-
-    /* get the network address in a human readable form */
-    addr.s_addr = netp;
-    net = inet_ntoa(addr);
-
-    if (net == NULL)/* thanks Scott :-P */
-    {
-	perror("inet_ntoa");
-	return -1;
-    }
-
-    printf("NET: %s\n",net);
-
-    /* do the same as above for the device's mask */
-    addr.s_addr = maskp;
-    mask = inet_ntoa(addr);
-
-    if(mask == NULL)
-    {
-	perror("inet_ntoa");
-	return -1;
-    }
-
-    printf("MASK: %s\n",mask);
-
-    return 0;
+    return;
 }
 
 
+/*
 while true
 do
         R1=`cat /sys/class/net/$1/statistics/rx_bytes`
@@ -391,3 +339,4 @@ do
         RKBPS=`expr $RBPS / 1024`
         echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
 done
+*/
