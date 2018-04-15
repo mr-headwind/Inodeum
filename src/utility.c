@@ -50,6 +50,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <time.h>
 #include <math.h>
@@ -76,20 +77,10 @@ void string_trim(char*);
 char * log_name();
 char * app_dir_path();
 char * home_dir();
-
-/* ??? */
-gint query_dialog(GtkWidget *, char *, char *);
-int close_ui(char *);
-void strlower(char *, char *);
-void dttm_stamp(char *, size_t);
-int check_dir(char *);
-int make_dir(char *);
+void set_sz_abbrev(char *s, int abbrev);
 int check_errno(char *);
-void print_bits(size_t const, void const * const);
-GtkWidget * find_parent(GtkWidget *);
-GtkWidget * find_widget_by_name(GtkWidget *, char *);
-GtkWidget * find_widget_by_parent(GtkWidget *, char *);
-GList * ctrl_widget_list(GtkWidget *, GtkWidget *);
+void strlower(char *, char *);
+char * read_file(char *fn);
 
 extern void cur_date_str(char *, int, char *);
 
@@ -239,29 +230,6 @@ void info_dialog(GtkWidget *window, char *msg, char *opt)
     gtk_widget_destroy (dialog);
 
     return;
-}
-
-
-/* General prupose query dialog */
-
-gint query_dialog(GtkWidget *window, char *msg, char *opt)
-{
-    GtkWidget *dialog;
-    gint res;
-
-    GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
-
-    dialog = gtk_message_dialog_new (GTK_WINDOW (window),
-				     flags,
-				     GTK_MESSAGE_QUESTION,
-				     GTK_BUTTONS_YES_NO,
-				     msg,
-				     opt);
-
-    res = gtk_dialog_run (GTK_DIALOG (dialog));
-    gtk_widget_destroy (dialog);
-
-    return res;
 }
 
 
@@ -517,33 +485,6 @@ void close_open_ui()
 }
 
 
-/* Close a window */
-
-int close_ui(char *s)
-{
-    GtkWidget *window;
-    const gchar *title;
-
-    open_ui_list = g_list_first(open_ui_list_head);
-
-    while(open_ui_list != NULL)
-    {
-	window = GTK_WIDGET (open_ui_list->data);
-	title = gtk_window_get_title(GTK_WINDOW (window));
-
-	if (strcmp(s, title) == 0)
-	{
-	    gtk_window_close(GTK_WINDOW (window));
-	    return TRUE;
-	}
-
-	open_ui_list = g_list_next(open_ui_list);
-    }
-
-    return FALSE;
-}
-
-
 /* Free the window register */
 
 void free_window_reg()
@@ -564,56 +505,6 @@ void strlower(char *s1, char *s2)
     *s2 = *s1;
 
     return;
-}
-
-
-/* Return a date and time stamp */
-
-void dttm_stamp(char *s, size_t max)
-{
-    size_t sz;
-    struct tm *tm;
-    time_t current_time;
-
-    *s = '\0';
-    current_time = time(NULL);
-    tm = localtime(&current_time);
-    sz = strftime(s, max, "%d%m%Y_%H%M%S", tm);
-
-    return;
-}
-
-
-/* Check directory exists */
-
-int check_dir(char *s)
-{
-    struct stat fileStat;
-    int err;
-
-    if ((err = stat(s, &fileStat)) < 0)
-	return FALSE;
-
-    if ((fileStat.st_mode & S_IFMT) == S_IFDIR)
-	return TRUE;
-    else
-	return FALSE;
-}
-
-
-/* Create a directory */
-
-int make_dir(char *s)
-{
-    int err;
-
-    if ((err = mkdir(s, 0700)) != 0)
-    {
-	log_msg("SYS9002", s, NULL, NULL);
-	return FALSE;
-    }
-
-    return TRUE;
 }
 
 
@@ -654,6 +545,14 @@ int val_str2dbl(char *s, double *numb, char *subst, GtkWidget *window)
 }
 
 
+/* Abbreviate (a sizing) text as per type */
+
+void set_sz_abbrev(char *s, int abbrev)
+{
+    return;
+}
+
+
 /* Check and print error message */
 
 int check_errno(char *s)
@@ -670,160 +569,46 @@ int check_errno(char *s)
 }
 
 
-/* Show binary representation of value (useful debug) */
+/* Stat a file */
 
-void print_bits(size_t const size, void const * const ptr)
+int stat_file(char *fn, struct stat *buf)
 {
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
+    int status;
 
-    for(i = size - 1; i >= 0; i--)
-    {
-        for(j = 7; j >= 0; j--)
-        {
-            byte = b[i] & (1<<j);
-            byte >>= j;
-            printf("%u", byte);
-        }
-    }
+    status = stat(fn, buf);
 
-    printf("\n");
-    fflush(stdout);
+    if (status < 0)
+	return FALSE;
+    else
+	return TRUE;
 }
 
 
-/* Return the parent of a widget */
+/* Read an entire file */
 
-GtkWidget * find_parent(GtkWidget *init_widget)
+char * read_file_all(char *fn)
 {
-    GtkWidget *parent_contnr;
+    char *s;
+    long fsz;
+    FILE *fp;
 
-    parent_contnr = gtk_widget_get_parent(init_widget);
+    /* Open */
+    fp = fopen(fn, "r");
 
-    if (! GTK_IS_CONTAINER(parent_contnr))
-    {
-	log_msg("SYS9011", "From initial widget", NULL, NULL);
+    if (! fp)
     	return NULL;
-    }
+    
+    /* Get size and reset to read again */
+    fseek(fp, 0 , SEEK_END);
+    fsz = ftell(fp);
+    fseek(fp, 0 , SEEK_SET);
 
-    return parent_contnr;
-}
+    /* Read file */
+    s = (char *) malloc(fsz + 1);
+    fgets(s, fsz, fp);
 
+    /* Close */
+    fclose(fp);
 
-/* Search for a child widget using the widget name */
-
-GtkWidget * find_widget_by_name(GtkWidget *parent_contnr, char *nm)
-{
-    GtkWidget *widget;
-    const gchar *widget_name;
-
-    if (! GTK_IS_CONTAINER(parent_contnr))
-    {
-	log_msg("SYS9011", "By name", NULL, NULL);
-    	return NULL;
-    }
-
-    GList *child_widgets = gtk_container_get_children(GTK_CONTAINER (parent_contnr));
-
-    child_widgets = g_list_first(child_widgets);
-
-    while (child_widgets != NULL)
-    {
-	widget = child_widgets->data;
-	widget_name = gtk_widget_get_name (widget);
-
-	if (widget_name != NULL)
-	{
-	    if (strcmp(widget_name, nm) == 0)
-	    {
-		g_list_free (child_widgets);
-		return widget;
-	    }
-	}
-
-	child_widgets = g_list_next(child_widgets);
-    }
-
-    g_list_free (child_widgets);
-
-    return NULL;
-}
-
-
-/* Search for a widget using the parent of an initiating widget */
-
-GtkWidget * find_widget_by_parent(GtkWidget *init_widget, char *nm)
-{
-    GtkWidget *widget;
-    GtkWidget *parent_contnr;
-    const gchar *widget_name;
-
-    parent_contnr = gtk_widget_get_parent(init_widget);
-
-    if (! GTK_IS_CONTAINER(parent_contnr))
-    {
-	log_msg("SYS9011", "By parent", NULL, NULL);
-    	return NULL;
-    }
-
-    GList *child_widgets = gtk_container_get_children(GTK_CONTAINER (parent_contnr));
-
-    child_widgets = g_list_first(child_widgets);
-
-    while (child_widgets != NULL)
-    {
-	widget = child_widgets->data;
-	widget_name = gtk_widget_get_name (widget);
-
-	if (strcmp(widget_name, nm) == 0)
-	{
-	    g_list_free (child_widgets);
-	    return widget;
-	}
-
-	child_widgets = g_list_next(child_widgets);
-    }
-
-    g_list_free (child_widgets);
-
-    return NULL;
-}
-
-
-/* Find all the control widgets in a container */
-
-GList * ctrl_widget_list(GtkWidget *contr, GtkWidget *window)
-{
-    GtkWidget *widget;
-    GList *ctl_list = NULL;
-    GList *tmp_list = NULL;
-
-    if (! GTK_IS_CONTAINER(contr))
-    {
-	log_msg("SYS9011", "Get Next Control", "SYS9011", window);
-	return NULL;
-    }
-
-    GList *child_widgets = gtk_container_get_children(GTK_CONTAINER (contr));
-    child_widgets = g_list_first(child_widgets);
-
-    while (child_widgets != NULL)
-    {
-	widget = child_widgets->data;
-
-	if ((GTK_IS_RANGE (widget)) || (GTK_IS_COMBO_BOX_TEXT (widget)) || (GTK_IS_RADIO_BUTTON (widget)))
-	{
-	    ctl_list = g_list_prepend(ctl_list, widget);
-	}
-	else if (GTK_IS_CONTAINER (widget))
-	{
-	    tmp_list = ctrl_widget_list(widget, window);
-	    ctl_list = g_list_concat(ctl_list, tmp_list);
-	}
-
-	child_widgets = g_list_next(child_widgets);
-    }
-
-    return ctl_list;
+    return s;
 }

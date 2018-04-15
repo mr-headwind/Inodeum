@@ -67,13 +67,16 @@ GtkWidget * monitor_net(MainUi *m_ui);
 GList * get_netdevices(MainUi *);
 void get_net_details(MainUi *);
 NetDevice * new_dev();
-void free_dev(NetDevice *);
+void free_dev(void *);
+int monitor_device(MainUi *);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern int ip_address(char *, char *, unsigned char [13]);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
+extern void set_sz_abbrev(char *, int);
+extern char * read_file(char *);
 extern void OnViewLog(GtkWidget*, gpointer);
 extern void OnSetNetDev(GtkWidget*, gpointer);
 
@@ -81,6 +84,8 @@ extern void OnSetNetDev(GtkWidget*, gpointer);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-monitor.c ";
+static const char *rx_bytes = "/sys/class/net/$1/statistics/rx_bytes";
+static const char *tx_bytes = "/sys/class/net/$1/statistics/tx_bytes";
 
 
 
@@ -154,15 +159,15 @@ GtkWidget * monitor_log(MainUi *m_ui)
 
 GtkWidget * monitor_net(MainUi *m_ui)
 {  
-    GtkWidget *frame;
-    GtkWidget *nbox, *dev_grid, *stat_grid;
+    GtkWidget *frame, *frame2;
+    GtkWidget *hbox, *dev_grid, *stat_grid;
     GtkWidget *lbl;
 
     /* Containers */
     frame = gtk_frame_new("Network");
 
     /* Box for interface details and network monitoring */
-    nbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
 
     /* ComboBox for interfaces, but only populate each time the panel is activated */
     m_ui->ndevs_cbox = gtk_combo_box_text_new();
@@ -182,16 +187,22 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (stat_grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID (stat_grid), 2);
 
-    create_label(&lbl, "txlbl", "TX bytes this session", stat_grid, 0, 0, 1, 1);
-    create_entry(&(m_ui->tx_bytes), "tx", stat_grid, 1, 0);
     create_label(&lbl, "rxlbl", "RX bytes this session", stat_grid, 0, 1, 1, 1);
     create_entry(&(m_ui->rx_bytes), "rx", stat_grid, 1, 1);
+    create_label(&lbl, "txlbl", "TX bytes this session", stat_grid, 0, 0, 1, 1);
+    create_entry(&(m_ui->tx_bytes), "tx", stat_grid, 1, 0);
+
+    /* Network speed progress bar */
+    frame2 = gtk_frame_new("Network speed");
+    m_ui->tx_bar = gtk_progress_bar_new();
+    gtk_container_add(GTK_CONTAINER (frame2), m_ui->tx_bar);
 
     /* Pack */
-    gtk_box_pack_start (GTK_BOX (nbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (nbox), dev_grid, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (nbox), stat_grid, FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER (frame), nbox);
+    gtk_box_pack_start (GTK_BOX (hbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (hbox), dev_grid, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (hbox), stat_grid, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (hbox), frame2, FALSE, FALSE, 0);
+    gtk_container_add(GTK_CONTAINER (frame), hbox);
 
     /* Callback */
     g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
@@ -208,7 +219,7 @@ void get_net_details(MainUi *m_ui)
     NetDevice *dev;
     
     /* Device list can be dynamic so reset every time */
-    gtk_combo_box_text_remove_all (GTK_COMBOBOX_TEXT (m_ui->ndevs_cbox));
+    gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (m_ui->ndevs_cbox));
     g_list_free_full (m_ui->ndevs, (GDestroyNotify) free_dev);
 
     /* New list */
@@ -218,10 +229,10 @@ void get_net_details(MainUi *m_ui)
     for(l = m_ui->ndevs; l != NULL; l = l->next)
     {
     	dev = (NetDevice *) l->data;
-    	gtk_combo_box_text_append (GTK_COMBOBOX_TEXT (m_ui->ndevs_cbox), dev->name, dev->name);
+    	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (m_ui->ndevs_cbox), dev->name, dev->name);
     }
 
-    gtk_combo_box_set_active (GTK_COMBOBOX_TEXT (m_ui->ndevs_cbox), 1);
+    gtk_combo_box_set_active (GTK_COMBO_BOX (m_ui->ndevs_cbox), 1);
 
     return;
 }
@@ -315,13 +326,65 @@ NetDevice * new_dev()
 
 /* Free network device */
 
-void free_dev(NetDevice *dev)
+void free_dev(void *l)
 {  
+    NetDevice *dev;
+
+    dev = (NetDevice *) l;
     free(dev->name);
     free(dev->ip);
-    free dev;
+    free(dev);
 
     return;
+}
+
+
+/* Display details for a selected device and initiate a thread to monitor performance */
+
+int monitor_device(MainUi *m_ui)
+{
+    char *rx, *tx;
+    gchar *txt;
+    GList *l;
+    NetDevice *dev;
+
+    /* Selected device */
+    txt = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (m_ui->ndevs_cbox));
+
+    /* Match device details and display */
+    for(l = m_ui->ndevs; l != NULL; l = l->next)
+    {
+    	dev = (NetDevice *) l->data;
+
+	if (strcmp(dev->name, txt) == 0)
+	{
+	    /* Hardware */
+	    gtk_entry_set_text(GTK_ENTRY (m_ui->ip_addr), dev->ip);
+	    gtk_entry_set_text(GTK_ENTRY (m_ui->mac_addr), dev->mac);
+
+	    if ((rx = read_file((char *) rx_bytes)) == NULL)
+	    	return FALSE;
+
+	    if ((tx = read_file((char *) tx_bytes)) == NULL)
+	    	return FALSE;
+
+	    /* Statistics */
+	    set_sz_abbrev(rx, 1);
+	    set_sz_abbrev(tx, 1);
+	    gtk_entry_set_text(GTK_ENTRY (m_ui->rx_bytes), rx);
+	    gtk_entry_set_text(GTK_ENTRY (m_ui->tx_bytes), tx);
+	    free(rx);
+	    free(tx);
+
+	    /* Start performance monitor thread */
+
+	    break;
+	}
+    }
+
+    g_free(txt);
+
+    return TRUE;
 }
 
 

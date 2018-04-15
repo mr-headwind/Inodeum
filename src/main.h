@@ -105,7 +105,8 @@ typedef struct _main_ui
 
     /* Widgets - history */
     GtkWidget *from_dt_lbl, *to_dt_lbl, *cat_lbl, *hist_total;
-    GtkWidget *hist_from_dt, *hist_to_dt, *fr_btn, *to_btn, *usgcat_cbox, *hist_search_btn;
+    GtkWidget *hist_from_dt, *hist_to_dt, *fr_btn, *to_btn;
+    GtkWidget *usgcat_cbox, *hist_search_btn;
     GtkWidget *hist_search_cntr, *hist_graph_area;
     LineGraph *hist_usg_graph;
 
@@ -115,7 +116,7 @@ typedef struct _main_ui
 
     /* Widgets - monitor */
     GtkWidget *log_cntr, *net_cntr;
-    GtkWidget *ip_addr, *mac_addr, *tx_bytes, *rx_bytes, *ndevs_cbox;
+    GtkWidget *ip_addr, *mac_addr, *tx_bytes, *rx_bytes, *ndevs_cbox, *tx_bar;
     GList *ndevs;
 
     /* Widgets - preferences */

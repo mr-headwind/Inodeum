@@ -62,6 +62,7 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void clean_up(IspData *);
 extern void free_pie_chart(PieChart *);
 extern void free_bar_chart(BarChart *);
+extern void free_dev(void *);
 
 
 /* Globals */
@@ -164,6 +165,9 @@ void final(IspData *isp_data, MainUi *m_ui)
 
     if (m_ui->bar_chart != NULL)
 	free_bar_chart(m_ui->bar_chart);
+
+    if (m_ui->ndevs != NULL)
+	g_list_free_full (m_ui->ndevs, (GDestroyNotify) free_dev);
 
     clean_up(isp_data);
 

@@ -100,6 +100,7 @@ extern int bar_chart_title(cairo_t *, BarChart *, GtkAllocation *, GtkAlign, Gtk
 extern void draw_line_graph(cairo_t *, LineGraph *, GtkAllocation *);
 extern int chart_title(cairo_t *, CText *, GtkAllocation *, GtkAlign, GtkAlign);
 extern void get_net_details(MainUi *);
+extern int monitor_device(MainUi *);
 extern void show_surface_info(cairo_t *, GtkAllocation *);
 
 
@@ -527,6 +528,9 @@ void OnSetNetDev(GtkWidget *cbx, gpointer user_data)
 
     /* Get details */
     m_ui = (MainUi *) user_data;
+
+    /* Set details for selected device */
+    monitor_device(m_ui);
 
     return;
 }  
