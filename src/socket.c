@@ -69,6 +69,7 @@ int ip_address(char *, char *, unsigned char [18]);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern char * setup_get(char *, IspData *);
+extern int check_errno();
 
 
 /* Globals */
@@ -291,12 +292,14 @@ int ip_address(char *dev, char *ip, unsigned char mac[18])
 
     if (r < 0)
     {
+	check_errno();
 	printf("Error: (%d) %s\n",  errno, strerror(errno));
 	close(fd);
 	return -1;
     }
 
     ip = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+printf("%s ip_address 1 %s %s\n", debug_hdr, dev, ip); fflush(stdout);
 
     r = ioctl(fd, SIOCGIFHWADDR, &ifr);
 
@@ -308,9 +311,11 @@ int ip_address(char *dev, char *ip, unsigned char mac[18])
     }
 
     for(i = 0; i < hwaddr_len; i++)
-        sprintf(&mac[i * 3], "%02X", ((unsigned char *) ifr.ifr_hwaddr.sa_data)[i]);
+        sprintf(&mac[i * 3], "%02X:", ((unsigned char *) ifr.ifr_hwaddr.sa_data)[i]);
 
-    mac[18] = '\0';
+    mac[17] = '\0';
+printf("%s ip_address 2 %s %s\n", debug_hdr, dev, ip); fflush(stdout);
+printf("%s ip_address 2 %s %s\n", debug_hdr, dev, mac); fflush(stdout);
 
     close(fd);
 

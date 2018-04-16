@@ -75,8 +75,8 @@ extern void log_msg(char*, char*, char*, GtkWidget*);
 extern int ip_address(char *, char *, unsigned char [13]);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
-extern void set_sz_abbrev(char *, int);
-extern char * read_file(char *);
+extern void set_sz_abbrev(char *);
+extern char * read_file_all(char *);
 extern void OnViewLog(GtkWidget*, gpointer);
 extern void OnSetNetDev(GtkWidget*, gpointer);
 
@@ -84,8 +84,10 @@ extern void OnSetNetDev(GtkWidget*, gpointer);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-monitor.c ";
-static const char *rx_bytes = "/sys/class/net/$1/statistics/rx_bytes";
-static const char *tx_bytes = "/sys/class/net/$1/statistics/tx_bytes";
+static const char *rtx_bytes_pfx = "/sys/class/net/";
+static const char *rx_bytes_sfx = "/statistics/rx_bytes";
+static const char *tx_bytes_sfx = "/statistics/tx_bytes";
+static const int tx_rx_len = 35;
 
 
 
@@ -160,14 +162,14 @@ GtkWidget * monitor_log(MainUi *m_ui)
 GtkWidget * monitor_net(MainUi *m_ui)
 {  
     GtkWidget *frame, *frame2;
-    GtkWidget *hbox, *dev_grid, *stat_grid;
+    GtkWidget *vbox, *dev_grid, *stat_grid;
     GtkWidget *lbl;
 
     /* Containers */
     frame = gtk_frame_new("Network");
 
     /* Box for interface details and network monitoring */
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 
     /* ComboBox for interfaces, but only populate each time the panel is activated */
     m_ui->ndevs_cbox = gtk_combo_box_text_new();
@@ -177,20 +179,20 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_grid_set_row_spacing(GTK_GRID (dev_grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID (dev_grid), 2);
 
-    create_label(&lbl, "iplbl", "IP Address", dev_grid, 0, 0, 1, 1);
-    create_entry(&(m_ui->ip_addr), "ip", dev_grid, 1, 0);
-    create_label(&lbl, "maclbl", "MAC Address", dev_grid, 0, 1, 1, 1);
-    create_entry(&(m_ui->mac_addr), "mac", dev_grid, 1, 1);
+    create_label(&lbl, "iplbl", "IP Address: ", dev_grid, 0, 0, 1, 1);
+    create_label(&(m_ui->ip_addr), "ip", "", dev_grid, 1, 0, 1, 1);
+    create_label(&lbl, "maclbl", "MAC Address: ", dev_grid, 0, 1, 1, 1);
+    create_label(&(m_ui->mac_addr), "mac", "", dev_grid, 1, 1, 1, 1);
 
     /* Grid for stats */
     stat_grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID (stat_grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID (stat_grid), 2);
 
-    create_label(&lbl, "rxlbl", "RX bytes this session", stat_grid, 0, 1, 1, 1);
-    create_entry(&(m_ui->rx_bytes), "rx", stat_grid, 1, 1);
-    create_label(&lbl, "txlbl", "TX bytes this session", stat_grid, 0, 0, 1, 1);
-    create_entry(&(m_ui->tx_bytes), "tx", stat_grid, 1, 0);
+    create_label(&lbl, "rxlbl", "RX bytes this session: ", stat_grid, 0, 0, 1, 1);
+    create_label(&(m_ui->rx_bytes), "rx", "", stat_grid, 1, 0, 1, 1);
+    create_label(&lbl, "txlbl", "TX bytes this session: ", stat_grid, 0, 1, 1, 1);
+    create_label(&(m_ui->tx_bytes), "tx", "", stat_grid, 1, 1, 1, 1);
 
     /* Network speed progress bar */
     frame2 = gtk_frame_new("Network speed");
@@ -198,11 +200,11 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_container_add(GTK_CONTAINER (frame2), m_ui->tx_bar);
 
     /* Pack */
-    gtk_box_pack_start (GTK_BOX (hbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (hbox), dev_grid, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (hbox), stat_grid, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (hbox), frame2, FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER (frame), hbox);
+    gtk_box_pack_start (GTK_BOX (vbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (vbox), dev_grid, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (vbox), stat_grid, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (vbox), frame2, FALSE, FALSE, 0);
+    gtk_container_add(GTK_CONTAINER (frame), vbox);
 
     /* Callback */
     g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
@@ -232,7 +234,7 @@ void get_net_details(MainUi *m_ui)
     	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (m_ui->ndevs_cbox), dev->name, dev->name);
     }
 
-    gtk_combo_box_set_active (GTK_COMBO_BOX (m_ui->ndevs_cbox), 1);
+    gtk_combo_box_set_active (GTK_COMBO_BOX (m_ui->ndevs_cbox), 0);
 
     return;
 }
@@ -300,6 +302,7 @@ GList * get_netdevices(MainUi *m_ui)
 	    return FALSE;
 	}
 
+printf("%s get_netdevices 1 %s %s\n", debug_hdr, ip); fflush(stdout);
 	ndev->ip = (char *) malloc(strlen(ip) + 1);
 	strcpy(ndev->ip, ip);
 
@@ -343,7 +346,7 @@ void free_dev(void *l)
 
 int monitor_device(MainUi *m_ui)
 {
-    char *rx, *tx;
+    char *rx, *tx, *fn;
     gchar *txt;
     GList *l;
     NetDevice *dev;
@@ -359,22 +362,30 @@ int monitor_device(MainUi *m_ui)
 	if (strcmp(dev->name, txt) == 0)
 	{
 	    /* Hardware */
-	    gtk_entry_set_text(GTK_ENTRY (m_ui->ip_addr), dev->ip);
-	    gtk_entry_set_text(GTK_ENTRY (m_ui->mac_addr), dev->mac);
+	    gtk_label_set_text(GTK_LABEL (m_ui->ip_addr), dev->ip);
+	    gtk_label_set_text(GTK_LABEL (m_ui->mac_addr), dev->mac);
+printf("%s monitor_device 3 %s\n", debug_hdr, dev->name); fflush(stdout);
+printf("%s monitor_device 4 %s %s\n", debug_hdr, dev->ip, dev->mac); fflush(stdout);
 
-	    if ((rx = read_file((char *) rx_bytes)) == NULL)
+	    fn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
+	    sprintf(fn, "%s%s%s", rtx_bytes_pfx, dev->name, rx_bytes_sfx);
+
+	    if ((rx = read_file_all(fn)) == NULL)
 	    	return FALSE;
 
-	    if ((tx = read_file((char *) tx_bytes)) == NULL)
+	    sprintf(fn, "%s%s%s", rtx_bytes_pfx, dev->name, tx_bytes_sfx);
+
+	    if ((tx = read_file_all(fn)) == NULL)
 	    	return FALSE;
 
 	    /* Statistics */
-	    set_sz_abbrev(rx, 1);
-	    set_sz_abbrev(tx, 1);
-	    gtk_entry_set_text(GTK_ENTRY (m_ui->rx_bytes), rx);
-	    gtk_entry_set_text(GTK_ENTRY (m_ui->tx_bytes), tx);
+	    set_sz_abbrev(rx);
+	    set_sz_abbrev(tx);
+	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx);
+	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx);
 	    free(rx);
 	    free(tx);
+	    free(fn);
 
 	    /* Start performance monitor thread */
 

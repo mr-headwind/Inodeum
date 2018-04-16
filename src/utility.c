@@ -77,10 +77,11 @@ void string_trim(char*);
 char * log_name();
 char * app_dir_path();
 char * home_dir();
-void set_sz_abbrev(char *s, int abbrev);
-int check_errno(char *);
+void set_sz_abbrev(char *s);
+int check_errno();
 void strlower(char *, char *);
-char * read_file(char *fn);
+int stat_file(char *, struct stat *);
+char * read_file_all(char *);
 
 extern void cur_date_str(char *, int, char *);
 
@@ -140,10 +141,11 @@ static const char *app_messages[][2] =
     { "ERR0046", "Calendar date field cannot be NULL. "},
     { "ERR0047", "Error determining Network devices. "},
     { "MSG0044", "Warning: Inconsistent 'Unit' encountered - %s. "},
+    { "ERR9998", "Error: %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 52;
+static const int Msg_Count = 53;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
@@ -545,23 +547,66 @@ int val_str2dbl(char *s, double *numb, char *subst, GtkWidget *window)
 }
 
 
-/* Abbreviate (a sizing) text as per type */
+/* Abbreviate (a sizing) text */
 
-void set_sz_abbrev(char *s, int abbrev)
+void set_sz_abbrev(char *s)
 {
+    int len;
+    double dv;
+    char abbr[6];
+
+    len = strlen(s);
+
+    if (len < 4)	// Bytes
+    {
+	strcpy(abbr, "Bytes");
+	dv = 1.0;
+	s = (char *) realloc(s, len + 6);
+    }
+    else if (len < 7)	// Kilobytes
+    {
+    	strcpy(abbr, "KB");
+    	dv = 1000.0;
+    }
+    else if (len < 10)	// Megabytes
+    {
+    	strcpy(abbr, "MB");
+    	dv = 1000000.0;
+    }
+    else		// Gigabytes
+    {
+    	strcpy(abbr, "GB");
+    	dv = 1000000000.0;
+    }
+
+    sprintf(s, "%0.2f %s", atof(s)/dv, abbr);
+
     return;
 }
 
 
 /* Check and print error message */
 
-int check_errno(char *s)
+int check_errno()
 {
-    int err;
+    int i, max;
+    char err[20];
+    char *p;
 
     if (errno != 0)
     {
-	printf("%s %s - error: (%d) %s\n", debug_hdr, s, errno, strerror(errno));
+	max = sizeof(app_msg_extra) - 1;
+	p = strerror(errno);
+	printf("Error: %d  %s\n", errno, p);
+
+
+	for(i = 0; i < max && p[i] != '\0'; i++)
+	    app_msg_extra[i] = p[i];
+
+	app_msg_extra[i] = '\0';
+
+	sprintf(err, "%d", errno);
+	log_msg("ERR9998", err, NULL, NULL);
 	return errno;
     }
 
@@ -578,9 +623,12 @@ int stat_file(char *fn, struct stat *buf)
     status = stat(fn, buf);
 
     if (status < 0)
+    {
+    	check_errno();
 	return FALSE;
-    else
-	return TRUE;
+    }
+    
+    return TRUE;
 }
 
 
