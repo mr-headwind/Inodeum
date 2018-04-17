@@ -132,9 +132,11 @@ typedef struct _main_ui
 
     /* Callback Handlers */
     int close_hndlr_id;
+    int dvcbx_hndlr_id;
 
     /* Misc */
     int duration, user_cd;
     double days_rem, days_quota;
     RefreshTmr RefTmr;
+    pthread_t net_speed_tid;
 } MainUi;

@@ -54,7 +54,7 @@
 
 typedef struct _net_device {
     char *name;
-    char *ip;
+    char ip[16];
     unsigned char mac[18];
 } NetDevice;
 
@@ -72,7 +72,7 @@ int monitor_device(MainUi *);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
-extern int ip_address(char *, char *, unsigned char [13]);
+extern int ip_address(char *, char [16], unsigned char [13]);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void set_sz_abbrev(char *);
@@ -88,6 +88,7 @@ static const char *rtx_bytes_pfx = "/sys/class/net/";
 static const char *rx_bytes_sfx = "/statistics/rx_bytes";
 static const char *tx_bytes_sfx = "/statistics/tx_bytes";
 static const int tx_rx_len = 35;
+static int net_mon;
 
 
 
@@ -167,36 +168,49 @@ GtkWidget * monitor_net(MainUi *m_ui)
 
     /* Containers */
     frame = gtk_frame_new("Network");
+    gtk_widget_set_margin_top (frame, 10);
 
     /* Box for interface details and network monitoring */
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 
     /* ComboBox for interfaces, but only populate each time the panel is activated */
     m_ui->ndevs_cbox = gtk_combo_box_text_new();
+    gtk_widget_set_margin_start (m_ui->ndevs_cbox, 20);
+    gtk_widget_set_margin_end (m_ui->ndevs_cbox, 30);
 
     /* Grid for device details */
     dev_grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID (dev_grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID (dev_grid), 2);
+    gtk_widget_set_margin_start (dev_grid, 20);
 
     create_label(&lbl, "iplbl", "IP Address: ", dev_grid, 0, 0, 1, 1);
-    create_label(&(m_ui->ip_addr), "ip", "", dev_grid, 1, 0, 1, 1);
+    create_label(&(m_ui->ip_addr), "data_1", "", dev_grid, 1, 0, 1, 1);
     create_label(&lbl, "maclbl", "MAC Address: ", dev_grid, 0, 1, 1, 1);
-    create_label(&(m_ui->mac_addr), "mac", "", dev_grid, 1, 1, 1, 1);
+    create_label(&(m_ui->mac_addr), "data_1", "", dev_grid, 1, 1, 1, 1);
 
     /* Grid for stats */
     stat_grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID (stat_grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID (stat_grid), 2);
+    gtk_widget_set_margin_start (stat_grid, 20);
 
     create_label(&lbl, "rxlbl", "RX bytes this session: ", stat_grid, 0, 0, 1, 1);
-    create_label(&(m_ui->rx_bytes), "rx", "", stat_grid, 1, 0, 1, 1);
+    create_label(&(m_ui->rx_bytes), "data_1", "", stat_grid, 1, 0, 1, 1);
     create_label(&lbl, "txlbl", "TX bytes this session: ", stat_grid, 0, 1, 1, 1);
-    create_label(&(m_ui->tx_bytes), "tx", "", stat_grid, 1, 1, 1, 1);
+    create_label(&(m_ui->tx_bytes), "data_1", "", stat_grid, 1, 1, 1, 1);
 
     /* Network speed progress bar */
     frame2 = gtk_frame_new("Network speed");
+    gtk_widget_set_margin_top (frame2, 10);
+    gtk_widget_set_margin_bottom (frame2, 10);
+    gtk_widget_set_margin_start (frame2, 10);
+    gtk_widget_set_margin_end (frame2, 10);
+
     m_ui->tx_bar = gtk_progress_bar_new();
+    gtk_widget_set_margin_bottom (m_ui->tx_bar, 5);
+    gtk_widget_set_margin_start (m_ui->tx_bar, 10);
+    gtk_widget_set_margin_end (m_ui->tx_bar, 10);
     gtk_container_add(GTK_CONTAINER (frame2), m_ui->tx_bar);
 
     /* Pack */
@@ -207,7 +221,7 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_container_add(GTK_CONTAINER (frame), vbox);
 
     /* Callback */
-    g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
+    m_ui->dvcbx_hndlr_id = g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
 
     return frame;
 }
@@ -221,7 +235,10 @@ void get_net_details(MainUi *m_ui)
     NetDevice *dev;
     
     /* Device list can be dynamic so reset every time */
+    g_signal_handler_block (m_ui->ndevs_cbox, m_ui->dvcbx_hndlr_id);
     gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (m_ui->ndevs_cbox));
+    g_signal_handler_unblock (m_ui->ndevs_cbox, m_ui->dvcbx_hndlr_id);
+
     g_list_free_full (m_ui->ndevs, (GDestroyNotify) free_dev);
 
     /* New list */
@@ -245,7 +262,6 @@ void get_net_details(MainUi *m_ui)
 GList * get_netdevices(MainUi *m_ui)
 {  
     int r;
-    char *ip;
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *alldevs, *dev;
     NetDevice *ndev;
@@ -295,16 +311,12 @@ GList * get_netdevices(MainUi *m_ui)
 	strcpy(ndev->name, dev->name);
 
 	/* IP & MAC Address */
-	if (ip_address(dev->name, ip, ndev->mac) < 0)
+	if (ip_address(dev->name, ndev->ip, ndev->mac) < 0)
 	{
 	    sprintf(app_msg_extra, "%s\n", strerror(errno));
 	    log_msg("ERR0047", NULL, "ERR0047", m_ui->window);
 	    return FALSE;
 	}
-
-printf("%s get_netdevices 1 %s %s\n", debug_hdr, ip); fflush(stdout);
-	ndev->ip = (char *) malloc(strlen(ip) + 1);
-	strcpy(ndev->ip, ip);
 
 	/* Add to list */
 	l = g_list_prepend(l, ndev);
@@ -335,7 +347,6 @@ void free_dev(void *l)
 
     dev = (NetDevice *) l;
     free(dev->name);
-    free(dev->ip);
     free(dev);
 
     return;
@@ -346,6 +357,7 @@ void free_dev(void *l)
 
 int monitor_device(MainUi *m_ui)
 {
+    int p_err;
     char *rx, *tx, *fn;
     gchar *txt;
     GList *l;
@@ -364,8 +376,6 @@ int monitor_device(MainUi *m_ui)
 	    /* Hardware */
 	    gtk_label_set_text(GTK_LABEL (m_ui->ip_addr), dev->ip);
 	    gtk_label_set_text(GTK_LABEL (m_ui->mac_addr), dev->mac);
-printf("%s monitor_device 3 %s\n", debug_hdr, dev->name); fflush(stdout);
-printf("%s monitor_device 4 %s %s\n", debug_hdr, dev->ip, dev->mac); fflush(stdout);
 
 	    fn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
 	    sprintf(fn, "%s%s%s", rtx_bytes_pfx, dev->name, rx_bytes_sfx);
@@ -388,6 +398,12 @@ printf("%s monitor_device 4 %s %s\n", debug_hdr, dev->ip, dev->mac); fflush(stdo
 	    free(fn);
 
 	    /* Start performance monitor thread */
+	    if ((p_err = pthread_create(&(m_ui->net_speed_tid), NULL, &net_speed, (void *) m_ui)) != 0)
+	    {
+		sprintf(app_msg_extra, "Error: %s", strerror(p_err));
+		log_msg("ERR0048", NULL, "ERR0048", m_ui->window);
+		return FALSE;
+	    }
 
 	    break;
 	}
@@ -396,6 +412,15 @@ printf("%s monitor_device 4 %s %s\n", debug_hdr, dev->ip, dev->mac); fflush(stdo
     g_free(txt);
 
     return TRUE;
+}
+
+
+/* Network speed performance thread */
+
+void * net_speed(void *arg)
+{  
+    
+    pthread_exit(&net_mon);
 }
 
 

@@ -53,6 +53,7 @@ static const char *debug_hdr = "DEBUG-css.c ";
 
 static const gchar *css_data = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
+	"@define-color METAL_GREY rgba(55,83,103,1.0); "
 	"GtkButton, GtkEntry, GtkLabel { font: Sans 9; }"
 	"GtkLabel#data_1 { color: @DARK_BLUE; }"
 	"GtkLabel#data_2 { color: #800000; font: Sans 8; }"
@@ -67,7 +68,7 @@ static const gchar *css_data =
 	"GtkFrame { background-color: #e6e6fa; border-radius: 5px}"
 	"GtkFrame > GtkLabel { color: #800000; font-weight: 500; }"
 	"GtkDrawingArea#draw_1 { background-color: #ffffff;}"
-	"GtkComboBoxText * { color: @DARK_BLUE; font: Sans 9; }"
+	"GtkComboBoxText * { color: @METAL_GREY; font: Sans 9; }"
 	//"#button_1 * { background-color: #ffe4e1; border-color: #800000; }"
 	"#button_1 * { color: #708090; font-weight: bold; }"
 	"GtkNotebook * { font: Sans 8; }"

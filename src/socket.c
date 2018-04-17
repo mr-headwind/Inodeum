@@ -65,7 +65,7 @@ int create_socket(IspData *, MainUi *);
 int send_request(char *, IspData *, MainUi *);
 int send_query(char *, IspData *, MainUi *);
 int recv_data(IspData *, MainUi *);
-int ip_address(char *, char *, unsigned char [18]);
+int ip_address(char *, char [16], unsigned char [18]);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern char * setup_get(char *, IspData *);
@@ -277,9 +277,10 @@ int recv_data(IspData *isp_data, MainUi *m_ui)
 
 /* Get the IP and MAC address for network device */
 
-int ip_address(char *dev, char *ip, unsigned char mac[18])
+int ip_address(char *dev, char ip[16], unsigned char mac[18])
 {
     int i, r, fd;
+    char *p;
     struct ifreq ifr;
     const int hwaddr_len = 6;
 
@@ -298,8 +299,8 @@ int ip_address(char *dev, char *ip, unsigned char mac[18])
 	return -1;
     }
 
-    ip = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
-printf("%s ip_address 1 %s %s\n", debug_hdr, dev, ip); fflush(stdout);
+    p = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+    strcpy(ip, p);
 
     r = ioctl(fd, SIOCGIFHWADDR, &ifr);
 
@@ -314,8 +315,6 @@ printf("%s ip_address 1 %s %s\n", debug_hdr, dev, ip); fflush(stdout);
         sprintf(&mac[i * 3], "%02X:", ((unsigned char *) ifr.ifr_hwaddr.sa_data)[i]);
 
     mac[17] = '\0';
-printf("%s ip_address 2 %s %s\n", debug_hdr, dev, ip); fflush(stdout);
-printf("%s ip_address 2 %s %s\n", debug_hdr, dev, mac); fflush(stdout);
 
     close(fd);
 
