@@ -21,11 +21,12 @@
 
 /*
 ** Description:
-**  Error and Message Reference functions
-**  Logging functions
-**  Session management
-**  Window management
-**  General usage functions
+**  Message (Errors, Warnings, Informaton) and Logging utilities
+**  Application utilities
+**  String utilities
+**  Session and Window management utilities
+**  General usage utilities
+**  File utilities
 **
 ** Author:	Anthony Buckley
 **
@@ -82,6 +83,8 @@ int check_errno();
 void strlower(char *, char *);
 int stat_file(char *, struct stat *);
 char * read_file_all(char *);
+FILE * open_file(char *, char *);
+int read_file(FILE *, char *, int);
 
 extern void cur_date_str(char *, int, char *);
 
@@ -155,6 +158,11 @@ static int app_dir_len;
 static const char *debug_hdr = "DEBUG-utility.c ";
 static GList *open_ui_list_head = NULL;
 static GList *open_ui_list = NULL;
+
+
+
+/*****  MESSAGE (ERRORS, WARNINGS, INFORMATON) AND lOGGING UTILITIES *****/
+
 
 
 /* Process additional application messages and error conditions */
@@ -278,53 +286,6 @@ char * log_name()
 }
 
 
-/* Return the application directory path */
-
-char * app_dir_path()
-{
-    return app_dir;
-}
-
-
-/* Return the Home directory path */
-
-char * home_dir()
-{
-    return Home;
-}
-
-
-/* Set up application directory(s) for the user if necessary */
-
-int check_app_dir()
-{
-    struct stat fileStat;
-    int err;
-
-    if ((Home = getenv("HOME")) == NULL)
-    {
-    	log_msg("ERR0002", NULL, NULL, NULL);
-    	return FALSE;
-    }
-
-    app_dir = (char *) malloc(strlen(Home) + strlen(TITLE) + 5);
-    sprintf(app_dir, "%s/.%s", Home, TITLE);
-    app_dir_len = strlen(app_dir);
-
-    if ((err = stat(app_dir, &fileStat)) < 0)
-    {
-	if ((err = mkdir(app_dir, 0700)) != 0)
-	{
-	    log_msg("ERR0003", app_dir, NULL, NULL);
-	    free(app_dir);
-	    return FALSE;
-	}
-    }
-
-    return TRUE;
-}
-
-
 /* Error lookup and optional string argument substitution */
 
 void get_msg(char *s, char *msg_id, char *opt_str)
@@ -376,6 +337,63 @@ void get_msg(char *s, char *msg_id, char *opt_str)
 }
 
 
+
+/*****  APPLICATION UTILITIES *****/
+
+
+
+/* Return the application directory path */
+
+char * app_dir_path()
+{
+    return app_dir;
+}
+
+
+/* Return the Home directory path */
+
+char * home_dir()
+{
+    return Home;
+}
+
+
+/* Set up application directory(s) for the user if necessary */
+
+int check_app_dir()
+{
+    struct stat fileStat;
+    int err;
+
+    if ((Home = getenv("HOME")) == NULL)
+    {
+    	log_msg("ERR0002", NULL, NULL, NULL);
+    	return FALSE;
+    }
+
+    app_dir = (char *) malloc(strlen(Home) + strlen(TITLE) + 5);
+    sprintf(app_dir, "%s/.%s", Home, TITLE);
+    app_dir_len = strlen(app_dir);
+
+    if ((err = stat(app_dir, &fileStat)) < 0)
+    {
+	if ((err = mkdir(app_dir, 0700)) != 0)
+	{
+	    log_msg("ERR0003", app_dir, NULL, NULL);
+	    free(app_dir);
+	    return FALSE;
+	}
+    }
+
+    return TRUE;
+}
+
+
+
+/*****  STRING UTILITIES *****/
+
+
+
 /* Remove leading and trailing spaces from a string */
 
 void string_trim(char *s)
@@ -413,6 +431,61 @@ void string_trim(char *s)
 
     return;
 }
+
+
+/* Convert a string to lowercase */
+
+void strlower(char *s1, char *s2)
+{
+    for(; *s1 != '\0'; s1++, s2++)
+    	*s2 = tolower(*s1);
+
+    *s2 = *s1;
+
+    return;
+}
+
+
+/* Convert a string to a (double) number and validate */
+
+int val_str2dbl(char *s, double *numb, char *subst, GtkWidget *window)
+{
+    double dbl;
+    char *end;
+
+    if (strlen(s) > 0)
+    {
+	errno = 0;
+	//l = strtol(s, &end, 10);
+	dbl = strtod(s, &end);
+
+	if (errno != 0)
+	{
+	    if (subst != NULL)
+		app_msg("ERR0040", subst, window);
+	    return FALSE;
+	}
+	else if (*end)
+	{
+	    if (subst != NULL)
+		app_msg("ERR0040", subst, window);
+	    return FALSE;
+	}
+    }
+    else
+    {
+    	dbl = 0;
+    }
+
+    *numb = dbl;
+
+    return TRUE;
+}
+
+
+
+/*****  SESSION AND WINDOW MANAGEMENT UTILITIES *****/
+
 
 
 /* Regiser the window as open */
@@ -498,54 +571,9 @@ void free_window_reg()
 }
 
 
-/* Convert a string to lowercase */
 
-void strlower(char *s1, char *s2)
-{
-    for(; *s1 != '\0'; s1++, s2++)
-    	*s2 = tolower(*s1);
+/*****  GENERAL USAGE UTILITIES *****/
 
-    *s2 = *s1;
-
-    return;
-}
-
-
-/* Convert a string to a (double) number and validate */
-
-int val_str2dbl(char *s, double *numb, char *subst, GtkWidget *window)
-{
-    double dbl;
-    char *end;
-
-    if (strlen(s) > 0)
-    {
-	errno = 0;
-	//l = strtol(s, &end, 10);
-	dbl = strtod(s, &end);
-
-	if (errno != 0)
-	{
-	    if (subst != NULL)
-		app_msg("ERR0040", subst, window);
-	    return FALSE;
-	}
-	else if (*end)
-	{
-	    if (subst != NULL)
-		app_msg("ERR0040", subst, window);
-	    return FALSE;
-	}
-    }
-    else
-    {
-    	dbl = 0;
-    }
-
-    *numb = dbl;
-
-    return TRUE;
-}
 
 
 /* Abbreviate (a sizing) text */
@@ -615,6 +643,11 @@ int check_errno()
 }
 
 
+
+/*****  FILE UTILITIES *****/
+
+
+
 /* Stat a file */
 
 int stat_file(char *fn, struct stat *buf)
@@ -660,4 +693,51 @@ char * read_file_all(char *fn)
     fclose(fp);
 
     return s;
+}
+
+
+/* Open a file */
+
+FILE * open_file(char *fn, char *op)
+{
+    FILE *fd;
+
+    if ((fd = fopen(fn, op)) == (FILE *) NULL)
+    {
+    	check_errno();
+	return (FILE *) NULL;
+    }
+
+    return fd;
+}
+
+
+/* Read a file */
+
+int read_file(FILE *fd, char *buf, int sz_len)
+{
+    int i, max;
+    char c;
+
+    i = 0;
+    max = sz_len - 1;
+    buf[0] = '\0';
+    
+    while((c = fgetc(fd)) != EOF)
+    {
+    	buf[i++] = c;
+
+    	if (i >= max)
+	    break;
+    }
+
+    buf[i] = '\0';
+
+    if (c == EOF)
+    {
+    	fclose(fd);
+    	fd = NULL;
+    }
+
+    return (int) c;
 }

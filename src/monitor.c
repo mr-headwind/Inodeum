@@ -69,6 +69,7 @@ void get_net_details(MainUi *);
 NetDevice * new_dev();
 void free_dev(void *);
 int monitor_device(MainUi *);
+void * net_speed(void *);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -419,6 +420,31 @@ int monitor_device(MainUi *m_ui)
 
 void * net_speed(void *arg)
 {  
+    const gchar *nm;
+    const int interval = 500000;	// microseconds (0.5 seconds)
+
+    /* Initial */
+    m_ui = (MainUi *) arg;
+    nm = gtk_widget_get_name (m_ui->curr_panel);
+
+    /* Get network totals */
+
+    /* Refresh and display current net speed */
+    while(1)
+    {
+	/* Wait interval */
+	usleep(interval);
+
+	/* Exit if 'monitor' is not the current panel */
+	if (strcmp(nm, "monitor_panel") != 0)
+	    break;
+
+	/* Get new network totals */
+
+	/* Calculate speed */
+
+	/* Set progressbar */
+    }
     
     pthread_exit(&net_mon);
 }

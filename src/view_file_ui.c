@@ -50,10 +50,11 @@ GtkWidget* view_file_ui(char *);
 int view_file_init(char  *);
 void OnViewFileClose(GtkWidget*, gpointer);
 GtkWidget* view_file_ui_menu(GtkWidget *);
-int read_file(char *, int);
 
 extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
+extern FILE * open_file(char *, char *);
+extern int read_file(FILE *, char *, int);
 
 
 /* Globals */
@@ -89,7 +90,7 @@ GtkWidget* view_file_main(char *fn)
 int view_file_init(char *fn)
 {
     /* Open the file for read */
-    if ((fd = fopen(fn, "r")) == (FILE *) NULL)
+    if ((fd = open_file(fn, "r")) == (FILE *) NULL)
 	return FALSE;
 
     viewfile = fn;
@@ -163,7 +164,9 @@ GtkWidget* view_file_ui(char *fn)
 
     while(rc != EOF)
     {
-	rc = read_file(buffer, sizeof(buffer));
+	/* Read the camera information file */
+	rc = read_file(fd, buffer, sizeof(buffer));
+
 	gtk_text_buffer_get_end_iter (txt_buffer, &iter);
 	gtk_text_buffer_insert (txt_buffer, &iter, buffer, -1);
 	gtk_text_iter_forward_to_end (&iter);
@@ -258,35 +261,4 @@ void OnViewFileClose(GtkWidget *window, gpointer user_data)
     gtk_window_close(GTK_WINDOW(window));
 
     return;
-}
-
-
-/* Read the camera information file */
-
-int read_file(char *buf, int sz_len)
-{
-    int i, max;
-    char c;
-
-    i = 0;
-    max = sz_len - 1;
-    buf[0] = '\0';
-    
-    while((c = fgetc(fd)) != EOF)
-    {
-    	buf[i++] = c;
-
-    	if (i >= max)
-	    break;
-    }
-
-    buf[i] = '\0';
-
-    if (c == EOF)
-    {
-    	fclose(fd);
-    	fd = NULL;
-    }
-
-    return (int) c;
 }
