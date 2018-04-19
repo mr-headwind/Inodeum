@@ -136,6 +136,8 @@ typedef struct _main_ui
 
     /* Misc */
     int duration, user_cd;
+    long rx1, tx1;
+    char *rxfn, *txfn;
     double days_rem, days_quota;
     RefreshTmr RefTmr;
     pthread_t net_speed_tid;

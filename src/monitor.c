@@ -70,6 +70,8 @@ NetDevice * new_dev();
 void free_dev(void *);
 int monitor_device(MainUi *);
 void * net_speed(void *);
+void reset_fn(MainUi *);
+int network_totals(char *, char *, char *, char *);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -77,7 +79,7 @@ extern int ip_address(char *, char [16], unsigned char [13]);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void set_sz_abbrev(char *);
-extern char * read_file_all(char *);
+extern long read_file_all(char *, char *);
 extern void OnViewLog(GtkWidget*, gpointer);
 extern void OnSetNetDev(GtkWidget*, gpointer);
 
@@ -359,13 +361,16 @@ void free_dev(void *l)
 int monitor_device(MainUi *m_ui)
 {
     int p_err;
-    char *rx, *tx, *fn;
+    char *rx, *tx;
     gchar *txt;
     GList *l;
     NetDevice *dev;
 
     /* Selected device */
     txt = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (m_ui->ndevs_cbox));
+
+    /* Reset filenames */
+    reset_fn(m_ui);
 
     /* Match device details and display */
     for(l = m_ui->ndevs; l != NULL; l = l->next)
@@ -378,25 +383,24 @@ int monitor_device(MainUi *m_ui)
 	    gtk_label_set_text(GTK_LABEL (m_ui->ip_addr), dev->ip);
 	    gtk_label_set_text(GTK_LABEL (m_ui->mac_addr), dev->mac);
 
-	    fn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
-	    sprintf(fn, "%s%s%s", rtx_bytes_pfx, dev->name, rx_bytes_sfx);
+	    /* Get new network totals */
+	    m_ui->rxfn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
+	    sprintf(m_ui->rxfn, "%s%s%s", rtx_bytes_pfx, dev->name, rx_bytes_sfx);
+	    m_ui->txfn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
+	    sprintf(m_ui->txfn, "%s%s%s", rtx_bytes_pfx, dev->name, tx_bytes_sfx);
 
-	    if ((rx = read_file_all(fn)) == NULL)
-	    	return FALSE;
-
-	    sprintf(fn, "%s%s%s", rtx_bytes_pfx, dev->name, tx_bytes_sfx);
-
-	    if ((tx = read_file_all(fn)) == NULL)
+	    if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx) == FALSE)
 	    	return FALSE;
 
 	    /* Statistics */
+	    m_ui->rx1 = atol(rx);
+	    m_ui->tx1 = atol(tx);
 	    set_sz_abbrev(rx);
 	    set_sz_abbrev(tx);
 	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx);
 	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx);
 	    free(rx);
 	    free(tx);
-	    free(fn);
 
 	    /* Start performance monitor thread */
 	    if ((p_err = pthread_create(&(m_ui->net_speed_tid), NULL, &net_speed, (void *) m_ui)) != 0)
@@ -420,33 +424,101 @@ int monitor_device(MainUi *m_ui)
 
 void * net_speed(void *arg)
 {  
+    long rx2, tx2;
+    char *rx, *tx;
+    double rxps;
     const gchar *nm;
     const int interval = 500000;	// microseconds (0.5 seconds)
+    MainUi *m_ui;
 
+printf("%s net_speed 1\n", debug_hdr); fflush(stdout);
     /* Initial */
     m_ui = (MainUi *) arg;
     nm = gtk_widget_get_name (m_ui->curr_panel);
 
-    /* Get network totals */
-
     /* Refresh and display current net speed */
     while(1)
     {
+printf("%s net_speed 2\n", debug_hdr); fflush(stdout);
 	/* Wait interval */
 	usleep(interval);
 
 	/* Exit if 'monitor' is not the current panel */
 	if (strcmp(nm, "monitor_panel") != 0)
+	{
+	    reset_fn(m_ui);
 	    break;
+	}
+
+	/* If file name(s) is null, there may be new selection so just loop */
+	if (m_ui->rxfn == NULL || m_ui->txfn == NULL)
+	    continue;
 
 	/* Get new network totals */
+	if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx) == FALSE)
+	    return FALSE;
+
+	/* Statistics */
+	rx2 = atol(rx);
+	tx2 = atol(tx);
 
 	/* Calculate speed */
+	rxps = (double) (rx2 - m_ui->rx1) / 1024.0;
+        //echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
 
 	/* Set progressbar */
+
+	/* Ready for next loop */
+	m_ui->rx1 = rx2;
+	m_ui->tx1 = tx2;
+	free(rx);
+	free(tx);
     }
     
     pthread_exit(&net_mon);
+}
+
+
+/* Reset filenames */
+
+
+void reset_fn(MainUi *m_ui)
+{  
+    if (m_ui->rxfn != NULL)
+    {
+	free(m_ui->rxfn);
+	m_ui->rxfn = NULL;
+    }
+
+    if (m_ui->txfn != NULL)
+    {
+	free(m_ui->txfn);
+	m_ui->txfn = NULL;
+    }
+
+    return;
+}
+
+
+/* Read the network device current totals */
+
+int network_totals(char *rxfn, char *rx, char *txfn, char *tx)
+{
+    long len;
+
+    if ((len = read_file_all(rxfn, rx)) < 0)
+	return FALSE;
+
+    if (rx[len] == '\n')
+	rx[len] = '\0';
+
+    if ((len = read_file_all(txfn, tx)) < 0)
+	return FALSE;
+
+    if (tx[len] == '\n')
+	tx[len] = '\0';
+
+    return TRUE;
 }
 
 

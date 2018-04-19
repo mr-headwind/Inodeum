@@ -82,7 +82,7 @@ void set_sz_abbrev(char *s);
 int check_errno();
 void strlower(char *, char *);
 int stat_file(char *, struct stat *);
-char * read_file_all(char *);
+long read_file_all(char *, char *);
 FILE * open_file(char *, char *);
 int read_file(FILE *, char *, int);
 
@@ -599,6 +599,7 @@ void set_sz_abbrev(char *s)
     }
     else if (len < 10)	// Megabytes
     {
+printf("%s set_sz_abbrev 1 s %s len %zu\n", debug_hdr, s, strlen(s)); fflush(stdout);
     	strcpy(abbr, "MB");
     	dv = 1000000.0;
     }
@@ -668,9 +669,8 @@ int stat_file(char *fn, struct stat *buf)
 
 /* Read an entire file */
 
-char * read_file_all(char *fn)
+long read_file_all(char *fn, char *s)
 {
-    char *s;
     long fsz;
     FILE *fp;
 
@@ -678,7 +678,7 @@ char * read_file_all(char *fn)
     fp = fopen(fn, "r");
 
     if (! fp)
-    	return NULL;
+    	return -1;
     
     /* Get size and reset to read again */
     fseek(fp, 0 , SEEK_END);
@@ -692,7 +692,7 @@ char * read_file_all(char *fn)
     /* Close */
     fclose(fp);
 
-    return s;
+    return fsz;
 }
 
 
