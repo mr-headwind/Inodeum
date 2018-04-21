@@ -116,7 +116,8 @@ typedef struct _main_ui
 
     /* Widgets - monitor */
     GtkWidget *log_cntr, *net_cntr;
-    GtkWidget *ip_addr, *mac_addr, *tx_bytes, *rx_bytes, *ndevs_cbox, *tx_bar;
+    GtkWidget *ip_addr, *mac_addr, *tx_bytes, *rx_bytes, *ndevs_cbox;
+    GtkWidget *rx_bar, *tx_bar;
     GList *ndevs;
 
     /* Widgets - preferences */

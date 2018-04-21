@@ -71,7 +71,8 @@ void free_dev(void *);
 int monitor_device(MainUi *);
 void * net_speed(void *);
 void reset_fn(MainUi *);
-int network_totals(char *, char *, char *, char *);
+int network_totals(char *, char *, char *, char *, const int);
+void display_speed(GtkWidget *, long, long);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -79,7 +80,8 @@ extern int ip_address(char *, char [16], unsigned char [13]);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void set_sz_abbrev(char *);
-extern long read_file_all(char *, char *);
+extern FILE * open_file(char *, char *);
+extern int read_file(FILE *, char *, int);
 extern void OnViewLog(GtkWidget*, gpointer);
 extern void OnSetNetDev(GtkWidget*, gpointer);
 
@@ -91,6 +93,7 @@ static const char *rtx_bytes_pfx = "/sys/class/net/";
 static const char *rx_bytes_sfx = "/statistics/rx_bytes";
 static const char *tx_bytes_sfx = "/statistics/tx_bytes";
 static const int tx_rx_len = 35;
+static const int fsz = 30;		// Max size allowed
 static int net_mon;
 
 
@@ -204,16 +207,23 @@ GtkWidget * monitor_net(MainUi *m_ui)
     create_label(&(m_ui->tx_bytes), "data_1", "", stat_grid, 1, 1, 1, 1);
 
     /* Network speed progress bar */
-    frame2 = gtk_frame_new("Network speed");
+    frame2 = gtk_frame_new("Network speed (approx.)");
     gtk_widget_set_margin_top (frame2, 10);
     gtk_widget_set_margin_bottom (frame2, 10);
     gtk_widget_set_margin_start (frame2, 10);
     gtk_widget_set_margin_end (frame2, 10);
 
+    m_ui->rx_bar = gtk_progress_bar_new();
+    gtk_widget_set_margin_bottom (m_ui->rx_bar, 5);
+    gtk_widget_set_margin_start (m_ui->rx_bar, 10);
+    gtk_widget_set_margin_end (m_ui->rx_bar, 10);
+
     m_ui->tx_bar = gtk_progress_bar_new();
     gtk_widget_set_margin_bottom (m_ui->tx_bar, 5);
     gtk_widget_set_margin_start (m_ui->tx_bar, 10);
     gtk_widget_set_margin_end (m_ui->tx_bar, 10);
+
+    gtk_container_add(GTK_CONTAINER (frame2), m_ui->rx_bar);
     gtk_container_add(GTK_CONTAINER (frame2), m_ui->tx_bar);
 
     /* Pack */
@@ -361,7 +371,7 @@ void free_dev(void *l)
 int monitor_device(MainUi *m_ui)
 {
     int p_err;
-    char *rx, *tx;
+    char rx[31], tx[31];	// Possibly unsafe, but it would be a huge number
     gchar *txt;
     GList *l;
     NetDevice *dev;
@@ -389,7 +399,7 @@ int monitor_device(MainUi *m_ui)
 	    m_ui->txfn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
 	    sprintf(m_ui->txfn, "%s%s%s", rtx_bytes_pfx, dev->name, tx_bytes_sfx);
 
-	    if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx) == FALSE)
+	    if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx, fsz) == FALSE)
 	    	return FALSE;
 
 	    /* Statistics */
@@ -399,8 +409,6 @@ int monitor_device(MainUi *m_ui)
 	    set_sz_abbrev(tx);
 	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx);
 	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx);
-	    free(rx);
-	    free(tx);
 
 	    /* Start performance monitor thread */
 	    if ((p_err = pthread_create(&(m_ui->net_speed_tid), NULL, &net_speed, (void *) m_ui)) != 0)
@@ -425,13 +433,11 @@ int monitor_device(MainUi *m_ui)
 void * net_speed(void *arg)
 {  
     long rx2, tx2;
-    char *rx, *tx;
-    double rxps;
+    char rx[31], tx[31];		// Possibly unsafe, but it would be a huge number
     const gchar *nm;
-    const int interval = 500000;	// microseconds (0.5 seconds)
     MainUi *m_ui;
+    const int interval = 500000;	// microseconds (0.5 seconds)
 
-printf("%s net_speed 1\n", debug_hdr); fflush(stdout);
     /* Initial */
     m_ui = (MainUi *) arg;
     nm = gtk_widget_get_name (m_ui->curr_panel);
@@ -439,7 +445,6 @@ printf("%s net_speed 1\n", debug_hdr); fflush(stdout);
     /* Refresh and display current net speed */
     while(1)
     {
-printf("%s net_speed 2\n", debug_hdr); fflush(stdout);
 	/* Wait interval */
 	usleep(interval);
 
@@ -455,24 +460,18 @@ printf("%s net_speed 2\n", debug_hdr); fflush(stdout);
 	    continue;
 
 	/* Get new network totals */
-	if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx) == FALSE)
+	if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx, fsz) == FALSE)
 	    return FALSE;
 
 	/* Statistics */
 	rx2 = atol(rx);
 	tx2 = atol(tx);
 
-	/* Calculate speed */
-	rxps = (double) (rx2 - m_ui->rx1) / 1024.0;
-        //echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
-
 	/* Set progressbar */
 
 	/* Ready for next loop */
 	m_ui->rx1 = rx2;
 	m_ui->tx1 = tx2;
-	free(rx);
-	free(tx);
     }
     
     pthread_exit(&net_mon);
@@ -480,7 +479,6 @@ printf("%s net_speed 2\n", debug_hdr); fflush(stdout);
 
 
 /* Reset filenames */
-
 
 void reset_fn(MainUi *m_ui)
 {  
@@ -502,23 +500,57 @@ void reset_fn(MainUi *m_ui)
 
 /* Read the network device current totals */
 
-int network_totals(char *rxfn, char *rx, char *txfn, char *tx)
+int network_totals(char *rxfn, char *rx, char *txfn, char *tx, const int fsz)
 {
-    long len;
+    int r;
+    char *p;
+    FILE *fd;
 
-    if ((len = read_file_all(rxfn, rx)) < 0)
+    /* RX */
+    fd = open_file(rxfn, "r");
+    
+    if ((r = read_file(fd, rx, (int) fsz)) != EOF)
 	return FALSE;
 
-    if (rx[len] == '\n')
-	rx[len] = '\0';
+    if ((p = strchr(rx, '\n')) != NULL)
+	*p = '\0';
 
-    if ((len = read_file_all(txfn, tx)) < 0)
+    /* TX */
+    fd = open_file(txfn, "r");
+    
+    if ((r = read_file(fd, tx, (int) fsz)) != EOF)
 	return FALSE;
 
-    if (tx[len] == '\n')
-	tx[len] = '\0';
+    if ((p = strchr(tx, '\n')) != NULL)
+	*p = '\0';
 
     return TRUE;
+}
+
+
+// Set the Progress bars to indicate speeds.
+// This is only an approximate speed indicator and not a performance monitor.
+// It is really a fudge using ProgressBars to display a meter by continually
+// changing the value.
+// Doing this requires a notional 100 percent complete speed never to attained.
+// The formula for this is entirely arbitrary:-
+//   . work out the average speed for the session (total bytes / uptime secs)
+//   . work out current speed
+//   . set whichever is higher as the 50% mark, thus double is the maximum
+//   . from then on, at each iteration, if the current speed >= the maximum,
+//     reset the maximum to current speed plus 25%
+// All speeds are worked out based on Kb/s, but should be displayed as Kb/s, Mb/s
+// and Gb/s as appropriate.
+
+void display_speed(GtkWidget *pbar, long x1, long x2)
+{
+    double rxps;
+
+    /* Calculate speed */
+    rxps = (double) (x2 - x1) / 1024.0;
+    //echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
+
+    return;
 }
 
 

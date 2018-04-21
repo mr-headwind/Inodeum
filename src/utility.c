@@ -599,7 +599,6 @@ void set_sz_abbrev(char *s)
     }
     else if (len < 10)	// Megabytes
     {
-printf("%s set_sz_abbrev 1 s %s len %zu\n", debug_hdr, s, strlen(s)); fflush(stdout);
     	strcpy(abbr, "MB");
     	dv = 1000000.0;
     }
@@ -671,8 +670,16 @@ int stat_file(char *fn, struct stat *buf)
 
 long read_file_all(char *fn, char *s)
 {
-    long fsz;
+    long sz;
     FILE *fp;
+    struct stat buf;
+
+    /* Get file size */
+    if (stat_file(fn, &buf) == FALSE)
+    	return -1;
+
+    sz = (long) buf.st_size;
+    s = (char *) malloc(sz + 1);
 
     /* Open */
     fp = fopen(fn, "r");
@@ -680,19 +687,17 @@ long read_file_all(char *fn, char *s)
     if (! fp)
     	return -1;
     
-    /* Get size and reset to read again */
-    fseek(fp, 0 , SEEK_END);
-    fsz = ftell(fp);
-    fseek(fp, 0 , SEEK_SET);
-
-    /* Read file */
-    s = (char *) malloc(fsz + 1);
-    fgets(s, fsz, fp);
+    /* Read */
+    if (fgets(s, sz, fp) == NULL)
+    {
+    	fclose(fp);
+    	return -1;
+    };
 
     /* Close */
     fclose(fp);
 
-    return fsz;
+    return sz;
 }
 
 
@@ -732,12 +737,10 @@ int read_file(FILE *fd, char *buf, int sz_len)
     }
 
     buf[i] = '\0';
+    fclose(fd);
 
     if (c == EOF)
-    {
-    	fclose(fd);
-    	fd = NULL;
-    }
-
-    return (int) c;
+	return (int) c;
+    else
+	return i;
 }
