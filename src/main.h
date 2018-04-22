@@ -138,6 +138,7 @@ typedef struct _main_ui
     /* Misc */
     int duration, user_cd;
     long rx1, tx1;
+    double sn_rx_kbps, sn_tx_kbps, rx_max_kbps, tx_max_kbps;
     char *rxfn, *txfn;
     double days_rem, days_quota;
     RefreshTmr RefTmr;

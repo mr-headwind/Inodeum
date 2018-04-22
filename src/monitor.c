@@ -43,6 +43,7 @@
 #include <gtk/gtk.h>  
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/sysinfo.h>
 #include <pcap.h> 
 #include <errno.h>
 #include <main.h>
@@ -72,7 +73,8 @@ int monitor_device(MainUi *);
 void * net_speed(void *);
 void reset_fn(MainUi *);
 int network_totals(char *, char *, char *, char *, const int);
-void display_speed(GtkWidget *, long, long);
+void display_speed(GtkWidget *, long, long, double, double *);
+int session_speed(MainUi *);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -82,6 +84,7 @@ extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
 extern void set_sz_abbrev(char *);
 extern FILE * open_file(char *, char *);
 extern int read_file(FILE *, char *, int);
+extern int check_errno();
 extern void OnViewLog(GtkWidget*, gpointer);
 extern void OnSetNetDev(GtkWidget*, gpointer);
 
@@ -169,7 +172,7 @@ GtkWidget * monitor_log(MainUi *m_ui)
 GtkWidget * monitor_net(MainUi *m_ui)
 {  
     GtkWidget *frame, *frame2;
-    GtkWidget *vbox, *dev_grid, *stat_grid;
+    GtkWidget *vbox, *vbox2, *dev_grid, *stat_grid;
     GtkWidget *lbl;
 
     /* Containers */
@@ -213,6 +216,8 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_widget_set_margin_start (frame2, 10);
     gtk_widget_set_margin_end (frame2, 10);
 
+    vbox2 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+
     m_ui->rx_bar = gtk_progress_bar_new();
     gtk_widget_set_margin_bottom (m_ui->rx_bar, 5);
     gtk_widget_set_margin_start (m_ui->rx_bar, 10);
@@ -223,8 +228,9 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_widget_set_margin_start (m_ui->tx_bar, 10);
     gtk_widget_set_margin_end (m_ui->tx_bar, 10);
 
-    gtk_container_add(GTK_CONTAINER (frame2), m_ui->rx_bar);
-    gtk_container_add(GTK_CONTAINER (frame2), m_ui->tx_bar);
+    gtk_box_pack_start (GTK_BOX (vbox2), m_ui->rx_bar, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (vbox2), m_ui->tx_bar, FALSE, FALSE, 0);
+    gtk_container_add(GTK_CONTAINER (frame2), vbox2);
 
     /* Pack */
     gtk_box_pack_start (GTK_BOX (vbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
@@ -410,6 +416,9 @@ int monitor_device(MainUi *m_ui)
 	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx);
 	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx);
 
+	    if (session_speed(m_ui) == FALSE)
+	    	break;
+
 	    /* Start performance monitor thread */
 	    if ((p_err = pthread_create(&(m_ui->net_speed_tid), NULL, &net_speed, (void *) m_ui)) != 0)
 	    {
@@ -468,6 +477,8 @@ void * net_speed(void *arg)
 	tx2 = atol(tx);
 
 	/* Set progressbar */
+	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->rx_max_kbps);
+	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->tx_max_kbps);
 
 	/* Ready for next loop */
 	m_ui->rx1 = rx2;
@@ -542,20 +553,60 @@ int network_totals(char *rxfn, char *rx, char *txfn, char *tx, const int fsz)
 // All speeds are worked out based on Kb/s, but should be displayed as Kb/s, Mb/s
 // and Gb/s as appropriate.
 
-void display_speed(GtkWidget *pbar, long x1, long x2)
+void display_speed(GtkWidget *pbar, long x1, long x2, double sn_kbps, double *max_kbps)
 {
-    double rxps;
+    double x_kbps;
+    char s[30];
 
-    /* Calculate speed */
-    rxps = (double) (x2 - x1) / 1024.0;
+    /* Calculate current speed */
+    x_kbps = (double) (x2 - x1) / 1024.0;
+
+    /* Set maximun if required */
+    if (*max_kbps == 0)
+    {
+    	if (x_kbps > sn_kbps)
+	    *max_kbps = x_kbps * 2.0;
+	else
+	    *max_kbps = sn_kbps * 2.0;
+    }
+    else if (x_kbps >= *max_kbps)
+    {
+    	*max_kbps = x_kbps * 1.25;
+    }
+
+    sprintf(s, "%0.2f Kb/s", x_kbps / *max_kbps);
+printf("%s display_speed 1 s: %s\n", debug_hdr, s); fflush(stdout);
+    gtk_progress_bar_set_text (GTK_PROGRESS_BAR (pbar), s);
+    gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pbar), x_kbps / *max_kbps);
     //echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
 
     return;
 }
 
 
+/* Determine the session speed averages */
+
+int session_speed(MainUi *m_ui)
+{
+    struct sysinfo info;
+
+    if (sysinfo(&info) != 0)
+    {
+	check_errno;
+	return FALSE;
+    }
+
+    m_ui->rx_max_kbps = 0;
+    m_ui->tx_max_kbps = 0;
+    m_ui->sn_rx_kbps = (double) (m_ui->rx1 / info.uptime) / 1024.0;
+    m_ui->sn_tx_kbps = (double) (m_ui->tx1 / info.uptime) / 1024.0;
+
+    return TRUE;
+}
+
+
 /*
-while true
+while trueutility.c
 do
         R1=`cat /sys/class/net/$1/statistics/rx_bytes`
         T1=`cat /sys/class/net/$1/statistics/tx_bytes`
