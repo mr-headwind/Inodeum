@@ -73,7 +73,7 @@ int monitor_device(MainUi *);
 void * net_speed(void *);
 void reset_fn(MainUi *);
 int network_totals(char *, char *, char *, char *, const int);
-void display_speed(GtkWidget *, long, long, double, double *);
+void display_speed(GtkWidget *, double, double, double, double *);
 int session_speed(MainUi *);
 
 extern char * log_name();
@@ -172,7 +172,7 @@ GtkWidget * monitor_log(MainUi *m_ui)
 GtkWidget * monitor_net(MainUi *m_ui)
 {  
     GtkWidget *frame, *frame2;
-    GtkWidget *vbox, *vbox2, *dev_grid, *stat_grid;
+    GtkWidget *vbox, *bar_grid, *dev_grid, *stat_grid;
     GtkWidget *lbl;
 
     /* Containers */
@@ -209,28 +209,40 @@ GtkWidget * monitor_net(MainUi *m_ui)
     create_label(&lbl, "txlbl", "TX bytes this session: ", stat_grid, 0, 1, 1, 1);
     create_label(&(m_ui->tx_bytes), "data_1", "", stat_grid, 1, 1, 1, 1);
 
-    /* Network speed progress bar */
+    /* Network speed frame */
     frame2 = gtk_frame_new("Network speed (approx.)");
     gtk_widget_set_margin_top (frame2, 10);
     gtk_widget_set_margin_bottom (frame2, 10);
     gtk_widget_set_margin_start (frame2, 10);
     gtk_widget_set_margin_end (frame2, 10);
 
-    vbox2 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+    /* Grid for device details */
+    bar_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID (bar_grid), 2);
+    gtk_grid_set_column_spacing(GTK_GRID (bar_grid), 2);
+    gtk_widget_set_margin_start (bar_grid, 20);
+
+    /* Network speed progress bars */
+    create_label(&lbl, "barrxbl", "RX:", bar_grid, 0, 0, 1, 1);
+    create_label(&lbl, "bartxbl", "TX:", bar_grid, 0, 1, 1, 1);
 
     m_ui->rx_bar = gtk_progress_bar_new();
+    gtk_progress_bar_set_show_text (GTK_PROGRESS_BAR (m_ui->rx_bar), TRUE);
+    gtk_widget_set_name (m_ui->rx_bar, "pbar_1");
     gtk_widget_set_margin_bottom (m_ui->rx_bar, 5);
     gtk_widget_set_margin_start (m_ui->rx_bar, 10);
     gtk_widget_set_margin_end (m_ui->rx_bar, 10);
 
     m_ui->tx_bar = gtk_progress_bar_new();
+    gtk_progress_bar_set_show_text (GTK_PROGRESS_BAR (m_ui->tx_bar), TRUE);
+    gtk_widget_set_name (m_ui->tx_bar, "pbar_1");
     gtk_widget_set_margin_bottom (m_ui->tx_bar, 5);
     gtk_widget_set_margin_start (m_ui->tx_bar, 10);
     gtk_widget_set_margin_end (m_ui->tx_bar, 10);
 
-    gtk_box_pack_start (GTK_BOX (vbox2), m_ui->rx_bar, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (vbox2), m_ui->tx_bar, FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER (frame2), vbox2);
+    gtk_grid_attach(GTK_GRID (bar_grid), m_ui->rx_bar, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID (bar_grid), m_ui->tx_bar, 1, 1, 1, 1);
+    gtk_container_add(GTK_CONTAINER (frame2), bar_grid);
 
     /* Pack */
     gtk_box_pack_start (GTK_BOX (vbox), m_ui->ndevs_cbox, FALSE, FALSE, 0);
@@ -377,7 +389,7 @@ void free_dev(void *l)
 int monitor_device(MainUi *m_ui)
 {
     int p_err;
-    char rx[31], tx[31];	// Possibly unsafe, but it would be a huge number
+    char rx_s[31], tx_s[31];	// Possibly unsafe, but it would be a huge number
     gchar *txt;
     GList *l;
     NetDevice *dev;
@@ -405,16 +417,18 @@ int monitor_device(MainUi *m_ui)
 	    m_ui->txfn = (char *) malloc(tx_rx_len + strlen(dev->name) + 1);
 	    sprintf(m_ui->txfn, "%s%s%s", rtx_bytes_pfx, dev->name, tx_bytes_sfx);
 
-	    if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx, fsz) == FALSE)
+	    if (network_totals(m_ui->rxfn, rx_s, m_ui->txfn, tx_s, fsz) == FALSE)
 	    	return FALSE;
 
 	    /* Statistics */
-	    m_ui->rx1 = atol(rx);
-	    m_ui->tx1 = atol(tx);
-	    set_sz_abbrev(rx);
-	    set_sz_abbrev(tx);
-	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx);
-	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx);
+	    m_ui->rx1 = (double) atol(rx_s);
+	    m_ui->tx1 = (double) atol(tx_s);
+printf("%s monitor_device 1 rx_s: %s rx1 %0.2f   tx_s %s tx1 %0.2f\n", 
+debug_hdr, rx_s, m_ui->rx1, tx_s, m_ui->tx1); fflush(stdout);
+	    set_sz_abbrev(rx_s);
+	    set_sz_abbrev(tx_s);
+	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx_s);
+	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx_s);
 
 	    if (session_speed(m_ui) == FALSE)
 	    	break;
@@ -441,11 +455,12 @@ int monitor_device(MainUi *m_ui)
 
 void * net_speed(void *arg)
 {  
-    long rx2, tx2;
-    char rx[31], tx[31];		// Possibly unsafe, but it would be a huge number
+    double rx2, tx2;
+    char rx_s[31], tx_s[31];		// Possibly unsafe, but it would be a huge number
     const gchar *nm;
     MainUi *m_ui;
-    const int interval = 500000;	// microseconds (0.5 seconds)
+    const int interval = 1000000;	// microseconds (1.0 seconds)
+    //const int interval = 500000;	// microseconds (0.5 seconds)
 
     /* Initial */
     m_ui = (MainUi *) arg;
@@ -469,16 +484,17 @@ void * net_speed(void *arg)
 	    continue;
 
 	/* Get new network totals */
-	if (network_totals(m_ui->rxfn, rx, m_ui->txfn, tx, fsz) == FALSE)
+	if (network_totals(m_ui->rxfn, rx_s, m_ui->txfn, tx_s, fsz) == FALSE)
 	    return FALSE;
 
 	/* Statistics */
-	rx2 = atol(rx);
-	tx2 = atol(tx);
+	rx2 = (double) atol(rx_s);
+	tx2 = (double) atol(tx_s);
 
+printf("%s net_speed 1 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", debug_hdr, rx_s, rx2, tx_s, tx2); fflush(stdout);
 	/* Set progressbar */
-	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->rx_max_kbps);
-	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->tx_max_kbps);
+	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->max_kbps);
+	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->max_kbps);
 
 	/* Ready for next loop */
 	m_ui->rx1 = rx2;
@@ -545,40 +561,43 @@ int network_totals(char *rxfn, char *rx, char *txfn, char *tx, const int fsz)
 // changing the value.
 // Doing this requires a notional 100 percent complete speed never to attained.
 // The formula for this is entirely arbitrary:-
-//   . work out the average speed for the session (total bytes / uptime secs)
-//   . work out current speed
-//   . set whichever is higher as the 50% mark, thus double is the maximum
-//   . from then on, at each iteration, if the current speed >= the maximum,
-//     reset the maximum to current speed plus 25%
+//   . Work out the average speed for the session (total bytes / uptime secs).
+//   . Set this as the 75% mark, thus 1.5x is the maximum.
+//   . From then on, at each iteration, if the current speed >= the maximum,
+//     reset the maximum to current speed plus 25% - This will almost certainly
+//     happen as the session figure will be skewed low, but it should stabalise
+//   (NB 75% and 25% area set constants that may change - see code).
 // All speeds are worked out based on Kb/s, but should be displayed as Kb/s, Mb/s
 // and Gb/s as appropriate.
 
-void display_speed(GtkWidget *pbar, long x1, long x2, double sn_kbps, double *max_kbps)
+void display_speed(GtkWidget *pbar, double x1, double x2, double sn_kbps, double *max_kbps)
 {
     double x_kbps;
     char s[30];
+    const double max_kbps_init = 1.5;
+    const double max_kbps_adj = 1.25;
 
+printf("%s display_speed 1 x1:  %0.2f   x2  %0.2f\n", debug_hdr, x1, x2); fflush(stdout);
     /* Calculate current speed */
-    x_kbps = (double) (x2 - x1) / 1024.0;
+    x_kbps = (x2 - x1) / 1024.0;
+printf("%s display_speed 1a x_kbps:  %0.2f   max_kbps  %0.2f\n", debug_hdr, x_kbps, *max_kbps); fflush(stdout);
 
     /* Set maximun if required */
-    if (*max_kbps == 0)
+    if (*max_kbps == 0.0)
     {
-    	if (x_kbps > sn_kbps)
-	    *max_kbps = x_kbps * 2.0;
-	else
-	    *max_kbps = sn_kbps * 2.0;
+	*max_kbps = sn_kbps * max_kbps_init;
+printf("%s display_speed 3 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
     }
     else if (x_kbps >= *max_kbps)
     {
-    	*max_kbps = x_kbps * 1.25;
+    	*max_kbps = x_kbps * max_kbps_adj;
+printf("%s display_speed 4 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
     }
 
-    sprintf(s, "%0.2f Kb/s", x_kbps / *max_kbps);
+    sprintf(s, "%0.2f Kb/s", x_kbps);
 printf("%s display_speed 1 s: %s\n", debug_hdr, s); fflush(stdout);
     gtk_progress_bar_set_text (GTK_PROGRESS_BAR (pbar), s);
     gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pbar), x_kbps / *max_kbps);
-    //echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
 
     return;
 }
@@ -596,10 +615,10 @@ int session_speed(MainUi *m_ui)
 	return FALSE;
     }
 
-    m_ui->rx_max_kbps = 0;
-    m_ui->tx_max_kbps = 0;
-    m_ui->sn_rx_kbps = (double) (m_ui->rx1 / info.uptime) / 1024.0;
-    m_ui->sn_tx_kbps = (double) (m_ui->tx1 / info.uptime) / 1024.0;
+    m_ui->max_kbps = 0.0;
+    m_ui->sn_rx_kbps = (m_ui->rx1 / (double) info.uptime) / 1024.0;
+    m_ui->sn_tx_kbps = (m_ui->tx1 / (double) info.uptime) / 1024.0;
+printf("%s session_speed 1 rx %0.2f  tx %0.2f\n", debug_hdr, m_ui->sn_rx_kbps, m_ui->sn_tx_kbps); fflush(stdout);
 
     return TRUE;
 }

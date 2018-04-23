@@ -69,6 +69,7 @@ static const gchar *css_data =
 	"GtkFrame > GtkLabel { color: #800000; font-weight: 500; }"
 	"GtkDrawingArea#draw_1 { background-color: #ffffff;}"
 	"GtkComboBoxText * { color: @METAL_GREY; font: Sans 9; }"
+	"GtkProgressBar#pbar_1 { color: @DARK_BLUE; font: Sans 7; }"
 	//"#button_1 * { background-color: #ffe4e1; border-color: #800000; }"
 	"#button_1 * { color: #708090; font-weight: bold; }"
 	"GtkNotebook * { font: Sans 8; }"
