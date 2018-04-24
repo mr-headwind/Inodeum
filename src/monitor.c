@@ -75,6 +75,7 @@ void reset_fn(MainUi *);
 int network_totals(char *, char *, char *, char *, const int);
 void display_speed(GtkWidget *, double, double, double, double *);
 int session_speed(MainUi *);
+void bps_abbrev(double, double *, char *);
 
 extern char * log_name();
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -97,6 +98,7 @@ static const char *rx_bytes_sfx = "/statistics/rx_bytes";
 static const char *tx_bytes_sfx = "/statistics/tx_bytes";
 static const int tx_rx_len = 35;
 static const int fsz = 30;		// Max size allowed
+const double kbps_dv = 128.0;		// 1024.0/8.0
 static int net_mon;
 
 
@@ -491,7 +493,7 @@ void * net_speed(void *arg)
 	rx2 = (double) atol(rx_s);
 	tx2 = (double) atol(tx_s);
 
-printf("%s net_speed 1 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", debug_hdr, rx_s, rx2, tx_s, tx2); fflush(stdout);
+printf("%s net_speed 8 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", debug_hdr, rx_s, rx2, tx_s, tx2); fflush(stdout);
 	/* Set progressbar */
 	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->max_kbps);
 	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->max_kbps);
@@ -567,19 +569,19 @@ int network_totals(char *rxfn, char *rx, char *txfn, char *tx, const int fsz)
 //     reset the maximum to current speed plus 25% - This will almost certainly
 //     happen as the session figure will be skewed low, but it should stabalise
 //   (NB 75% and 25% area set constants that may change - see code).
-// All speeds are worked out based on Kb/s, but should be displayed as Kb/s, Mb/s
+// All speeds are worked out based on Kb/s (kilobits/sec), but should be displayed as Kb/s, Mb/s
 // and Gb/s as appropriate.
 
 void display_speed(GtkWidget *pbar, double x1, double x2, double sn_kbps, double *max_kbps)
 {
-    double x_kbps;
-    char s[30];
+    double x_kbps, tmp_bps;
+    char s[30], abbrev[5];
     const double max_kbps_init = 1.5;
     const double max_kbps_adj = 1.25;
 
 printf("%s display_speed 1 x1:  %0.2f   x2  %0.2f\n", debug_hdr, x1, x2); fflush(stdout);
     /* Calculate current speed */
-    x_kbps = (x2 - x1) / 1024.0;
+    x_kbps = (x2 - x1) / kbps_dv;
 printf("%s display_speed 1a x_kbps:  %0.2f   max_kbps  %0.2f\n", debug_hdr, x_kbps, *max_kbps); fflush(stdout);
 
     /* Set maximun if required */
@@ -594,7 +596,8 @@ printf("%s display_speed 3 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(st
 printf("%s display_speed 4 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
     }
 
-    sprintf(s, "%0.2f Kb/s", x_kbps);
+    bps_abbrev(x_kbps, &tmp_bps, abbrev);
+    sprintf(s, "%0.2f %s", tmp_bps, abbrev);
 printf("%s display_speed 1 s: %s\n", debug_hdr, s); fflush(stdout);
     gtk_progress_bar_set_text (GTK_PROGRESS_BAR (pbar), s);
     gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pbar), x_kbps / *max_kbps);
@@ -616,11 +619,35 @@ int session_speed(MainUi *m_ui)
     }
 
     m_ui->max_kbps = 0.0;
-    m_ui->sn_rx_kbps = (m_ui->rx1 / (double) info.uptime) / 1024.0;
-    m_ui->sn_tx_kbps = (m_ui->tx1 / (double) info.uptime) / 1024.0;
+    m_ui->sn_rx_kbps = (m_ui->rx1 / (double) info.uptime) / kbps_dv;
+    m_ui->sn_tx_kbps = (m_ui->tx1 / (double) info.uptime) / kbps_dv;
 printf("%s session_speed 1 rx %0.2f  tx %0.2f\n", debug_hdr, m_ui->sn_rx_kbps, m_ui->sn_tx_kbps); fflush(stdout);
 
     return TRUE;
+}
+
+
+/* Set speed abbreviation */
+
+void bps_abbrev(double xbps, double *tmp_bps, char *abbrev)
+{
+    if (xbps < 1000.0)
+    {
+    	strcpy(abbrev, "Kbps");
+    	*tmp_bps = xbps;
+    }
+    else if (xbps < 1000000.0)
+    {
+    	strcpy(abbrev, "Mbps");
+    	*tmp_bps = xbps / 1000.0;
+    }
+    else 
+    {
+    	strcpy(abbrev, "Gbps");
+    	*tmp_bps = xbps / 1000000.0;
+    }
+
+    return;
 }
 
 

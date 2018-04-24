@@ -175,8 +175,8 @@ void OnMonitor(GtkWidget *btn, gpointer user_data)
     m_ui = (MainUi *) user_data;
 
     /* Display current network information */
-    get_net_details(m_ui);
     show_panel(m_ui->mon_cntr, m_ui);
+    get_net_details(m_ui);
 
     return;
 }  
