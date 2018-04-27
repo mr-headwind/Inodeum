@@ -425,8 +425,6 @@ int monitor_device(MainUi *m_ui)
 	    /* Statistics */
 	    m_ui->rx1 = (double) atol(rx_s);
 	    m_ui->tx1 = (double) atol(tx_s);
-printf("%s monitor_device 1 rx_s: %s rx1 %0.2f   tx_s %s tx1 %0.2f\n", 
-debug_hdr, rx_s, m_ui->rx1, tx_s, m_ui->tx1); fflush(stdout);
 	    set_sz_abbrev(rx_s);
 	    set_sz_abbrev(tx_s);
 	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx_s);
@@ -450,6 +448,10 @@ debug_hdr, rx_s, m_ui->rx1, tx_s, m_ui->tx1); fflush(stdout);
     g_free(txt);
 
     return TRUE;
+/*
+printf("%s monitor_device 1 rx_s: %s rx1 %0.2f   tx_s %s tx1 %0.2f\n", 
+    debug_hdr, rx_s, m_ui->rx1, tx_s, m_ui->tx1); fflush(stdout);
+*/
 }
 
 
@@ -466,7 +468,6 @@ void * net_speed(void *arg)
 
     /* Initial */
     m_ui = (MainUi *) arg;
-    nm = gtk_widget_get_name (m_ui->curr_panel);
 
     /* Refresh and display current net speed */
     while(1)
@@ -475,6 +476,8 @@ void * net_speed(void *arg)
 	usleep(interval);
 
 	/* Exit if 'monitor' is not the current panel */
+	nm = gtk_widget_get_name (m_ui->curr_panel);
+
 	if (strcmp(nm, "monitor_panel") != 0)
 	{
 	    reset_fn(m_ui);
@@ -493,7 +496,6 @@ void * net_speed(void *arg)
 	rx2 = (double) atol(rx_s);
 	tx2 = (double) atol(tx_s);
 
-printf("%s net_speed 8 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", debug_hdr, rx_s, rx2, tx_s, tx2); fflush(stdout);
 	/* Set progressbar */
 	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->max_kbps);
 	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->max_kbps);
@@ -504,6 +506,11 @@ printf("%s net_speed 8 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", debug_hdr, rx_
     }
     
     pthread_exit(&net_mon);
+
+/*
+printf("%s net_speed 8 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", 
+    debug_hdr, rx_s, rx2, tx_s, tx2); fflush(stdout);
+*/
 }
 
 
@@ -579,30 +586,32 @@ void display_speed(GtkWidget *pbar, double x1, double x2, double sn_kbps, double
     const double max_kbps_init = 1.5;
     const double max_kbps_adj = 1.25;
 
-printf("%s display_speed 1 x1:  %0.2f   x2  %0.2f\n", debug_hdr, x1, x2); fflush(stdout);
     /* Calculate current speed */
     x_kbps = (x2 - x1) / kbps_dv;
-printf("%s display_speed 1a x_kbps:  %0.2f   max_kbps  %0.2f\n", debug_hdr, x_kbps, *max_kbps); fflush(stdout);
 
     /* Set maximun if required */
     if (*max_kbps == 0.0)
     {
 	*max_kbps = sn_kbps * max_kbps_init;
-printf("%s display_speed 3 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
     }
     else if (x_kbps >= *max_kbps)
     {
     	*max_kbps = x_kbps * max_kbps_adj;
-printf("%s display_speed 4 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
     }
 
     bps_abbrev(x_kbps, &tmp_bps, abbrev);
     sprintf(s, "%0.2f %s", tmp_bps, abbrev);
-printf("%s display_speed 1 s: %s\n", debug_hdr, s); fflush(stdout);
     gtk_progress_bar_set_text (GTK_PROGRESS_BAR (pbar), s);
     gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pbar), x_kbps / *max_kbps);
 
     return;
+/*
+printf("%s display_speed 1 x1:  %0.2f   x2  %0.2f\n", debug_hdr, x1, x2); fflush(stdout);
+printf("%s display_speed 1a x_kbps:  %0.2f   max_kbps  %0.2f\n", debug_hdr, x_kbps, *max_kbps); fflush(stdout);
+printf("%s display_speed 3 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
+printf("%s display_speed 4 max_kbps:  %0.2f\n", debug_hdr, *max_kbps); fflush(stdout);
+printf("%s display_speed 1 s: %s\n", debug_hdr, s); fflush(stdout);
+*/
 }
 
 
@@ -621,9 +630,12 @@ int session_speed(MainUi *m_ui)
     m_ui->max_kbps = 0.0;
     m_ui->sn_rx_kbps = (m_ui->rx1 / (double) info.uptime) / kbps_dv;
     m_ui->sn_tx_kbps = (m_ui->tx1 / (double) info.uptime) / kbps_dv;
-printf("%s session_speed 1 rx %0.2f  tx %0.2f\n", debug_hdr, m_ui->sn_rx_kbps, m_ui->sn_tx_kbps); fflush(stdout);
 
     return TRUE;
+/*
+printf("%s session_speed 1 rx %0.2f  tx %0.2f\n", 
+    debug_hdr, m_ui->sn_rx_kbps, m_ui->sn_tx_kbps); fflush(stdout);
+*/
 }
 
 
@@ -649,20 +661,3 @@ void bps_abbrev(double xbps, double *tmp_bps, char *abbrev)
 
     return;
 }
-
-
-/*
-while trueutility.c
-do
-        R1=`cat /sys/class/net/$1/statistics/rx_bytes`
-        T1=`cat /sys/class/net/$1/statistics/tx_bytes`
-        sleep $INTERVAL
-        R2=`cat /sys/class/net/$1/statistics/rx_bytes`
-        T2=`cat /sys/class/net/$1/statistics/tx_bytes`
-        TBPS=`expr $T2 - $T1`
-        RBPS=`expr $R2 - $R1`
-        TKBPS=`expr $TBPS / 1024`
-        RKBPS=`expr $RBPS / 1024`
-        echo "TX $1: $TKBPS kB/s RX $1: $RKBPS kB/s"
-done
-*/
