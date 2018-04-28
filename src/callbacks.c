@@ -633,6 +633,7 @@ void OnQuit(GtkWidget *w, gpointer user_data)
     m_ui = g_object_get_data (G_OBJECT(window), "ui");
     pthread_cancel(m_ui->RefTmr.refresh_tid);
     g_source_remove (m_ui->RefTmr.tmr_id);
+    pthread_cancel(m_ui->net_speed_tid);
 
     /* Close any open windows */
     close_open_ui();
