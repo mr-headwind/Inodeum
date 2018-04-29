@@ -118,6 +118,7 @@ typedef struct _main_ui
     GtkWidget *log_cntr, *net_cntr;
     GtkWidget *ip_addr, *mac_addr, *tx_bytes, *rx_bytes, *ndevs_cbox;
     GtkWidget *rx_bar, *tx_bar;
+    GtkWidget *max_rxtx;
     GList *ndevs;
 
     /* Widgets - preferences */

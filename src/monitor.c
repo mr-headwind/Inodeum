@@ -73,7 +73,8 @@ int monitor_device(MainUi *);
 void * net_speed(void *);
 void reset_fn(MainUi *);
 int network_totals(char *, char *, char *, char *, const int);
-void display_speed(GtkWidget *, double, double, double, double *);
+void session_stats(char *, char *, double *, double *, MainUi *);
+void display_speed(GtkWidget *, double, double, double, double *, GtkWidget *);
 int session_speed(MainUi *);
 void bps_abbrev(double, double *, char *);
 
@@ -133,11 +134,12 @@ void monitor_panel(MainUi *m_ui)
 
 GtkWidget * monitor_log(MainUi *m_ui)
 {  
-    char *fn;
+    char *fn, *abbr_fn, *p;
     GtkWidget *frame;
     GtkWidget *log_grid;
     GtkWidget *label_fn;
     GtkWidget *view_btn;
+    const int fn_max = 36;
 
     /* Containers */
     frame = gtk_frame_new("Log File");
@@ -145,19 +147,27 @@ GtkWidget * monitor_log(MainUi *m_ui)
 
     /* Name and location */
     fn = log_name();
-    label_fn = gtk_label_new(fn);
-    gtk_widget_set_name(label_fn, "data_1");
-    gtk_widget_set_margin_top(label_fn, 5);
-    gtk_widget_set_margin_start(label_fn, 10);
-    gtk_widget_set_halign (label_fn, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID (log_grid), label_fn, 0, 0, 1, 1);
+
+    if (strlen(fn) > fn_max)
+    {
+    	abbr_fn = (char *) malloc(fn_max);
+    	p = strchr(&fn[strlen(fn) - fn_max], '/');
+    	sprintf(abbr_fn, "...%s", p);
+	create_label(&(label_fn), "data_1", abbr_fn, log_grid, 0, 0, 1, 1);
+	free(abbr_fn);
+    }
+    else
+    {
+	create_label(&(label_fn), "data_1", fn, log_grid, 0, 0, 1, 1);
+    }
+
+    gtk_widget_set_margin_start(label_fn, 5);
 
     /* View button */
     view_btn = gtk_button_new_with_label("View");
-    gtk_widget_set_margin_top(view_btn, 5);
-    gtk_widget_set_margin_start(view_btn, 10);
-    gtk_widget_set_halign (label_fn, GTK_ALIGN_END);
-    gtk_grid_attach(GTK_GRID (log_grid), view_btn, 1, 1, 1, 1);
+    gtk_widget_set_margin_start(view_btn, 5);
+    gtk_widget_set_halign (view_btn, GTK_ALIGN_END);
+    gtk_grid_attach(GTK_GRID (log_grid), view_btn, 1, 0, 1, 1);
 
     /* Pack */
     gtk_container_add(GTK_CONTAINER (frame), log_grid);
@@ -227,6 +237,8 @@ GtkWidget * monitor_net(MainUi *m_ui)
     /* Network speed progress bars */
     create_label(&lbl, "barrxbl", "RX:", bar_grid, 0, 0, 1, 1);
     create_label(&lbl, "bartxbl", "TX:", bar_grid, 0, 1, 1, 1);
+    create_label(&(m_ui->max_rxtx), "data_3", "", bar_grid, 1, 2, 1, 1);
+    gtk_widget_set_halign (m_ui->max_rxtx, GTK_ALIGN_CENTER);
 
     m_ui->rx_bar = gtk_progress_bar_new();
     gtk_progress_bar_set_show_text (GTK_PROGRESS_BAR (m_ui->rx_bar), TRUE);
@@ -423,12 +435,7 @@ int monitor_device(MainUi *m_ui)
 	    	return FALSE;
 
 	    /* Statistics */
-	    m_ui->rx1 = (double) atol(rx_s);
-	    m_ui->tx1 = (double) atol(tx_s);
-	    set_sz_abbrev(rx_s);
-	    set_sz_abbrev(tx_s);
-	    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx_s);
-	    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx_s);
+	    session_stats(rx_s, tx_s, &(m_ui->rx1), &(m_ui->tx1), m_ui);
 
 	    if (session_speed(m_ui) == FALSE)
 	    	break;
@@ -448,10 +455,6 @@ int monitor_device(MainUi *m_ui)
     g_free(txt);
 
     return TRUE;
-/*
-printf("%s monitor_device 1 rx_s: %s rx1 %0.2f   tx_s %s tx1 %0.2f\n", 
-    debug_hdr, rx_s, m_ui->rx1, tx_s, m_ui->tx1); fflush(stdout);
-*/
 }
 
 
@@ -493,12 +496,11 @@ void * net_speed(void *arg)
 	    return FALSE;
 
 	/* Statistics */
-	rx2 = (double) atol(rx_s);
-	tx2 = (double) atol(tx_s);
+	session_stats(rx_s, tx_s, &rx2, &tx2, m_ui);
 
 	/* Set progressbar */
-	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->max_kbps);
-	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->max_kbps);
+	display_speed(m_ui->rx_bar, m_ui->rx1, rx2, m_ui->sn_rx_kbps, &m_ui->max_kbps, m_ui->max_rxtx);
+	display_speed(m_ui->tx_bar, m_ui->tx1, tx2, m_ui->sn_tx_kbps, &m_ui->max_kbps, m_ui->max_rxtx);
 
 	/* Ready for next loop */
 	m_ui->rx1 = rx2;
@@ -510,6 +512,7 @@ void * net_speed(void *arg)
 /*
 printf("%s net_speed 8 rx_s: %s rx2 %0.2f   tx_s %s tx2 %0.2f\n", 
     debug_hdr, rx_s, rx2, tx_s, tx2); fflush(stdout);
+printf("%s speed thread exit\n", debug_hdr); fflush(stdout);
 */
 }
 
@@ -564,6 +567,21 @@ int network_totals(char *rxfn, char *rx, char *txfn, char *tx, const int fsz)
 }
 
 
+/* Session statistics */
+
+void session_stats(char *rx_s, char *tx_s, double *rx, double *tx, MainUi *m_ui)
+{
+    *rx = (double) atol(rx_s);
+    *tx = (double) atol(tx_s);
+    set_sz_abbrev(rx_s);
+    set_sz_abbrev(tx_s);
+    gtk_label_set_text(GTK_LABEL (m_ui->rx_bytes), rx_s);
+    gtk_label_set_text(GTK_LABEL (m_ui->tx_bytes), tx_s);
+
+    return;
+}
+
+
 // Set the Progress bars to indicate speeds.
 // This is only an approximate speed indicator and not a performance monitor.
 // It is really a fudge using ProgressBars to display a meter by continually
@@ -579,8 +597,9 @@ int network_totals(char *rxfn, char *rx, char *txfn, char *tx, const int fsz)
 // All speeds are worked out based on Kb/s (kilobits/sec), but should be displayed as Kb/s, Mb/s
 // and Gb/s as appropriate.
 
-void display_speed(GtkWidget *pbar, double x1, double x2, double sn_kbps, double *max_kbps)
+void display_speed(GtkWidget *pbar, double x1, double x2, double sn_kbps, double *max_kbps, GtkWidget *max_bps)
 {
+    int max_lbl;
     double x_kbps, tmp_bps;
     char s[30], abbrev[5];
     const double max_kbps_init = 1.5;
@@ -590,19 +609,30 @@ void display_speed(GtkWidget *pbar, double x1, double x2, double sn_kbps, double
     x_kbps = (x2 - x1) / kbps_dv;
 
     /* Set maximun if required */
+    max_lbl = FALSE;
+
     if (*max_kbps == 0.0)
     {
 	*max_kbps = sn_kbps * max_kbps_init;
+	max_lbl = TRUE;
     }
     else if (x_kbps >= *max_kbps)
     {
     	*max_kbps = x_kbps * max_kbps_adj;
+	max_lbl = TRUE;
     }
 
     bps_abbrev(x_kbps, &tmp_bps, abbrev);
     sprintf(s, "%0.2f %s", tmp_bps, abbrev);
     gtk_progress_bar_set_text (GTK_PROGRESS_BAR (pbar), s);
     gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pbar), x_kbps / *max_kbps);
+
+    if (max_lbl == TRUE)
+    {
+	bps_abbrev(*max_kbps, &tmp_bps, abbrev);
+	sprintf(s, "(Max.: %0.2f %s)", tmp_bps, abbrev);
+	gtk_label_set_text(GTK_LABEL (max_bps), s);
+    }
 
     return;
 /*

@@ -625,15 +625,23 @@ gboolean OnHistExpose(GtkWidget *widget, cairo_t *cr, gpointer user_data)
 
 void OnQuit(GtkWidget *w, gpointer user_data)
 {  
+    int r;
+    void *res;
     GtkWidget *window;
     MainUi *m_ui;
 
-    /* Do some clean up */
+    /* Initial */
     window = (GtkWidget *) user_data;
     m_ui = g_object_get_data (G_OBJECT(window), "ui");
-    pthread_cancel(m_ui->RefTmr.refresh_tid);
+
+    /* Clean up threads */
+    if ((r = pthread_cancel(m_ui->RefTmr.refresh_tid)) == 0)
+    	pthread_join(m_ui->RefTmr.refresh_tid, &res);
+
     g_source_remove (m_ui->RefTmr.tmr_id);
-    pthread_cancel(m_ui->net_speed_tid);
+
+    if ((r = pthread_cancel(m_ui->net_speed_tid)) == 0)
+    	pthread_join(m_ui->net_speed_tid, &res);
 
     /* Close any open windows */
     close_open_ui();
