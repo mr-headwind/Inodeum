@@ -496,6 +496,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     /* Process all the '<usage tags' */
     r = TRUE;
     p = xml;
+printf("%s load_usage_hist:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     while(p != NULL)
     {
@@ -579,6 +580,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 
 
 /* Test debug
+*/
 for(i = 0; i < days; i++)
 {
     for(j = 0; j < 5; j++)
@@ -592,7 +594,6 @@ for(i = 0; i < 5; i++)
     printf(" tot_arr[%d] =%lld  ", i, srv_usage.hist_tot_arr[i]); fflush(stdout);
 }
 printf("\n\n");
-*/
 
     return r;
 }  
