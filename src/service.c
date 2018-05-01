@@ -515,6 +515,9 @@ printf("%s load_usage_hist:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 	    break;
 	}
 
+	/* Dates with no usage are not returned, so array index must be determined */
+	free(val);
+
     	/* Process the traffic tags (metered, unmetered, up, down) */
     	while((p = get_next_tag(p, &tag, m_ui)) != NULL)
 	{
