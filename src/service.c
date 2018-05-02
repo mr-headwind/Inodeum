@@ -452,8 +452,8 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     int i, j, hday, dir, cat, idx, r;
     long days, total;
     char *p, *attr, *tag, *val;
-    struct tm tm_fr, tm_to;
-    time_t tmt_fr, tmt_to;
+    struct tm tm_fr, tm_to, tm_tmp;
+    time_t tmt_fr, tmt_to, tmt_tmp;
     const int max_traffic_attr = 3;		// direction, name & unit
 
     const int traffic[3][3] = { {0, 0, 0},		// total met'd unmet'd
@@ -496,15 +496,13 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
     /* Process all the '<usage tags' */
     r = TRUE;
     p = xml;
-printf("%s load_usage_hist:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     while(p != NULL)
     {
+	/* New usage day */
 	if ((p = get_tag(p, "usage", FALSE, m_ui)) == NULL)
 	    break;
 
-	/* New usage day */
-	hday++;
 	p += 6;
 
 	/* Date */
@@ -516,6 +514,9 @@ printf("%s load_usage_hist:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 	}
 
 	/* Dates with no usage are not returned, so array index must be determined */
+	tmt_tmp = string2tm(val, &tm_tmp);
+	idx = (int) difftime_days(tmt_tmp, tmt_fr);
+	hday = idx + 1;
 	free(val);
 
     	/* Process the traffic tags (metered, unmetered, up, down) */
