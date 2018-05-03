@@ -269,6 +269,9 @@ GtkWidget * monitor_net(MainUi *m_ui)
     /* Callback */
     m_ui->dvcbx_hndlr_id = g_signal_connect(m_ui->ndevs_cbox, "changed", G_CALLBACK(OnSetNetDev), m_ui);
 
+    /* Inits */
+    m_ui->max_kbps = 0.0;
+
     return frame;
 }
 
@@ -658,7 +661,6 @@ int session_speed(MainUi *m_ui)
 	return FALSE;
     }
 
-    m_ui->max_kbps = 0.0;
     m_ui->sn_rx_kbps = (m_ui->rx1 / (double) info.uptime) / kbps_dv;
     m_ui->sn_tx_kbps = (m_ui->tx1 / (double) info.uptime) / kbps_dv;
 

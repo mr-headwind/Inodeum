@@ -56,7 +56,6 @@ void create_menu(IspData *, MainUi *);
 void create_main_view(IspData *, MainUi *);
 void usage_btns(MainUi *);
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
-void service_panel(MainUi *);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 void create_label2(GtkWidget **, char *, char *, GtkWidget *);
 void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
@@ -76,6 +75,7 @@ extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
 extern void load_overview(IspData *, MainUi *);
+extern void serv_plan_panel(MainUi *);
 extern void history_panel(MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
@@ -298,7 +298,7 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
 
     /* Usage panels */
     overview_panel(m_ui);
-    service_panel(m_ui);
+    serv_plan_panel(m_ui);
     monitor_panel(m_ui);
     history_panel(m_ui);
     pref_panel(m_ui);
@@ -375,15 +375,6 @@ void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
     gtk_widget_set_vexpand (btn, TRUE);
     gtk_widget_set_hexpand (btn, TRUE);
     gtk_grid_attach(GTK_GRID (cntr), btn, col, row, c_spn, r_spn);
-
-    return;
-}
-
-
-/* Create widgets for the service panel */
-
-void service_panel(MainUi *m_ui)
-{  
 
     return;
 }

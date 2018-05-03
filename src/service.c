@@ -52,6 +52,7 @@
 
 /* Prototypes */
 
+void serv_plan_panel(MainUi *);
 IspListObj * default_srv_type(IspData *, MainUi *);
 int parse_serv_list(char *, IspData *, MainUi *);
 int parse_resource_list(char *, IspListObj *, IspData *, MainUi *);
@@ -89,6 +90,29 @@ static const char *debug_hdr = "DEBUG-service.c ";
 static ServUsage srv_usage;
 static SrvPlan srv_plan;
 
+
+
+/* Servcie Plan details display panel */
+
+void serv_plan_panel(MainUi *m_ui)
+{  
+    /* Log file */
+    m_ui->serv_plan_cntr = service_plan(m_ui);
+
+    /* Combine everything for display */
+    m_ui->mon_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_widget_set_name(m_ui->mon_cntr, "monitor_panel");
+    gtk_widget_set_margin_top (m_ui->mon_cntr, 10);
+    gtk_widget_set_margin_left (m_ui->mon_cntr, 5);
+
+    gtk_box_pack_start (GTK_BOX (m_ui->mon_cntr), m_ui->log_cntr, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->mon_cntr), m_ui->net_cntr, FALSE, FALSE, 0);
+
+    /* Add to the panel stack */
+    gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->mon_cntr, "monitor_panel");
+
+    return;
+}
 
 
 // Set default order - User sets a default
