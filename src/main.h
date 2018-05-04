@@ -110,6 +110,8 @@ typedef struct _main_ui
     GtkWidget *hist_search_cntr, *hist_graph_area;
     LineGraph *hist_usg_graph;
 
+    /* Widgets - service plan */
+
     /* Widgets - about */
     GtkWidget *hdr_box, *misc_box, *tab_nb;
     GtkWidget *app_icon, *home_page;

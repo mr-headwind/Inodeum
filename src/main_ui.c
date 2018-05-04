@@ -75,7 +75,7 @@ extern int check_user_creds(IspData *, MainUi *);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
 extern void load_overview(IspData *, MainUi *);
-extern void serv_plan_panel(MainUi *);
+extern void serv_plan_panel(IspData *, MainUi *);
 extern void history_panel(MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
@@ -298,7 +298,7 @@ void create_main_view(IspData *isp_data, MainUi *m_ui)
 
     /* Usage panels */
     overview_panel(m_ui);
-    serv_plan_panel(m_ui);
+    serv_plan_panel(isp_data, m_ui);
     monitor_panel(m_ui);
     history_panel(m_ui);
     pref_panel(m_ui);
