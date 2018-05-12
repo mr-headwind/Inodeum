@@ -52,8 +52,8 @@
 
 /* Prototypes */
 
-void serv_plan_panel(IspData *, MainUi *);
-GtkWidget * plan_details(IspData *, MainUi *);
+void serv_plan_panel(MainUi *);
+GtkWidget * plan_details(MainUi *);
 IspListObj * default_srv_type(IspData *, MainUi *);
 int parse_serv_list(char *, IspData *, MainUi *);
 int parse_resource_list(char *, IspListObj *, IspData *, MainUi *);
@@ -83,6 +83,7 @@ extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
 extern time_t string2tm(char *, struct tm *);
 extern double difftime_days(time_t, time_t);
+extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 
 
 /* Globals */
@@ -95,9 +96,9 @@ static SrvPlan srv_plan;
 
 /* Servcie Plan details display panel */
 
-void serv_plan_panel(IspData *isp_data, MainUi *m_ui)
+void serv_plan_panel(MainUi *m_ui)
 {  
-    GtkWidget *plan_info_cntr;
+    GtkWidget *plan_cntr;
 
     /* Main panel container */
     m_ui->srv_cntr = gtk_frame_new(NULL);
@@ -106,10 +107,10 @@ void serv_plan_panel(IspData *isp_data, MainUi *m_ui)
     gtk_widget_set_margin_left (m_ui->srv_cntr, 5);
 
     /* Service Plan Details */
-    plan_info_cntr = plan_details(isp_data, m_ui);
+    plan_cntr = plan_details(m_ui);
 
     /* Pack */
-    gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), plan_info_cntr);
+    gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), plan_cntr);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->srv_cntr, "service_panel");
@@ -120,9 +121,26 @@ void serv_plan_panel(IspData *isp_data, MainUi *m_ui)
 
 /* Servcie Plan information */
 
-GtkWidget * plan_details(IspData *isp_data, MainUi *m_ui)
+GtkWidget * plan_details(MainUi *m_ui)
 {  
+    int i;
     GtkWidget *plan_grid;
+    GtkWidget *item_lbl, *item_val;
+    const char *plan_items[] = { "Username", "Plan Quota", "Plan", "Carrier", "Speed", "Usage Rating", 
+    				 "Rollover", "Excess Cost", "Excess Charging", "Excess Shaping", 
+    				 "Excess Restrict Access", "Plan Interval", "Cost" }; 
+    const int item_cnt = 13;
+
+    plan_grid = gtk_grid_new();
+
+    for(i = 0; i < item_cnt; i++)
+    {
+	if (srv_plan.srv_plan_item[i] == NULL)
+	    continue;
+	
+	create_label(&(item_lbl), "data_1", (char *) plan_items[i], plan_grid, 0, i, 1, 1);
+	create_label(&(item_val), "data_1", srv_plan.srv_plan_item[i], plan_grid, 0, i, 1, 1);
+    }
 
     return plan_grid;
 }

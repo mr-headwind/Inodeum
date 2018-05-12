@@ -156,10 +156,9 @@ void OnService(GtkWidget *btn, gpointer user_data)
 
     /* Get details */
     m_ui = (MainUi *) user_data;
-    isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
 
     /* Display service plan details */
-    printf("%s Service plan not available yet\n", debug_hdr); fflush(stdout);
+    show_panel(m_ui->srv_cntr, m_ui);
 
     return;
 }  

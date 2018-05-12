@@ -155,7 +155,7 @@ typedef struct _service_plan
     char *excess_cost;				// If applicable
     char *excess_charged;			// Excess charging? (eg. no)
     char *excess_shaped;			// Excess shaping? (eg. yes)
-    char *excess_restrict;			// Excess rrstrict? (eg. no)
+    char *excess_restrict;			// Excess restrict? (eg. no)
     char *plan_interval;			// Interval (eg. Monthly)
     char *plan_cost;				// Cost (eg. 59.99)
     */
