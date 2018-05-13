@@ -53,7 +53,7 @@
 /* Prototypes */
 
 void serv_plan_panel(MainUi *);
-GtkWidget * plan_details(MainUi *);
+void serv_plan_details(MainUi *);
 IspListObj * default_srv_type(IspData *, MainUi *);
 int parse_serv_list(char *, IspData *, MainUi *);
 int parse_resource_list(char *, IspListObj *, IspData *, MainUi *);
@@ -84,6 +84,7 @@ extern int get_user_pref(char *, char **);
 extern time_t string2tm(char *, struct tm *);
 extern double difftime_days(time_t, time_t);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
+extern void set_sz_abbrev(char *);
 
 
 /* Globals */
@@ -98,19 +99,13 @@ static SrvPlan srv_plan;
 
 void serv_plan_panel(MainUi *m_ui)
 {  
-    GtkWidget *plan_cntr;
-
     /* Main panel container */
-    m_ui->srv_cntr = gtk_frame_new(NULL);
+    m_ui->srv_cntr = gtk_frame_new("Service Plan");
     gtk_widget_set_name(m_ui->srv_cntr, "service_panel");
-    gtk_widget_set_margin_top (m_ui->srv_cntr, 5);
-    gtk_widget_set_margin_left (m_ui->srv_cntr, 5);
-
-    /* Service Plan Details */
-    plan_cntr = plan_details(m_ui);
-
-    /* Pack */
-    gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), plan_cntr);
+    gtk_widget_set_margin_top (m_ui->srv_cntr, 15);
+    gtk_widget_set_margin_bottom (m_ui->srv_cntr, 15);
+    gtk_widget_set_margin_left (m_ui->srv_cntr, 10);
+    gtk_widget_set_margin_right (m_ui->srv_cntr, 10);
 
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->srv_cntr, "service_panel");
@@ -121,28 +116,76 @@ void serv_plan_panel(MainUi *m_ui)
 
 /* Servcie Plan information */
 
-GtkWidget * plan_details(MainUi *m_ui)
+void serv_plan_details(MainUi *m_ui)
 {  
-    int i;
+    int i, unit_free;
+    char *s;
     GtkWidget *plan_grid;
     GtkWidget *item_lbl, *item_val;
-    const char *plan_items[] = { "Username", "Plan Quota", "Plan", "Carrier", "Speed", "Usage Rating", 
-    				 "Rollover", "Excess Cost", "Excess Charging", "Excess Shaping", 
-    				 "Excess Restrict Access", "Plan Interval", "Cost" }; 
+    const char *item_names[] = { "Username:", "Plan Quota:", "Plan:", "Carrier:", "Speed:", "Usage Rating:", 
+    				 "Rollover:", "Excess Cost:", "Excess Charging:", "Excess Shaping:", 
+    				 "Excess Restrict:", "Plan Interval:", "Cost:" }; 
     const int item_cnt = 13;
 
     plan_grid = gtk_grid_new();
 
+    /* Display each service plan item found */
     for(i = 0; i < item_cnt; i++)
     {
 	if (srv_plan.srv_plan_item[i] == NULL)
 	    continue;
+
+	/* Some item have 'units' descriptor */
+	switch(i)
+	{
+	    case 1:		// Quota
+		if (strcmp(srv_plan.quota_units, "bytes") == 0)
+		{
+		    set_sz_abbrev(srv_plan.srv_plan_item[i]);
+		    s = srv_plan.srv_plan_item[i];
+		    unit_free = FALSE;
+		}
+		else
+		{
+		    s = (char *) malloc(strlen(srv_plan.srv_plan_item[i]) + strlen(srv_plan.quota_units) + 4);
+		    sprintf(s, "%s (%s)", srv_plan.srv_plan_item[i], srv_plan.quota_units);
+		    unit_free = TRUE;
+		}
+
+		break;
+
+	    case 7: 		// Excess Costs
+		s = (char *) malloc(strlen(srv_plan.srv_plan_item[i]) + strlen(srv_plan.excess_cost_units) + 4);
+		sprintf(s, "%s (%s)", srv_plan.srv_plan_item[i], srv_plan.excess_cost_units);
+		unit_free = TRUE;
+		break;
+
+	    case 12:		// Plan Cost
+		s = (char *) malloc(strlen(srv_plan.srv_plan_item[i]) + strlen(srv_plan.plan_cost_units) + 4);
+		sprintf(s, "%s (%s)", srv_plan.srv_plan_item[i], srv_plan.plan_cost_units);
+		unit_free = TRUE;
+		break;
+
+	    default:
+		s = srv_plan.srv_plan_item[i];
+		unit_free = FALSE;
+		break;
+	}
 	
-	create_label(&(item_lbl), "data_1", (char *) plan_items[i], plan_grid, 0, i, 1, 1);
-	create_label(&(item_val), "data_1", srv_plan.srv_plan_item[i], plan_grid, 0, i, 1, 1);
+	create_label(&(item_lbl), "lbl", (char *) item_names[i], plan_grid, 0, i, 1, 1);
+	create_label(&(item_val), "data_1", s, plan_grid, 1, i, 1, 1);
+	//create_label(&(item_val), "data_1", srv_plan.srv_plan_item[i], plan_grid, 1, i, 1, 1);
+	gtk_widget_set_margin_left (item_lbl, 5);
+	gtk_widget_set_margin_left (item_val, 5);
+
+	if (unit_free == TRUE)
+	    free(s);
     }
 
-    return plan_grid;
+    /* Pack */
+    gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), plan_grid);
+
+    return;
 }
 
 
@@ -987,6 +1030,9 @@ char * next_rollover_dt()
 
 void clean_up(IspData *isp_data)
 {  
+    int i;
+    const int item_cnt = 13;
+
     g_list_free_full(isp_data->srv_list_head, (GDestroyNotify) free_srv_list);
 
     if (srv_usage.rollover_dt)
@@ -1009,6 +1055,12 @@ void clean_up(IspData *isp_data)
 
     if (srv_usage.unmetered_bytes)
     	free(srv_usage.unmetered_bytes);
+
+    for(i = 0; i < item_cnt; i++)
+    {
+    	if (srv_plan.srv_plan_item[i])
+	    free(srv_plan.srv_plan_item[i]);
+    }
 
     return;
 }  

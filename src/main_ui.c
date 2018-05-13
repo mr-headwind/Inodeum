@@ -76,6 +76,7 @@ extern int ssl_service_details(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
 extern void load_overview(IspData *, MainUi *);
 extern void serv_plan_panel(MainUi *);
+extern void serv_plan_details(MainUi *);
 extern void history_panel(MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
@@ -177,6 +178,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     else
     {
     	disable_login(m_ui);
+    	serv_plan_details(m_ui);
     	load_overview(isp_data, m_ui);
     	show_panel(m_ui->oview_cntr, m_ui);
 

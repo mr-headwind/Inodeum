@@ -30,4 +30,5 @@
 */
 
 
-#define VERSION "0.10"
+#define VERSION "0.50"
+#define VERSION_DATE "14-May-2018"
