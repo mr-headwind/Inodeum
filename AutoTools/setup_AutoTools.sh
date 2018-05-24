@@ -8,38 +8,38 @@ Rel=Release
 
 curdir=`pwd`
 
-if test -d $HOME/$Rel/AstroCTC
+if test -d $HOME/$Rel/Inodeum
 then
-    rm -rf $HOME/$Rel/AstroCTC
+    rm -rf $HOME/$Rel/Inodeum
 fi
 
-mkdir -p $HOME/$Rel/AstroCTC
-cd $HOME/$Rel/AstroCTC
+mkdir -p $HOME/$Rel/Inodeum
+cd $HOME/$Rel/Inodeum
 mkdir src
 mkdir -p data/icons
 
-ln -s $HOME/$Dev/AstroCTC/README .
-ln -s $HOME/$Dev/AstroCTC/COPYING .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/AUTHORS .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/ChangeLog .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/INSTALL .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/NEWS .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/configure.ac .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/Makefile.am .
+ln -s $HOME/$Dev/Inodeum/README .
+ln -s $HOME/$Dev/Inodeum/COPYING .
+ln -s $HOME/$Dev/Inodeum/AutoTools/AUTHORS .
+ln -s $HOME/$Dev/Inodeum/AutoTools/ChangeLog .
+ln -s $HOME/$Dev/Inodeum/AutoTools/INSTALL .
+ln -s $HOME/$Dev/Inodeum/AutoTools/NEWS .
+ln -s $HOME/$Dev/Inodeum/AutoTools/configure.ac .
+ln -s $HOME/$Dev/Inodeum/AutoTools/Makefile.am .
 
 cd src
-ln -s $HOME/$Dev/AstroCTC/AutoTools/src/Makefile.am .
-cp -p $HOME/$Dev/AstroCTC/src/*.c .
-cp -p $HOME/$Dev/AstroCTC/src/*.h .
+ln -s $HOME/$Dev/Inodeum/AutoTools/src/Makefile.am .
+cp -p $HOME/$Dev/Inodeum/src/*.c .
+cp -p $HOME/$Dev/Inodeum/src/*.h .
 
 cd ../data
-ln -s $HOME/$Dev/AstroCTC/AutoTools/data/astroctc.1 .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/data/astroctc.desktop .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/data/Makefile.am .
+ln -s $HOME/$Dev/Inodeum/AutoTools/data/inodeum.1 .
+ln -s $HOME/$Dev/Inodeum/AutoTools/data/inodeum.desktop .
+ln -s $HOME/$Dev/Inodeum/AutoTools/data/Makefile.am .
 
 cd icons
-ln -s $HOME/$Dev/AstroCTC/AutoTools/data/icons/astroctc.png .
-ln -s $HOME/$Dev/AstroCTC/AutoTools/data/icons/Makefile.am .
+ln -s $HOME/$Dev/Inodeum/AutoTools/data/icons/inodeum.png .
+ln -s $HOME/$Dev/Inodeum/AutoTools/data/icons/Makefile.am .
 
 cd ../..
 
