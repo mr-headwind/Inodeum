@@ -3,10 +3,10 @@ SUBDIRS = icons
 
 #if DESKTOP
 
-dist_man_MANS = astroctc.1
+dist_man_MANS = inodeum.1
 
 applicationsdir = $(datadir)/applications
-applications_DATA = astroctc.desktop
+applications_DATA = inodeum.desktop
 
 #endif
 
