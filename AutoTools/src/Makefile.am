@@ -26,5 +26,5 @@ inodeum_SOURCES = \
 		version.h           \
 		view_file_ui.c
 
-astroctc_CFLAGS = $(X_CFLAGS) -Wno-deprecated-declarations
-astroctc_LDADD = $(X_LIBS) -lssl -lcrypto -lpthread -lm -lpcap
+inodeum_CFLAGS = $(X_CFLAGS) -Wno-deprecated-declarations
+inodeum_LDADD = $(X_LIBS) -lssl -lcrypto -lpthread -lm -lpcap

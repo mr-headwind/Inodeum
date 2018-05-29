@@ -19,11 +19,12 @@ AC_CHECK_LIB([pcap], [pcap_findalldevs])
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([ssl], [SSL_library_init])
 AC_CHECK_LIB([cairo], [cairo_stroke])
-AC_CHECK_LIB([cairo], [cairo_stroke])
-AC_CHECK_LIB([gtk_init], [gtk-3])
+AC_CHECK_LIB([gtk-3], [gtk_init])
 AC_CHECK_LIB([gnome-keyring], [gnome_keyring_list_item_ids_sync])
 
 # Checks for header files.
+LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
+CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([arpa/inet.h cairo.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
                   gdk/gdkkeysyms.h glib/gbase64.h glib.h gnome-keyring.h gnome-keyring-memory.h \
