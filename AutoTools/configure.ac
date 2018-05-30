@@ -27,7 +27,7 @@ LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
 CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([arpa/inet.h cairo.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
-                  gdk/gdkkeysyms.h glib/gbase64.h glib.h gnome-keyring.h gnome-keyring-memory.h \
+                  gdk/gdkkeysyms.h glib.h gnome-keyring.h gnome-keyring-memory.h \
                   gtk/gtk.h libgen.h math.h netdb.h net/if.h  netinet/in.h \
                   openssl/bio.h openssl/err.h openssl/pem.h openssl/ssl.h openssl/x509.h openssl/x509_vfy.h \
                   pcap.h pthread.h resolv.h stdint.h stdio.h stdlib.h string.h \

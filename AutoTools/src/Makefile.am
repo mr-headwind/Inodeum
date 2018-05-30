@@ -1,6 +1,6 @@
 bin_PROGRAMS = inodeum
 inodeum_SOURCES = \
-		about.h             \
+		about.c             \
 		cairo_chart.c       \
 		cairo_chart.h       \
 		cairo_util.c        \
