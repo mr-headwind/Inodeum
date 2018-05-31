@@ -42,7 +42,6 @@
 #include <libgen.h>  
 #include <time.h>  
 #include <gtk/gtk.h>  
-#include <glib/gbase64.h>
 #include <main.h>
 #include <isp.h>
 #include <defs.h>
