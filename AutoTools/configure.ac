@@ -13,6 +13,18 @@ AC_PROG_INSTALL
 AM_PROG_CC_C_O
 
 # Checks for libraries.
+not_inst=""
+AC_SEARCH_LIBS([OPENSSL_init], [crypto], [l_pthread=yes],  \)
+AC_SEARCH_LIBS([cos], [m])
+AC_SEARCH_LIBS([pcap_findalldevs], [pcap])
+AC_SEARCH_LIBS([pthread_create], [pthread], [l_pthread=yes],  \
+               [not_inst="${not_inst} pthread"])
+AC_SEARCH_LIBS([SSL_library_init], [ssl])
+AC_SEARCH_LIBS([cairo_stroke], [cairo])
+AC_SEARCH_LIBS([[gtk_init], gtk-3])
+AC_SEARCH_LIBS([gnome_keyring_list_item_ids_sync], [gnome-keyring])
+
+
 AC_CHECK_LIB([crypto], [OPENSSL_init])
 AC_CHECK_LIB([m], [cos])
 AC_CHECK_LIB([pcap], [pcap_findalldevs])
@@ -21,6 +33,22 @@ AC_CHECK_LIB([ssl], [SSL_library_init])
 AC_CHECK_LIB([cairo], [cairo_stroke])
 AC_CHECK_LIB([gtk-3], [gtk_init])
 AC_CHECK_LIB([gnome-keyring], [gnome_keyring_list_item_ids_sync])
+
+
+if test "x${l_gtk}" != xyes || test "x{h_gtk]" = "xno"; then
+  echo " "
+  echo "------------------------------------------"
+  echo " It appears that the GTK development libraries and/or header files  "
+  echo " are not pressent on this system.  "
+  echo " To install try:    [sudo] apt-get install libgtk-3-dev  "
+  echo " Note that depending on what development tools are present  "
+  echo " you may need to run:    [sudo] apt-get build-dep libgtk-3-dev "
+  echo "------------------------------------------"
+  (exit 1); exit 1;
+fi
+
+
+
 
 # Checks for header files.
 LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
