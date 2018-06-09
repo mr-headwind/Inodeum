@@ -12,28 +12,41 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AM_PROG_CC_C_O
 
-# Checks for libraries.
+# Checks for specific libraries and headers.
 not_inst=""
-AC_SEARCH_LIBS([OPENSSL_init], [crypto], [l_pthread=yes],  \)
-AC_SEARCH_LIBS([cos], [m])
-AC_SEARCH_LIBS([pcap_findalldevs], [pcap])
-AC_SEARCH_LIBS([pthread_create], [pthread], [l_pthread=yes],  \
-               [not_inst="${not_inst} pthread"])
-AC_SEARCH_LIBS([SSL_library_init], [ssl])
-AC_SEARCH_LIBS([cairo_stroke], [cairo])
-AC_SEARCH_LIBS([[gtk_init], gtk-3])
-AC_SEARCH_LIBS([gnome_keyring_list_item_ids_sync], [gnome-keyring])
+searchlibs="crypto:OPENSSl_init:openssl/bio.h " \
+	   "m:cos:math.h " \
+	   "pcap:pcap_findalldevs:pcap.h " \
+	   "pthread:pthread_create:pthread.h " \
+	   "ssl:SSL_library_init:openssl/ssl.h " \
+	   "cairo:cairo_stroke:cairo.h " \
+	   "gtk-3:gtk_init:gtk/gtk.h " \
+	   "gnome-keyring:gnome_keyring_list_item_ids_sync:gnome-keyring.h"
 
+for i in ${searchlibs}
+do
+    l_lib=""
+    lib=`echo ${i} | awk -F: '{print $1}'`
+    func=`echo ${i} | awk -F: '{print $2}'`
+    AC_SEARCH_LIBS([${func}], [${lib}], [l_lib=yes], [not_inst="${not_inst} $lib"])
 
-AC_CHECK_LIB([crypto], [OPENSSL_init])
-AC_CHECK_LIB([m], [cos])
-AC_CHECK_LIB([pcap], [pcap_findalldevs])
-AC_CHECK_LIB([pthread], [pthread_create])
-AC_CHECK_LIB([ssl], [SSL_library_init])
-AC_CHECK_LIB([cairo], [cairo_stroke])
-AC_CHECK_LIB([gtk-3], [gtk_init])
-AC_CHECK_LIB([gnome-keyring], [gnome_keyring_list_item_ids_sync])
+    if test "x${l_lib}" = xyes; then
+	hdr=`echo ${i} | awk -F: '{print $3}'`
+    	AC_CHECK_HEADERS([${hdr}], [], [not_inst="${not_inst}  $lib"])
+    fi
+done
 
+if test "x${not_inst}" != x; then
+  echo "------------------------------------------"
+  echo " Unable to find one or more libraries and/or header files on this system.  "
+  echo " The following will need to be installed to build Inodeum:  "
+  echo ${not_inst}
+
+  echo " "
+  echo " For example on Ubuntu or Debian based platforms try the following:  "
+  echo "[sudo] apt-get install ${not_inst}  "
+  echo "------------------------------------------"
+fi
 
 if test "x${l_gtk}" != xyes || test "x{h_gtk]" = "xno"; then
   echo " "
@@ -47,18 +60,15 @@ if test "x${l_gtk}" != xyes || test "x{h_gtk]" = "xno"; then
   (exit 1); exit 1;
 fi
 
-
-
-
-# Checks for header files.
+# General check for other header files.
 LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
 CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
 AC_HEADER_RESOLV
-AC_CHECK_HEADERS([arpa/inet.h cairo.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
-                  gdk/gdkkeysyms.h glib.h gnome-keyring.h gnome-keyring-memory.h \
-                  gtk/gtk.h libgen.h math.h netdb.h net/if.h  netinet/in.h \
-                  openssl/bio.h openssl/err.h openssl/pem.h openssl/ssl.h openssl/x509.h openssl/x509_vfy.h \
-                  pcap.h pthread.h resolv.h stdint.h stdio.h stdlib.h string.h \
+AC_CHECK_HEADERS([arpa/inet.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
+                  gdk/gdkkeysyms.h glib.h gnome-keyring-memory.h \
+                  gtk/gtk.h libgen.h netdb.h net/if.h  netinet/in.h \
+                  openssl/err.h openssl/pem.h openssl/x509.h openssl/x509_vfy.h \
+                  resolv.h stdint.h stdio.h stdlib.h string.h \
                   sys/ioctl.h sys/socket.h sys/stat.h sys/sysinfo.h sys/types.h \
                   time.h unistd.h])
 
