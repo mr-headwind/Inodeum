@@ -46,23 +46,35 @@ if test "x${not_inst}" != x; then
   echo " For example on Ubuntu or Debian based platforms try the following:  "
   echo "[sudo] apt-get install ${not_inst}  "
   echo "------------------------------------------"
-fi
 
-if test "x${l_gtk}" != xyes || test "x{h_gtk]" = "xno"; then
-  echo " "
-  echo "------------------------------------------"
-  echo " It appears that the GTK development libraries and/or header files  "
-  echo " are not pressent on this system.  "
-  echo " To install try:    [sudo] apt-get install libgtk-3-dev  "
-  echo " Note that depending on what development tools are present  "
-  echo " you may need to run:    [sudo] apt-get build-dep libgtk-3-dev "
-  echo "------------------------------------------"
+  gtkmsg=`echo "${not_inst}" | grep "gtk-3" | wc -w`
+
+  if test ${gtkmsg} -eq 0; then
+      echo " "
+      echo "------------------------------------------"
+      echo " *** NOTE ***   "
+      echo " It appears that the GTK development libraries and/or header files  "
+      echo " are not pressent on this system.  "
+      echo " To install try:    [sudo] apt-get install libgtk-3-dev  "
+      echo " Note that depending on what development tools are present  "
+      echo " you may need to run:    [sudo] apt-get build-dep libgtk-3-dev "
+      echo "------------------------------------------"
+  fi
+
   (exit 1); exit 1;
 fi
 
 # General check for other header files.
+#LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
+#CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
+# pkg-config module checks for cflags and linker flags
+PKG_PROG_PKG_CONFIG
+
+PKG_CHECK_MODULES([X], [gtk+-3.0 gnome-keyring-1 openssl cairo glib-2.0])
+#PKG_CHECK_MODULES([X], [gtk+-3.0 gnome-keyring-1 cairo])
 LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
 CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
+
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([arpa/inet.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
                   gdk/gdkkeysyms.h glib.h gnome-keyring-memory.h \
@@ -71,11 +83,6 @@ AC_CHECK_HEADERS([arpa/inet.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
                   resolv.h stdint.h stdio.h stdlib.h string.h \
                   sys/ioctl.h sys/socket.h sys/stat.h sys/sysinfo.h sys/types.h \
                   time.h unistd.h])
-
-# pkg-config module checks for cflags and linker flags
-PKG_PROG_PKG_CONFIG
-
-PKG_CHECK_MODULES([X], [gtk+-3.0 gnome-keyring-1 cairo])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_INT64_T
