@@ -26,8 +26,5 @@ inodeum_SOURCES = \
 		version.h           \
 		view_file_ui.c
 
-inodeum_CPPFLAGS = $(X_CFLAGS) -Wno-deprecated-declarations
-inodeum_LDFLAGS = $(X_LIBS) -lpthread -lm -lpcap
-#inodeum_CFLAGS = $(X_CFLAGS) -Wno-deprecated-declarations
-#inodeum_LDADD = $(X_LIBS) -lpthread -lm -lpcap
-#inodeum_LDADD = $(X_LIBS) -lssl -lcrypto -lpthread -lm -lpcap
+inodeum_CFLAGS=$(GTK_CFLAGS) $(KEYR_CFLAGS) $(SSL_CFLAGS) $(CAIRO_CFLAGS) -Wno-deprecated-declarations
+inodeum_LDADD=$(GTK_LIBS) $(KEYR_LIBS) $(SSL_LIBS) $(CAIRO_LIBS)

@@ -14,25 +14,18 @@ AM_PROG_CC_C_O
 
 # Checks for specific libraries and headers.
 not_inst=""
-searchlibs="crypto:OPENSSl_init:openssl/bio.h " \
-	   "m:cos:math.h " \
-	   "pcap:pcap_findalldevs:pcap.h " \
-	   "pthread:pthread_create:pthread.h " \
-	   "ssl:SSL_library_init:openssl/ssl.h " \
-	   "cairo:cairo_stroke:cairo.h " \
-	   "gtk-3:gtk_init:gtk/gtk.h " \
-	   "gnome-keyring:gnome_keyring_list_item_ids_sync:gnome-keyring.h"
+searchlibs="m:cos:math.h pcap:pcap_findalldevs:pcap.h pthread:pthread_create:pthread.h"
 
 for i in ${searchlibs}
 do
     l_lib=""
     lib=`echo ${i} | awk -F: '{print $1}'`
     func=`echo ${i} | awk -F: '{print $2}'`
-    AC_SEARCH_LIBS([${func}], [${lib}], [l_lib=yes], [not_inst="${not_inst} $lib"])
+    AC_SEARCH_LIBS([${func}], [${lib}], [l_lib=yes], [not_inst="${not_inst}  $lib"])
 
     if test "x${l_lib}" = xyes; then
 	hdr=`echo ${i} | awk -F: '{print $3}'`
-    	AC_CHECK_HEADERS([${hdr}], [], [not_inst="${not_inst}  $lib"])
+    	AC_CHECK_HEADERS([${hdr}], [], [not_inst="${not_inst}  $lib ($hdr)"])
     fi
 done
 
@@ -47,39 +40,35 @@ if test "x${not_inst}" != x; then
   echo "[sudo] apt-get install ${not_inst}  "
   echo "------------------------------------------"
 
-  gtkmsg=`echo "${not_inst}" | grep "gtk-3" | wc -w`
+  (exit 1); exit 1;
+fi
 
-  if test ${gtkmsg} -eq 0; then
-      echo " "
-      echo "------------------------------------------"
-      echo " *** NOTE ***   "
-      echo " It appears that the GTK development libraries and/or header files  "
-      echo " are not pressent on this system.  "
-      echo " To install try:    [sudo] apt-get install libgtk-3-dev  "
-      echo " Note that depending on what development tools are present  "
-      echo " you may need to run:    [sudo] apt-get build-dep libgtk-3-dev "
-      echo "------------------------------------------"
-  fi
+# Check for packages
+PKG_PROG_PKG_CONFIG
+
+not_inst=""
+PKG_CHECK_MODULES([GTK], [gtk+-3.0], [], [not_inst="${not_inst} gtk+3.0"])
+PKG_CHECK_MODULES([KEYR], [gnome-keyring-1], [], [not_inst="${not_inst} gnome-keyring-1"])
+PKG_CHECK_MODULES([SSL], [openssl], [], [not_inst="${not_inst} openssl"])
+PKG_CHECK_MODULES([CAIRO], [cairo], [], [not_inst="${not_inst} cairo"])
+
+if test "x${not_inst}" != x; then
+  echo "------------------------------------------"
+  echo " Unable to find one or more package files on this system.  "
+  echo " The following will need to be installed to build Inodeum:  "
+  echo ${not_inst}
+
+  echo " "
+  echo " To view a list of installed packages enter:  pkg-config --list-all  "
+  echo "------------------------------------------"
 
   (exit 1); exit 1;
 fi
 
 # General check for other header files.
-#LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
-#CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
-# pkg-config module checks for cflags and linker flags
-PKG_PROG_PKG_CONFIG
-
-PKG_CHECK_MODULES([X], [gtk+-3.0 gnome-keyring-1 openssl cairo glib-2.0])
-#PKG_CHECK_MODULES([X], [gtk+-3.0 gnome-keyring-1 cairo])
-LDFLAGS=`pkg-config --libs gtk+-3.0 gnome-keyring-1 cairo glib-2.0`;
-CPPFLAGS=`pkg-config --cflags gtk+-3.0 gnome-keyring-1 glib-2.0`;
-
 AC_HEADER_RESOLV
-AC_CHECK_HEADERS([arpa/inet.h cairo-xlib.h ctype.h dirent.h errno.h fcntl.h \
-                  gdk/gdkkeysyms.h glib.h gnome-keyring-memory.h \
-                  gtk/gtk.h libgen.h netdb.h net/if.h  netinet/in.h \
-                  openssl/err.h openssl/pem.h openssl/x509.h openssl/x509_vfy.h \
+AC_CHECK_HEADERS([arpa/inet.h ctype.h dirent.h errno.h fcntl.h \
+                  libgen.h netdb.h net/if.h  netinet/in.h \
                   resolv.h stdint.h stdio.h stdlib.h string.h \
                   sys/ioctl.h sys/socket.h sys/stat.h sys/sysinfo.h sys/types.h \
                   time.h unistd.h])
