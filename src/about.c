@@ -184,7 +184,7 @@ GtkWidget * about_misc(MainUi *m_ui)
     }
 
     /* Web page */
-    s = (char *) malloc(strlen(TITLE) + 9);
+    s = (char *) malloc(strlen(TITLE) + 10);
     sprintf(s, "%s Web Page", TITLE);
     m_ui->home_page = gtk_link_button_new_with_label (APP_URI, s);
     free(s);
