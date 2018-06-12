@@ -34,10 +34,10 @@ if test "x${not_inst}" != x; then
   echo " Unable to find one or more libraries and/or header files on this system.  "
   echo " The following will need to be installed to build Inodeum:  "
   echo ${not_inst}
-
   echo " "
-  echo " For example on Ubuntu or Debian based platforms try the following:  "
-  echo "[sudo] apt-get install ${not_inst}  "
+  echo " For example, to install 'pthread' and 'pcap' on Ubuntu or Debian   "
+  echo " based platforms try the following:  "
+  echo "[sudo] apt-get install libpthread-stubs0-dev libpcap-dev  "
   echo "------------------------------------------"
 
   (exit 1); exit 1;
@@ -57,7 +57,6 @@ if test "x${not_inst}" != x; then
   echo " Unable to find one or more package files on this system.  "
   echo " The following will need to be installed to build Inodeum:  "
   echo ${not_inst}
-
   echo " "
   echo " To view a list of installed packages enter:  pkg-config --list-all  "
   echo "------------------------------------------"
@@ -68,7 +67,7 @@ fi
 # General check for other header files.
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([arpa/inet.h ctype.h dirent.h errno.h fcntl.h \
-                  libgen.h netdb.h net/if.h  netinet/in.h \
+                  libgen.h netdb.h net/if.h netinet/in.h \
                   resolv.h stdint.h stdio.h stdlib.h string.h \
                   sys/ioctl.h sys/socket.h sys/stat.h sys/sysinfo.h sys/types.h \
                   time.h unistd.h])
