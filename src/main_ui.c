@@ -63,7 +63,9 @@ void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, c
 void create_cbox(GtkWidget **, char *, const char *[], int, int, GtkWidget *, int, int);
 void show_panel(GtkWidget *, MainUi *); 
 void disable_login(MainUi *);
+void add_connect_loop(MainUi *);
 void add_main_loop(MainUi *);
+gboolean connect_main_loop_fn(gpointer);
 gboolean refresh_main_loop_fn(gpointer);
 int refresh_thread(MainUi *);
 void * timer_thread(void *);
@@ -108,8 +110,6 @@ static int ret_mon;
 
 void main_ui(IspData *isp_data, MainUi *m_ui)
 {  
-    int login_req, r;
-
     /* Set up the UI window */
     m_ui->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
     g_object_set_data (G_OBJECT (m_ui->window), "isp_data", isp_data);
@@ -150,41 +150,9 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     set_css();
     gtk_widget_show_all(m_ui->window);
 
-    /* Check user credentials from the gnome keyring */
-    login_req = FALSE;
-
-    if (check_user_creds(isp_data, m_ui) == FALSE)
-    {
-	/* Get user credentials and service request via user entry interface */
-	login_req = TRUE;
-    }
-    else
-    {
-	/* Initiate a service request */
-	r = ssl_service_details(isp_data, m_ui);
-	
-	if (r == -1)
-	    login_req = TRUE;
-
-	else if (r == FALSE)
-	    return;
-    }
-
-    /* User login or display usage details */
-    if (login_req == TRUE)
-    {
-    	user_login_main(isp_data, m_ui->window);
-    }
-    else
-    {
-    	disable_login(m_ui);
-    	serv_plan_details(m_ui);
-    	load_overview(isp_data, m_ui);
-    	show_panel(m_ui->oview_cntr, m_ui);
-
-    	if (refresh_thread(m_ui) == TRUE)
-	    add_main_loop(m_ui);
-    }
+    /* Add an initial loop function to initiate connection */
+    show_panel(m_ui->mon_cntr, m_ui);
+    add_connect_loop(m_ui);
 
     return;
 }
@@ -514,13 +482,84 @@ void disable_login(MainUi *m_ui)
 }
 
 
+// Inject a main loop timer to initiate isp connection.
+// Required as main loop needs to be started in case of an error. */
+
+void add_connect_loop(MainUi *m_ui)
+{  
+    g_timeout_add(1, connect_main_loop_fn, m_ui);
+
+    return;
+}
+
+
 /* Inject a main loop timer */
 
 void add_main_loop(MainUi *m_ui)
 {  
+printf("%s add_main_loop 1\n", debug_hdr); fflush(stdout);
     m_ui->RefTmr.tmr_id = g_timeout_add_seconds(main_loop_interval, refresh_main_loop_fn, m_ui);
+printf("%s add_main_loop 2\n", debug_hdr); fflush(stdout);
 
     return;
+}
+
+
+/* Main loop timer function for isp connection */
+
+gboolean connect_main_loop_fn(gpointer user_data)
+{
+    int login_req, r;
+    MainUi *m_ui;
+    IspData *isp_data;
+
+    /* Initial */
+    m_ui = (MainUi *) user_data;
+    isp_data = (IspData *) g_object_get_data (G_OBJECT (m_ui->window), "isp_data");
+
+    /* Check user credentials from the gnome keyring */
+    login_req = FALSE;
+
+    if (check_user_creds(isp_data, m_ui) == FALSE)
+    {
+	/* Get user credentials and service request via user entry interface */
+	login_req = TRUE;
+    }
+    else
+    {
+	/* Initiate a service request */
+	r = ssl_service_details(isp_data, m_ui);
+	
+	if (r == -1)
+	{
+	    login_req = TRUE;
+	}
+	else if (r == FALSE)
+	{
+	    /* ******** need to enable / disable overview, service & history panels ****/
+	    g_timeout_add_seconds(60, connect_main_loop_fn, m_ui);
+	    return FALSE;
+	}
+    }
+
+    /* User login or display usage details */
+    if (login_req == TRUE)
+    {
+    	user_login_main(isp_data, m_ui->window);
+    }
+    else
+    {
+    	disable_login(m_ui);
+    	serv_plan_details(m_ui);
+    	load_overview(isp_data, m_ui);
+    	show_panel(m_ui->oview_cntr, m_ui);
+
+    	if (refresh_thread(m_ui) == TRUE)
+	    add_main_loop(m_ui);
+    }
+
+    /* If success, return False destroys the loop function */
+    return FALSE;
 }
 
 
@@ -528,11 +567,12 @@ void add_main_loop(MainUi *m_ui)
 
 gboolean refresh_main_loop_fn(gpointer user_data)
 {
-    int r;
+    int login_req, r;
     MainUi *m_ui;
     IspData *isp_data;
     RefreshTmr *ref_tmr;
 
+printf("%s refresh_main_loop_fn 1\n", debug_hdr); fflush(stdout);
     /* Initial */
     m_ui = (MainUi *) user_data;
     ref_tmr = &(m_ui->RefTmr);
@@ -545,8 +585,36 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     	return TRUE;
 
     /* Reset usage data */
+    /*
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return FALSE;
+    */
+printf("%s refresh_main_loop_fn 2\n", debug_hdr); fflush(stdout);
+    login_req = FALSE;
+    r = ssl_service_details(isp_data, m_ui);
+printf("%s refresh_main_loop_fn 3\n", debug_hdr); fflush(stdout);
+    
+    if (r == -1)
+	login_req = TRUE;
+
+    else if (r == FALSE)
+	return r;
+
+    /* User login or display usage details */
+    if (login_req == TRUE)
+    {
+    	user_login_main(isp_data, m_ui->window);
+    }
+    else
+    {
+    	disable_login(m_ui);
+    	serv_plan_details(m_ui);
+    	load_overview(isp_data, m_ui);
+    	show_panel(m_ui->oview_cntr, m_ui);
+    }
+
+printf("%s refresh_main_loop_fn 3\n", debug_hdr); fflush(stdout);
+    serv_plan_details(m_ui);
 
     init_history(m_ui);
     load_overview(isp_data, m_ui);
