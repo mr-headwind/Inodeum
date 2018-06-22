@@ -55,6 +55,7 @@ void main_ui(IspData *, MainUi *);
 void create_menu(IspData *, MainUi *);
 void create_main_view(IspData *, MainUi *);
 void usage_btns(MainUi *);
+void set_connect_btns(MainUi *, int); 
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 void create_label2(GtkWidget **, char *, char *, GtkWidget *);
@@ -152,6 +153,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 
     /* Add an initial loop function to initiate connection */
     show_panel(m_ui->mon_cntr, m_ui);
+    set_connect_btns(m_ui, FALSE);
     add_connect_loop(m_ui);
 
     return;
@@ -350,6 +352,18 @@ void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
 }
 
 
+/* Enable or disable the date panel buttons */
+
+void set_connect_btns(MainUi *m_ui, int sens) 
+{
+    gtk_widget_set_sensitive (m_ui->overview_btn, sens);
+    gtk_widget_set_sensitive (m_ui->service_btn, sens);
+    gtk_widget_set_sensitive (m_ui->history_btn, sens);
+
+    return;
+}
+
+
 /* Maintain which panel is visible */
 
 void show_panel(GtkWidget *cntr, MainUi *m_ui) 
@@ -497,9 +511,7 @@ void add_connect_loop(MainUi *m_ui)
 
 void add_main_loop(MainUi *m_ui)
 {  
-printf("%s add_main_loop 1\n", debug_hdr); fflush(stdout);
     m_ui->RefTmr.tmr_id = g_timeout_add_seconds(main_loop_interval, refresh_main_loop_fn, m_ui);
-printf("%s add_main_loop 2\n", debug_hdr); fflush(stdout);
 
     return;
 }
@@ -542,6 +554,9 @@ gboolean connect_main_loop_fn(gpointer user_data)
 	}
     }
 
+    /* Can enable the data panels now */
+    set_connect_btns(m_ui, TRUE);
+
     /* User login or display usage details */
     if (login_req == TRUE)
     {
@@ -558,7 +573,7 @@ gboolean connect_main_loop_fn(gpointer user_data)
 	    add_main_loop(m_ui);
     }
 
-    /* If success, return False destroys the loop function */
+    /* Return False destroys the loop function */
     return FALSE;
 }
 
@@ -572,7 +587,6 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     IspData *isp_data;
     RefreshTmr *ref_tmr;
 
-printf("%s refresh_main_loop_fn 1\n", debug_hdr); fflush(stdout);
     /* Initial */
     m_ui = (MainUi *) user_data;
     ref_tmr = &(m_ui->RefTmr);
@@ -585,35 +599,9 @@ printf("%s refresh_main_loop_fn 1\n", debug_hdr); fflush(stdout);
     	return TRUE;
 
     /* Reset usage data */
-    /*
     if (ssl_service_details(isp_data, m_ui) != TRUE)
     	return FALSE;
-    */
-printf("%s refresh_main_loop_fn 2\n", debug_hdr); fflush(stdout);
-    login_req = FALSE;
-    r = ssl_service_details(isp_data, m_ui);
-printf("%s refresh_main_loop_fn 3\n", debug_hdr); fflush(stdout);
-    
-    if (r == -1)
-	login_req = TRUE;
 
-    else if (r == FALSE)
-	return r;
-
-    /* User login or display usage details */
-    if (login_req == TRUE)
-    {
-    	user_login_main(isp_data, m_ui->window);
-    }
-    else
-    {
-    	disable_login(m_ui);
-    	serv_plan_details(m_ui);
-    	load_overview(isp_data, m_ui);
-    	show_panel(m_ui->oview_cntr, m_ui);
-    }
-
-printf("%s refresh_main_loop_fn 3\n", debug_hdr); fflush(stdout);
     serv_plan_details(m_ui);
 
     init_history(m_ui);
