@@ -92,6 +92,7 @@ extern int load_service(char *, IspData *, MainUi *);
 extern int load_usage_hist(char *, IspData *, MainUi *);
 extern ServUsage * get_service_usage();
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void log_status_msg(char *, char *, const char *, GtkWidget *);
 extern void date_tm_add(struct tm *, char *, int);
 extern time_t string2tm(char *, struct tm *);
 extern char * next_rollover_dt();
@@ -101,6 +102,7 @@ extern int check_http_status(char *, int *, MainUi *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-ssl_socket.c ";
+static const char *connect_err = "Connection error (see log file), will try again in 1 min.";
 
 
 /* API Webtools service requests */
@@ -165,7 +167,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 
     if (!(NULL != method))
     {
-	log_msg("ERR0012", NULL, "ERR0012", m_ui->window);
+	log_status_msg("ERR0012", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -174,7 +176,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 
     if (!(isp_data->ctx != NULL))
     {
-	log_msg("ERR0013", NULL, "ERR0013", m_ui->window);
+	log_status_msg("ERR0013", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -185,7 +187,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     /* Certificate chain */
     if (! SSL_CTX_load_verify_locations(isp_data->ctx, NULL, SSL_CERT_PATH))
     {
-	log_msg("ERR0014", SSL_CERT_PATH, "ERR0014", m_ui->window);
+	log_status_msg("ERR0014", SSL_CERT_PATH, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -200,14 +202,14 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     /* New connection */
     if ((isp_data->web = BIO_new_ssl_connect(isp_data->ctx)) == NULL)
     {
-	log_msg("ERR0015", NULL, "ERR0015", m_ui->window);
+	log_status_msg("ERR0015", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
     /* Host and port */
     if (! BIO_set_conn_hostname(isp_data->web, HOST ":" SSL_PORT))
     {
-	log_msg("ERR0016", NULL, "ERR0016", m_ui->window);
+	log_status_msg("ERR0016", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -216,7 +218,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     if (isp_data->ssl == NULL)
     {
-	log_msg("ERR0017", NULL, "ERR0017", m_ui->window);
+	log_status_msg("ERR0017", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -228,7 +230,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     if (! SSL_set_cipher_list(isp_data->ssl, PREFERRED_CIPHERS))
     {
-	log_msg("ERR0018", NULL, "ERR0018", m_ui->window);
+	log_status_msg("ERR0018", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
     */
@@ -236,7 +238,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     /* Fine tune host if possible */
     if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST))
     {
-	log_msg("ERR0019", NULL, "ERR0019", m_ui->window);
+	log_status_msg("ERR0019", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -245,7 +247,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     if (BIO_do_connect(isp_data->web) <= 0)
     {
-	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
+	log_status_msg("ERR0020", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -253,7 +255,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     if (BIO_do_handshake(isp_data->web) <= 0)
     {
-	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
+	log_status_msg("ERR0020", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -266,14 +268,14 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
     else if (NULL == cert)
     {
-	log_msg("ERR0021", NULL, "ERR0021", m_ui->window);
+	log_status_msg("ERR0021", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 
     /* Verify the certificate */
     if (SSL_get_verify_result(isp_data->ssl) != X509_V_OK)
     {
-	log_msg("ERR0022", NULL, "ERR0021", m_ui->window);
+	log_status_msg("ERR0022", NULL, connect_err, m_ui->status_info);
     	return FALSE;
     }
 

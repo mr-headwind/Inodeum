@@ -64,6 +64,7 @@ void create_radio(GtkWidget **, GtkWidget *, char *, char *, GtkWidget *, int, c
 void create_cbox(GtkWidget **, char *, const char *[], int, int, GtkWidget *, int, int);
 void show_panel(GtkWidget *, MainUi *); 
 void disable_login(MainUi *);
+void start_usage_mon(IspData *, MainUi *);
 void add_connect_loop(MainUi *);
 void add_main_loop(MainUi *);
 gboolean connect_main_loop_fn(gpointer);
@@ -496,6 +497,23 @@ void disable_login(MainUi *m_ui)
 }
 
 
+/* Start the usage monitor */
+
+void start_usage_mon(IspData *isp_data, MainUi *m_ui)
+{  
+    set_connect_btns(m_ui, TRUE);
+    disable_login(m_ui);
+    serv_plan_details(m_ui);
+    load_overview(isp_data, m_ui);
+    show_panel(m_ui->oview_cntr, m_ui);
+
+    if (refresh_thread(m_ui) == TRUE)
+	add_main_loop(m_ui);
+
+    return;
+}
+
+
 // Inject a main loop timer to initiate isp connection.
 // Required as main loop needs to be started in case of an error. */
 
@@ -548,30 +566,16 @@ gboolean connect_main_loop_fn(gpointer user_data)
 	}
 	else if (r == FALSE)
 	{
-	    /* ******** need to enable / disable overview, service & history panels ****/
 	    g_timeout_add_seconds(60, connect_main_loop_fn, m_ui);
 	    return FALSE;
 	}
     }
 
-    /* Can enable the data panels now */
-    set_connect_btns(m_ui, TRUE);
-
     /* User login or display usage details */
     if (login_req == TRUE)
-    {
     	user_login_main(isp_data, m_ui->window);
-    }
     else
-    {
-    	disable_login(m_ui);
-    	serv_plan_details(m_ui);
-    	load_overview(isp_data, m_ui);
-    	show_panel(m_ui->oview_cntr, m_ui);
-
-    	if (refresh_thread(m_ui) == TRUE)
-	    add_main_loop(m_ui);
-    }
+	start_usage_mon(isp_data, m_ui);
 
     /* Return False destroys the loop function */
     return FALSE;

@@ -99,8 +99,10 @@ extern void disable_login(MainUi *);
 extern void load_overview(IspData *isp_data, MainUi *m_ui);
 extern void serv_plan_details(MainUi *);
 extern void show_panel(GtkWidget *, MainUi *);
+extern void start_usage_mon(IspData *, MainUi *);
 extern int refresh_thread(MainUi *);
 extern void add_main_loop(MainUi *);
+extern void set_connect_btns(MainUi *, int);
 extern void set_css();
 
 
@@ -512,16 +514,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     r = ssl_service_details(isp_data, m_ui);
 
     if (r == TRUE)
-    {
-    	disable_login(m_ui);
-    	serv_plan_details(m_ui);
-    	load_overview(isp_data, m_ui);
-    	show_panel(m_ui->oview_cntr, m_ui);
-
-    	if (refresh_thread(m_ui) == TRUE)
-	    add_main_loop(m_ui);
-    }
-
+    	start_usage_mon(isp_data, m_ui);
     else if (r == -1)
 	return;
 

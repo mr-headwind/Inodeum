@@ -65,6 +65,7 @@ int check_app_dir();
 int reset_log();
 void log_msg(char*, char*, char*, GtkWidget*);
 void app_msg(char*, char *, GtkWidget*);
+void log_status_msg(char *, char *, const char *, GtkWidget *);
 void info_dialog(GtkWidget *, char *, char *);
 void get_msg(char*, char*, char*);
 void close_log();
@@ -219,6 +220,17 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
     	sprintf(app_msg_extra, "\nLog file (%s) may contain more details.", logfile);
     	app_msg(sys_msg_id, opt_str, window);
     }
+
+    return;
+}
+
+
+/* Add a message to the log file and display text in the info status area */
+
+void log_status_msg(char *msg_id, char *opt_str, const char *txt, GtkWidget *status_info)
+{
+    log_msg(msg_id, opt_str, NULL, NULL);
+    gtk_label_set_text (GTK_LABEL (status_info), txt);
 
     return;
 }
