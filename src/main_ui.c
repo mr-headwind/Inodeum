@@ -604,7 +604,10 @@ gboolean refresh_main_loop_fn(gpointer user_data)
 
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
-    	return FALSE;
+    {
+	refresh_thread(m_ui);
+    	return TRUE;
+    }
 
     serv_plan_details(m_ui);
 

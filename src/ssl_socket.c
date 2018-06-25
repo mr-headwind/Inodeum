@@ -91,7 +91,6 @@ extern int load_usage(char *, IspData *, MainUi *);
 extern int load_service(char *, IspData *, MainUi *);
 extern int load_usage_hist(char *, IspData *, MainUi *);
 extern ServUsage * get_service_usage();
-extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void log_status_msg(char *, char *, const char *, GtkWidget *);
 extern void date_tm_add(struct tm *, char *, int);
 extern time_t string2tm(char *, struct tm *);
@@ -102,7 +101,8 @@ extern int check_http_status(char *, int *, MainUi *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-ssl_socket.c ";
-static const char *connect_err = "Connection error (see log file), will try again in 1 min.";
+static const char *connect_err = "Connection error (see log file), retry ?????.";
+static const char *service_query_err = "Service query error (see log file), retry in 1 min.";
 
 
 /* API Webtools service requests */
@@ -243,7 +243,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
 
     /* Connection and handshake */
-    log_msg("MSG0003", "Connecting...", NULL, NULL);
+    log_status_msg("MSG0003", "Connecting...", "Connecting...", m_ui->status_info);
 
     if (BIO_do_connect(isp_data->web) <= 0)
     {
@@ -251,7 +251,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     	return FALSE;
     }
 
-    log_msg("MSG0003", "Handshaking...", NULL, NULL);
+    log_status_msg("MSG0003", "Handshaking...", "Handshaking...", m_ui->status_info);
 
     if (BIO_do_handshake(isp_data->web) <= 0)
     {
@@ -292,7 +292,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 
     r = TRUE;
     sprintf(isp_data->url, "/api/%s/", API_VER);
-    log_msg("MSG0003", "Retrieving usage details...", NULL, NULL);
+    log_status_msg("MSG0003", "Retrieving usage details...", "Retrieving usage details...", m_ui->status_info);
     
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
@@ -680,7 +680,7 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 
 	if (r <= 0)
 	{
-	    log_msg("ERR0010", NULL, "ERR0010", m_ui->window);
+	    log_status_msg("ERR0010", NULL, service_query_err, m_ui->status_info);
 	    return FALSE;
 	}
 	else
@@ -689,23 +689,6 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 	}
     }
 
-    //r = BIO_puts(web, get_qry);		// Try this for starters - perhaps BIO_write may better
-
-    /*
-    if (r >= 0 && r < strlen(get_qry))
-    {
-    	sprintf(s, "%d", r);
-	log_msg("ERR0023", s, "ERR0023", m_ui->window);
-	return FALSE;
-    }
-
-    if (r < 0)
-    {
-	log_msg("ERR0024", NULL, "ERR0024", m_ui->window);
-	return FALSE;
-    }
-    */
-    
     return TRUE;
 }  
 

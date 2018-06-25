@@ -78,6 +78,7 @@ char * resp_status_desc(char *, MainUi *);
 ServUsage * get_service_usage();
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
+extern void log_status_msg(char *, char *, const char *, GtkWidget *);
 extern void app_msg(char*, char*, GtkWidget*);
 extern int get_user_pref(char *, char **);
 extern time_t string2tm(char *, struct tm *);
@@ -89,6 +90,11 @@ extern void set_sz_abbrev(char *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-service.c ";
+static const char *default_srv_err = "Default service error (see log file), will try again in 1 min.";
+static const char *xml_parse_err = "XML parse error (see log file), will try again in 1 min.";
+static const char *http_err = "HTML error (see log file), will try again in 1 min.";
+static const char *login_err = "Username / Password invalid (see log file), will try again in 1 min.";
+static const char *client_err = "Client error (see log file), will try again in 1 min.";
 static ServUsage srv_usage;
 static SrvPlan srv_plan;
 
@@ -205,7 +211,7 @@ IspListObj * default_srv_type(IspData *isp_data, MainUi *m_ui)
     {
     	if ((srv_type = search_list(p, isp_data->srv_list_head)) == NULL)
     	{
-	    log_msg("ERR0034", p, "ERR0034", m_ui->window);
+	    log_status_msg("ERR0034", p, default_srv_err, m_ui->status_info);
 	    return NULL;
 	}
     }
@@ -259,7 +265,7 @@ int parse_serv_list(char *xml, IspData *isp_data, MainUi *m_ui)
 	}
 	else
 	{
-	    log_msg("ERR0030", "<service ", "ERR0030", m_ui->window);
+	    log_status_msg("ERR0030", "<service ", xml_parse_err, m_ui->status_info);
 	    r = FALSE;
 	    break;
 	}
@@ -302,7 +308,7 @@ int parse_resource_list(char *xml, IspListObj *isp_srv, IspData *isp_data, MainU
 	}
 	else
 	{
-	    log_msg("ERR0030", "service", "ERR0030", m_ui->window);
+	    log_status_msg("ERR0030", "resource ", xml_parse_err, m_ui->status_info);
 	    r = FALSE;
 	    break;
 	}
@@ -409,7 +415,7 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
 	    	free(val);
 	    	break;
 	    default:
-		log_msg("ERR0035", val, "ERR0035", m_ui->window);
+		log_status_msg("ERR0035", val, xml_parse_err, m_ui->status_info);
 		r = FALSE;
 	    	free(val);
 	    	break;
@@ -419,7 +425,7 @@ int total_usage(char *xml, ServUsage *usg, MainUi *m_ui)
     /* Flag a warning if not all are found */
     if (i != tag_cnt)
     {
-	log_msg("ERR0036", NULL, "ERR0036", m_ui->window);
+	log_status_msg("ERR0036", NULL, xml_parse_err, m_ui->status_info);
 	r = FALSE;
     }
 
@@ -503,7 +509,7 @@ int load_service(char *xml, IspData *isp_data, MainUi *m_ui)
 	{
 	    if ((p = get_named_tag_attr(p, "units", &val, m_ui)) == NULL)
 	    {
-		log_msg("ERR0031", msg, "ERR0031", m_ui->window);
+		log_status_msg("ERR0031", msg, xml_parse_err, m_ui->status_info);
 		r = FALSE;
 	    }
 	    else
@@ -606,7 +612,7 @@ int load_usage_hist(char *xml, IspData *isp_data, MainUi *m_ui)
 	if ((p = get_named_tag_attr(p, "day", &val, m_ui)) == NULL)
 	{
 	    r = FALSE;
-	    log_msg("ERR0031", "day", "ERR0031", m_ui->window);
+	    log_status_msg("ERR0031", "day", xml_parse_err, m_ui->status_info);
 	    break;
 	}
 
@@ -717,7 +723,7 @@ char * get_list_count(char *xml, char *tag, int *cnt, MainUi *m_ui)
 
     if (*cnt == 0)
     {
-	log_msg("ERR0033", tag, "ERR0033", m_ui->window);
+	log_status_msg("ERR0033", tag, xml_parse_err, m_ui->status_info);
     	return NULL;
     }
 
@@ -818,7 +824,7 @@ char * get_tag(char *xml, char *tag, int err, MainUi *m_ui)
 	if ((p = strstr(p, tag)) == NULL)
 	{
 	    if (err == TRUE)
-		log_msg("ERR0030", tag, "ERR0030", m_ui->window);
+		log_status_msg("ERR0030", tag, xml_parse_err, m_ui->status_info);
 
 	    break;
 	}
@@ -887,7 +893,7 @@ char * get_named_tag_attr(char *xml, char *attr, char **val, MainUi *m_ui)
     p = get_tag_attr(xml, &attr, &(*val), m_ui);
 
     if (*val == NULL)
-	log_msg("ERR0031", attr, "ERR0031", m_ui->window);
+	log_status_msg("ERR0031", attr, xml_parse_err, m_ui->status_info);
 
     return p;
 }  
@@ -942,7 +948,7 @@ char * get_tag_attr(char *xml, char **attr, char **val, MainUi *m_ui)
 
 	if (p2 == NULL)
 	{
-	    log_msg("ERR0031", "Tag Attribute", "ERR0039", m_ui->window);
+	    log_status_msg("ERR0031", "Tag Attribute", xml_parse_err, m_ui->status_info);
 	    break;
 	}
 	    
@@ -994,13 +1000,13 @@ int get_tag_val(char *xml, char **s, MainUi *m_ui)
 
     if ((p = strchr(xml,'>')) == NULL)
     {
-	log_msg("ERR0032", NULL, "ERR0032", m_ui->window);
+	log_status_msg("ERR0032", NULL, xml_parse_err, m_ui->status_info);
     	return FALSE;
     }
 
     if ((p2 = strchr(p,'<')) == NULL)
     {
-	log_msg("ERR0032", NULL, "ERR0032", m_ui->window);
+	log_status_msg("ERR0032", NULL, xml_parse_err, m_ui->status_info);
     	return FALSE;
     }
 
@@ -1151,11 +1157,11 @@ int check_http_status(char *xml, int *html_code, MainUi *m_ui)
 	    if (n_code == 401)
 	    {
 		sprintf(app_msg_extra, "%s", err_txt);
-		log_msg("ERR0025", txt, NULL, NULL);
+		log_status_msg("ERR0025", txt, http_err, m_ui->status_info);
 		sprintf(app_msg_extra, "If your password has been changed you may\n"
 				       "need to log in and store securely again.\n"
 				       "Check the log file for more details.");
-		app_msg("ERR0026", NULL, m_ui->window);
+		log_status_msg("ERR0026", NULL, login_err, m_ui->status_info);
 	    }
 	    else
 	    {
@@ -1164,9 +1170,7 @@ int check_http_status(char *xml, int *html_code, MainUi *m_ui)
 			    "or the setup of the request.\n"
 			    "The program cannot continue and investigation is required.\n"
 			    "Further details follow:\n %s", err_txt);
-		log_msg("ERR0025", txt, NULL, NULL);
-		sprintf(app_msg_extra, "Check the log file for more details.");
-		app_msg("ERR0025", NULL, m_ui->window);
+		log_status_msg("ERR0025", txt, client_err, m_ui->status_info);
 	    }
 	    	
 	    free(err_txt);
