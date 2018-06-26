@@ -49,6 +49,10 @@
 #define BOTH 2
 #endif
 
+#ifndef RETRY_SZ
+#define RETRY_SZ 30
+#endif
+
 #ifndef AC_COLOURS
 #define AC_COLOURS
 #ifdef MAIN_UI

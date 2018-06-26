@@ -65,7 +65,7 @@ int check_app_dir();
 int reset_log();
 void log_msg(char*, char*, char*, GtkWidget*);
 void app_msg(char*, char *, GtkWidget*);
-void log_status_msg(char *, char *, const char *, GtkWidget *);
+void log_status_msg(char *, char *, char *, char *, GtkWidget *);
 void info_dialog(GtkWidget *, char *, char *);
 void get_msg(char*, char*, char*);
 void close_log();
@@ -97,6 +97,17 @@ static const char *app_messages[][2] =
     { "MSG0001", "Session started. "},
     { "MSG0002", "Session ends. "},
     { "MSG0003", "%s "},
+    { "MSG0004", "Warning: Inconsistent 'Unit' encountered - %s. "},
+    { "INF0001", "Connection error (see log file) %s "},
+    { "INF0002", "Service query error (see log file) %s "},
+    { "INF0003", "Connecting... %s "},
+    { "INF0004", "Handshaking... %s "},
+    { "INF0005", "Retrieving usage details... %s "},
+    { "INF0006", "Default service error (see log file) %s "},
+    { "INF0007", "XML parse error (see log file) %s "},
+    { "INF0008", "HTML error (see log file) %s "},
+    { "INF0009", "Username / Password invalid (see log file) %s "},
+    { "INF0010", "Client error (see log file) %s "},
     { "ERR0001", "Failed to create log file: %s "},
     { "ERR0002", "Failed to read $HOME variable. "},
     { "ERR0003", "Failed to create Application directory: %s "},
@@ -145,12 +156,11 @@ static const char *app_messages[][2] =
     { "ERR0046", "Calendar date field cannot be NULL. "},
     { "ERR0047", "Error determining Network devices. "},
     { "ERR0048", "Error starting network speed monitor thread. "},
-    { "MSG0044", "Warning: Inconsistent 'Unit' encountered - %s. "},
     { "ERR9998", "Error: %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 54;
+static const int Msg_Count = 64;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
@@ -159,6 +169,7 @@ static int app_dir_len;
 static const char *debug_hdr = "DEBUG-utility.c ";
 static GList *open_ui_list_head = NULL;
 static GList *open_ui_list = NULL;
+static char msg[512];
 
 
 
@@ -170,7 +181,6 @@ static GList *open_ui_list = NULL;
 
 void app_msg(char *msg_id, char *opt_str, GtkWidget *window)
 {
-    char msg[512];
     int i;
 
     /* Lookup the error */
@@ -191,7 +201,6 @@ void app_msg(char *msg_id, char *opt_str, GtkWidget *window)
 
 void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
 {
-    char msg[512];
     char date_str[50];
 
     /* Lookup the error */
@@ -227,10 +236,15 @@ void log_msg(char *msg_id, char *opt_str, char *sys_msg_id, GtkWidget *window)
 
 /* Add a message to the log file and display text in the info status area */
 
-void log_status_msg(char *msg_id, char *opt_str, const char *txt, GtkWidget *status_info)
+void log_status_msg(char *msg_id, char *opt_str, char *inf_id, char *opt_inf, GtkWidget *status_info)
 {
+    /* Log file */
     log_msg(msg_id, opt_str, NULL, NULL);
-    gtk_label_set_text (GTK_LABEL (status_info), txt);
+
+    /* Lookup the message */
+    get_msg(msg, inf_id, opt_inf);
+
+    gtk_label_set_text (GTK_LABEL (status_info), msg + strlen(inf_id) + 2);
 
     return;
 }

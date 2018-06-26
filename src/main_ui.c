@@ -71,6 +71,7 @@ gboolean connect_main_loop_fn(gpointer);
 gboolean refresh_main_loop_fn(gpointer);
 int refresh_thread(MainUi *);
 void * timer_thread(void *);
+void set_retry_txt(MainUi *, char *, int);
 GtkWidget * debug_cntr(GtkWidget *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
@@ -692,6 +693,23 @@ printf("%s timer thread exit\n", debug_hdr); fflush(stdout);
 */
 }
 
+
+/* Set text for retry messages based on whether Inodeum has really started or not */
+
+void set_retry_txt(MainUi *m_ui, char *buf, int maxsz)
+{
+    static const char *retry_nxtref = ", retry at next refresh.";
+    static const char *retry_1min = ", retry in 1 min.";
+
+    memset(buf, '\0', maxsz);
+
+    if (m_ui->RefTmr.refresh_req == TRUE)
+    	strncpy(buf, retry_nxtref, maxsz - 1);
+    else
+    	strncpy(buf, retry_1min, maxsz - 1);
+
+    return;
+}
 
 
 /* Debug widget container */

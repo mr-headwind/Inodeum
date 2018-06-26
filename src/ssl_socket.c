@@ -91,7 +91,9 @@ extern int load_usage(char *, IspData *, MainUi *);
 extern int load_service(char *, IspData *, MainUi *);
 extern int load_usage_hist(char *, IspData *, MainUi *);
 extern ServUsage * get_service_usage();
-extern void log_status_msg(char *, char *, const char *, GtkWidget *);
+extern void set_retry_txt(MainUi *, char *, int);
+extern void set_service_retry_txt(MainUi *, char *);
+extern void log_status_msg(char *, char *, char *, char *, GtkWidget *);
 extern void date_tm_add(struct tm *, char *, int);
 extern time_t string2tm(char *, struct tm *);
 extern char * next_rollover_dt();
@@ -101,8 +103,7 @@ extern int check_http_status(char *, int *, MainUi *);
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-ssl_socket.c ";
-static const char *connect_err = "Connection error (see log file), retry ?????.";
-static const char *service_query_err = "Service query error (see log file), retry in 1 min.";
+static char retry_txt[RETRY_SZ];
 
 
 /* API Webtools service requests */
@@ -153,6 +154,10 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
 
 int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 {  
+    /* Initialise */
+    set_retry_txt(m_ui, retry_txt, 30);
+    set_service_retry_txt(m_ui, retry_txt);
+
     isp_data->ctx = NULL;
     isp_data->web = NULL;
     isp_data->ssl = NULL;
@@ -167,7 +172,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 
     if (!(NULL != method))
     {
-	log_status_msg("ERR0012", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0012", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -176,7 +181,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
 
     if (!(isp_data->ctx != NULL))
     {
-	log_status_msg("ERR0013", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0013", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -187,7 +192,7 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     /* Certificate chain */
     if (! SSL_CTX_load_verify_locations(isp_data->ctx, NULL, SSL_CERT_PATH))
     {
-	log_status_msg("ERR0014", SSL_CERT_PATH, connect_err, m_ui->status_info);
+	log_status_msg("ERR0014", SSL_CERT_PATH, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -202,14 +207,14 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     /* New connection */
     if ((isp_data->web = BIO_new_ssl_connect(isp_data->ctx)) == NULL)
     {
-	log_status_msg("ERR0015", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0015", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
     /* Host and port */
     if (! BIO_set_conn_hostname(isp_data->web, HOST ":" SSL_PORT))
     {
-	log_status_msg("ERR0016", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0016", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -218,7 +223,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     if (isp_data->ssl == NULL)
     {
-	log_status_msg("ERR0017", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0017", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -230,7 +235,7 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 
     if (! SSL_set_cipher_list(isp_data->ssl, PREFERRED_CIPHERS))
     {
-	log_status_msg("ERR0018", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0018", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
     */
@@ -238,24 +243,24 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     /* Fine tune host if possible */
     if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST))
     {
-	log_status_msg("ERR0019", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0019", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
     /* Connection and handshake */
-    log_status_msg("MSG0003", "Connecting...", "Connecting...", m_ui->status_info);
+    log_status_msg("INF0003", NULL, "INF0003", NULL, m_ui->status_info);
 
     if (BIO_do_connect(isp_data->web) <= 0)
     {
-	log_status_msg("ERR0020", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0020", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
-    log_status_msg("MSG0003", "Handshaking...", "Handshaking...", m_ui->status_info);
+    log_status_msg("INF0004", NULL, "INF0004", NULL, m_ui->status_info);
 
     if (BIO_do_handshake(isp_data->web) <= 0)
     {
-	log_status_msg("ERR0020", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0020", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -268,14 +273,14 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
     else if (NULL == cert)
     {
-	log_status_msg("ERR0021", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0021", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
     /* Verify the certificate */
     if (SSL_get_verify_result(isp_data->ssl) != X509_V_OK)
     {
-	log_status_msg("ERR0022", NULL, connect_err, m_ui->status_info);
+	log_status_msg("ERR0022", NULL, "INF0001", retry_txt, m_ui->status_info);
     	return FALSE;
     }
 
@@ -292,7 +297,7 @@ int service_list(IspData *isp_data, MainUi *m_ui)
 
     r = TRUE;
     sprintf(isp_data->url, "/api/%s/", API_VER);
-    log_status_msg("MSG0003", "Retrieving usage details...", "Retrieving usage details...", m_ui->status_info);
+    log_status_msg("INF0005", NULL, "INF0005", NULL, m_ui->status_info);
     
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
@@ -680,7 +685,7 @@ int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
 
 	if (r <= 0)
 	{
-	    log_status_msg("ERR0010", NULL, service_query_err, m_ui->status_info);
+	    log_status_msg("ERR0010", NULL, "INF0002", retry_txt, m_ui->status_info);
 	    return FALSE;
 	}
 	else
