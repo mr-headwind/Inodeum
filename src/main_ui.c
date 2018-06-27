@@ -165,8 +165,8 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
 /*
 ** Menu function for application.
 **
-**  File       Service	     Help
-**   - Exit    	-Login        - About
+**  File       Service
+**   - Exit    	-Login 
 */
 
 void create_menu(IspData *isp_data, MainUi *m_ui)
@@ -209,22 +209,6 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show (m_ui->user_login);
 
 
-    /* HELP MENU */
-    m_ui->help_menu = gtk_menu_new();
-
-    /* Option menu items */
-    m_ui->help_about = gtk_menu_item_new_with_mnemonic ("About...");
-
-    /* Add to menu */
-    gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->help_menu), m_ui->help_about);
-
-    /* Callbacks */
-    g_signal_connect (m_ui->help_about, "activate", G_CALLBACK (OnAbout), m_ui);
-
-    /* Show menu items */
-    gtk_widget_show (m_ui->help_about);
-
-
     /* File header menu */
     m_ui->file_hdr = gtk_menu_item_new_with_mnemonic ("_File");
     gtk_widget_show (m_ui->file_hdr);
@@ -236,13 +220,6 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
     gtk_widget_show (m_ui->service_hdr);
     gtk_menu_item_set_submenu (GTK_MENU_ITEM (m_ui->service_hdr), m_ui->service_menu);
     gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->menu_bar), m_ui->service_hdr);
-
-    /* Help header menu */
-    m_ui->help_hdr = gtk_menu_item_new_with_mnemonic ("_Help");
-    gtk_widget_show (m_ui->help_hdr);
-    gtk_menu_item_set_submenu (GTK_MENU_ITEM (m_ui->help_hdr), m_ui->help_menu);
-    gtk_menu_shell_append (GTK_MENU_SHELL (m_ui->menu_bar), m_ui->help_hdr);
-
 
     /* Accelerators */
     accel_group = gtk_accel_group_new();

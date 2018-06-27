@@ -146,6 +146,7 @@ int ssl_service_details(IspData *isp_data, MainUi *m_ui)
     BIO_free_all(isp_data->web);
     SSL_CTX_free(isp_data->ctx);
 
+    log_status_msg("INF0005", "Success", "INF0005", "Success", m_ui->status_info);
     return TRUE;
 }  
 

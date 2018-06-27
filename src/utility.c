@@ -763,10 +763,14 @@ int read_file(FILE *fd, char *buf, int sz_len)
     }
 
     buf[i] = '\0';
-    fclose(fd);
 
     if (c == EOF)
+    {
+	fclose(fd);
 	return (int) c;
+    }
     else
+    {
 	return i;
+    }
 }

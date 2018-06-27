@@ -117,6 +117,7 @@ GtkWidget* view_file_ui(char *fn)
     int rc;
     int close_hndlr_id;
 
+printf("%s view_file_ui 1\n", debug_hdr); fflush(stdout);
     /* Set up the UI window */
     view_file_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);  
     gtk_window_set_title(GTK_WINDOW(view_file_window), VIEW_FILE_UI);

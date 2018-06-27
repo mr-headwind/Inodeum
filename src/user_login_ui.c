@@ -514,9 +514,19 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     r = ssl_service_details(isp_data, m_ui);
 
     if (r == TRUE)
+    {
     	start_usage_mon(isp_data, m_ui);
+    }
     else if (r == -1)
+    {
+	log_msg("ERR0026", NULL, "ERR0026", m_ui->window);
 	return;
+    }
+    else
+    {
+	log_msg("ERR0020", NULL, "ERR0020", m_ui->window);
+	return;
+    }
 
     /* Close the window, free the screen data and block any secondary close signal */
     close_login_ui(u_ui->window, u_ui);
