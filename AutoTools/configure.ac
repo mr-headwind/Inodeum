@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([inodeum], [0.50], [tony.buckley000@gmail.com])
+AC_INIT([inodeum], [0.55], [tony.buckley000@gmail.com])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/um_main.c])
 AC_CONFIG_HEADERS([config.h])

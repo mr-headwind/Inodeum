@@ -272,7 +272,7 @@ char * format_remdays(time_t time_rovr, double *ndays)
 {  
     char *s;
 
-    s = (char *) malloc(5);
+    s = (char *) malloc(10);
     *ndays = difftime_days(time_rovr, time(NULL));
     sprintf(s, "%0.2f", *ndays);
 
