@@ -63,6 +63,7 @@ void OnPrefSave(GtkWidget*, gpointer);
 void OnPrefPieLbl(GtkToggleButton*, gpointer);
 void OnPrefPieLgd(GtkToggleButton*, gpointer);
 void OnPrefBarLbl(GtkToggleButton*, gpointer);
+void OnPrefVersion(GtkToggleButton*, gpointer);
 void OnHistFind(GtkWidget *, gpointer);
 void OnCalendar(GtkWidget *, gpointer);
 int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
@@ -365,6 +366,28 @@ void OnPrefBarLbl(GtkToggleButton *rad, gpointer user_data)
     /* Determine which radio toggled and set the preference */
     idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
     set_user_pref(OV_BAR_LBL, idx);
+
+    return;
+}  
+
+
+/* Callback - User preference (version check labels) toggled */
+
+void OnPrefVersion(GtkToggleButton *rad, gpointer user_data)
+{  
+    MainUi *m_ui;
+    char *idx;
+
+    /* Get data */
+    m_ui = (MainUi *) user_data;
+
+    /* Ignore if not active */
+    if (! gtk_toggle_button_get_active(rad))
+	return;
+
+    /* Determine which radio toggled and set the preference */
+    idx = (char *) g_object_get_data (G_OBJECT(rad), "idx");
+    set_user_pref(OV_VER_LBL, idx);
 
     return;
 }  

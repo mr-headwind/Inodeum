@@ -71,6 +71,8 @@ void set_default_prefs();
 void free_prefs();
 GtkWidget * reset_pw(MainUi *);
 GtkWidget * std_prefs(MainUi *);
+void pref_radio(char *, char *, char *, char *, char *, char *, int, GtkWidget **, MainUi *);
+void set_callback(GtkWidget *, int, MainUi *);
 
 extern void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
@@ -85,6 +87,7 @@ extern void OnPrefSave(GtkWidget*, gpointer);
 extern void OnPrefPieLbl(GtkToggleButton*, gpointer);
 extern void OnPrefPieLgd(GtkToggleButton*, gpointer);
 extern void OnPrefBarLbl(GtkToggleButton*, gpointer);
+extern void OnPrefVersion(GtkToggleButton*, gpointer);
 extern int OnSetRefresh(GtkWidget*, GdkEvent *, gpointer);
 extern void OnRefreshTxt(GtkEditable *, gchar *, gint, gpointer, gpointer);
 
@@ -152,88 +155,30 @@ GtkWidget * reset_pw(MainUi *m_ui)
 GtkWidget * std_prefs(MainUi *m_ui)
 {
     char *p;
-    int i, idx[3];
     GtkWidget *frame;
     GtkWidget *vbox, *tbox;
     GtkWidget *lbl;
     GtkWidget *save_btn;
-    GtkWidget *radio, *radio_grp;
 
     /* Containers */
     frame = gtk_frame_new("General Preferences");
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 
-    /* Label */
-    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
-    create_label2(&lbl, "title_4", "Overview Usage Chart", tbox);
-    gtk_box_pack_start (GTK_BOX (vbox), tbox, FALSE, FALSE, 0);
+    /* Create overview usage chart preference radio button(s) */
+    pref_radio("title_4", "Overview Usage Chart", OV_PIE_LBL, 
+	       "Label", "Percent", "Both", 1, &vbox, m_ui);
 
-    /* Set label and percentage options */
-    get_user_pref(OV_PIE_LBL, &p);
-    memset(&idx, 0, sizeof(idx));
-    i = atoi(p);
-    idx[i] = TRUE;
-    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+    /* Create label descriptions radio button(s) */
+    pref_radio("typ_lbl", "Description", OV_PIE_LGD, 
+	       "On Chart", "Legend", NULL, 2, &vbox, m_ui);
 
-    create_radio(&radio, NULL, "Label", "rad_1", tbox, idx[0], "idx", "0");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
-    radio_grp = radio;
-    gtk_widget_set_margin_start (radio, 25);
+    /* Create overview rollover chart radio button(s) */
+    pref_radio("title_4", "Overview Rollover Chart", OV_BAR_LBL, 
+	       "Label", "Percent", "Both", 3, &vbox, m_ui);
 
-    create_radio(&radio, radio_grp, "Percent", "rad_1", tbox, idx[1], "idx", "1");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
-
-    create_radio(&radio, radio_grp, "Both", "rad_1", tbox, idx[2], "idx", "2");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui);
-
-    gtk_box_pack_start (GTK_BOX (vbox), tbox, FALSE, FALSE, 0);
-
-    /* Label */
-    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
-    create_label2(&lbl, "typ_lbl", "Description", tbox);
-    gtk_box_pack_start (GTK_BOX (vbox), tbox, FALSE, FALSE, 0);
-
-    /* Set legend options */
-    get_user_pref(OV_PIE_LGD, &p);
-    memset(&idx, 0, sizeof(idx));
-    i = atoi(p);
-    idx[i] = TRUE;
-    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
-
-    create_radio(&radio, NULL, "On Chart", "rad_1", tbox, idx[0], "idx", "0");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
-    radio_grp = radio;
-    gtk_widget_set_margin_start (radio, 25);
-
-    create_radio(&radio, radio_grp, "Legend", "rad_1", tbox, idx[1], "idx", "1");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui);
-
-    gtk_box_pack_start (GTK_BOX (vbox), tbox, FALSE, FALSE, 0);
-
-    /* Label */
-    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
-    create_label2(&lbl, "title_4", "Overview Rollover Chart", tbox);
-    gtk_box_pack_start (GTK_BOX (vbox), tbox, FALSE, FALSE, 0);
-
-    /* Set label and percentage options */
-    get_user_pref(OV_BAR_LBL, &p);
-    memset(&idx, 0, sizeof(idx));
-    i = atoi(p);
-    idx[i] = TRUE;
-    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
-
-    create_radio(&radio, NULL, "Label", "rad_1", tbox, idx[0], "idx", "0");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
-    radio_grp = radio;
-    gtk_widget_set_margin_start (radio, 25);
-
-    create_radio(&radio, radio_grp, "Percent", "rad_1", tbox, idx[1], "idx", "1");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
-
-    create_radio(&radio, radio_grp, "Both", "rad_1", tbox, idx[2], "idx", "2");
-    g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui);
-
-    gtk_box_pack_start (GTK_BOX (vbox), tbox, FALSE, FALSE, 0);
+    /* Create version check radio button(s) */
+    pref_radio("title_4", "Check New Version", OV_VER_LBL, 
+	       "At start", "Manual", "Auto (ppa)", 4, &vbox, m_ui);
 
     /* Label */
     tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
@@ -278,6 +223,72 @@ GtkWidget * std_prefs(MainUi *m_ui)
     gtk_container_add(GTK_CONTAINER (frame), vbox);
 
     return frame;
+}
+
+
+/* Create a radion button(s) (max. 3) for a user preference */
+
+void pref_radio(char *lbl_nm, char *lbl_desc, char *pref_nm,
+	        char *rad1, char *rad2, char *rad3, 
+	        int callback, GtkWidget **vbox, MainUi *m_ui)
+{
+    char *p;
+    int i, idx[3];
+    GtkWidget *tbox;
+    GtkWidget *lbl;
+    GtkWidget *radio, *radio_grp;
+
+    /* Label */
+    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+    create_label2(&lbl, lbl_nm, lbl_desc, tbox);
+    gtk_box_pack_start (GTK_BOX (*vbox), tbox, FALSE, FALSE, 0);
+
+    /* Get preference */
+    get_user_pref(pref_nm, &p);
+    memset(&idx, 0, sizeof(idx));
+    i = atoi(p);
+    idx[i] = TRUE;
+
+    /* Set radio options */
+    tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
+
+    create_radio(&radio, NULL, rad1, "rad_1", tbox, idx[0], "idx", "0");
+    set_callback(radio, callback, m_ui);
+    radio_grp = radio;
+    gtk_widget_set_margin_start (radio, 25);
+
+    if (rad2 != NULL)
+    {
+	create_radio(&radio, radio_grp, rad2, "rad_1", tbox, idx[1], "idx", "1");
+	set_callback(radio, callback, m_ui);
+    }
+
+    if (rad3 != NULL)
+    {
+	create_radio(&radio, radio_grp, rad3, "rad_1", tbox, idx[2], "idx", "2");
+	set_callback(radio, callback, m_ui);
+    }
+
+    gtk_box_pack_start (GTK_BOX (*vbox), tbox, FALSE, FALSE, 0);
+
+    return;
+}
+
+
+/* Set a particular callback function for a radio button */
+
+void set_callback(GtkWidget *radio, int cback, MainUi *m_ui)
+{
+    switch(cback)
+    {
+    	case 1: g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLbl), m_ui); break;
+    	case 2: g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefPieLgd), m_ui); break;
+    	case 3: g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefBarLbl), m_ui); break;
+    	case 4: g_signal_connect (radio, "toggled", G_CALLBACK (OnPrefVersion), m_ui); break;
+    	default: break;
+    }
+
+    return;
 }
 
 
@@ -524,6 +535,12 @@ void set_default_prefs()
 
     if (p == NULL)
 	add_user_pref(REFRESH_TM, "30");
+
+    /* Version check labels */
+    get_user_pref(OV_VER_LBL, &p);
+
+    if (p == NULL)
+	add_user_pref(OV_VER_LBL, "0");
 
     return;
 }

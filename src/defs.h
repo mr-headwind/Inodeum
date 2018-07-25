@@ -105,6 +105,7 @@ extern const GdkRGBA DARK_MAROON;
 #define OV_PIE_LBL "ovpielbl"
 #define OV_PIE_LGD "ovpielgd"
 #define OV_BAR_LBL "ovbarlbl"
+#define OV_VER_LBL "ovverlbl"
 #define REFRESH_TM "refresh"
 #endif
 
