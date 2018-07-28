@@ -577,8 +577,10 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     gtk_label_set_text (GTK_LABEL (m_ui->status_info), ref_tmr->info_txt);
     gtk_widget_show (m_ui->status_info);
 
+printf("%s refresh_main_loop_fn 1\n", debug_hdr);fflush(stdout);
     if (ref_tmr->refresh_req == FALSE)
     	return TRUE;
+printf("%s refresh_main_loop_fn 2\n", debug_hdr);fflush(stdout);
 
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
@@ -587,10 +589,14 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     	return TRUE;
     }
 
+printf("%s refresh_main_loop_fn 3\n", debug_hdr);fflush(stdout);
     serv_plan_details(m_ui);
 
+printf("%s refresh_main_loop_fn 4\n", debug_hdr);fflush(stdout);
     init_history(m_ui);
+printf("%s refresh_main_loop_fn 5\n", debug_hdr);fflush(stdout);
     load_overview(isp_data, m_ui);
+printf("%s refresh_main_loop_fn 6\n", debug_hdr);fflush(stdout);
     refresh_thread(m_ui);
 
     return TRUE;

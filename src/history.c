@@ -182,8 +182,19 @@ void history_panel(MainUi *m_ui)
 
 void init_history(MainUi *m_ui)
 {  
-    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), NULL);
-    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), NULL);
+    const gchar *nm;
+    IspData *isp_data;
+
+    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_from_dt), "");
+    gtk_entry_set_text (GTK_ENTRY(m_ui->hist_to_dt), "");
+
+    nm = gtk_widget_get_name (m_ui->curr_panel);
+
+    if (strcmp(nm, "hist_panel") == 0)
+    {
+    	isp_data = g_object_get_data (G_OBJECT(m_ui->window), "isp_data");
+    	load_history(isp_data, m_ui);
+    }
 
     return;
 }

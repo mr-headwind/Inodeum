@@ -97,7 +97,6 @@ extern void OnQuit(GtkWidget*, gpointer);
 extern int ssl_service_details(IspData *, MainUi *);
 extern void disable_login(MainUi *);
 extern void load_overview(IspData *isp_data, MainUi *m_ui);
-extern void serv_plan_details(MainUi *);
 extern void show_panel(GtkWidget *, MainUi *);
 extern void start_usage_mon(IspData *, MainUi *);
 extern int refresh_thread(MainUi *);

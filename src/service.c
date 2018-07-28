@@ -137,7 +137,7 @@ void serv_plan_details(MainUi *m_ui)
 	if (srv_plan.srv_plan_item[i] == NULL)
 	    continue;
 
-	/* Some item have 'units' descriptor */
+	/* Some items have 'units' descriptor */
 	switch(i)
 	{
 	    case 1:		// Quota
