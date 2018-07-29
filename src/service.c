@@ -52,7 +52,7 @@
 /* Prototypes */
 
 void serv_plan_panel(MainUi *);
-void serv_plan_details(MainUi *);
+void serv_plan_details(int, MainUi *);
 IspListObj * default_srv_type(IspData *, MainUi *);
 int parse_serv_list(char *, IspData *, MainUi *);
 int parse_resource_list(char *, IspListObj *, IspData *, MainUi *);
@@ -86,6 +86,7 @@ extern time_t string2tm(char *, struct tm *);
 extern double difftime_days(time_t, time_t);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void set_sz_abbrev(char *);
+extern GtkWidget * find_widget_by_name(GtkWidget *, char *);
 
 
 /* Globals */
@@ -118,18 +119,21 @@ void serv_plan_panel(MainUi *m_ui)
 
 /* Servcie Plan information */
 
-void serv_plan_details(MainUi *m_ui)
+void serv_plan_details(int init, MainUi *m_ui)
 {  
     int i, unit_free;
     char *s;
-    GtkWidget *plan_grid;
     GtkWidget *item_lbl, *item_val;
     const char *item_names[] = { "Username:", "Plan Quota:", "Plan:", "Carrier:", "Speed:", "Usage Rating:", 
     				 "Rollover:", "Excess Cost:", "Excess Charging:", "Excess Shaping:", 
     				 "Excess Restrict:", "Plan Interval:", "Cost:" }; 
     const int item_cnt = 13;
 
-    plan_grid = gtk_grid_new();
+    if (init == TRUE)
+    {
+	m_ui->plan_grid = gtk_grid_new();
+	gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), m_ui->plan_grid);
+    }
 
     /* Display each service plan item found */
     for(i = 0; i < item_cnt; i++)
@@ -174,18 +178,29 @@ void serv_plan_details(MainUi *m_ui)
 		break;
 	}
 	
-	create_label(&(item_lbl), "lbl", (char *) item_names[i], plan_grid, 0, i, 1, 1);
-	create_label(&(item_val), "data_1", s, plan_grid, 1, i, 1, 1);
-	//create_label(&(item_val), "data_1", srv_plan.srv_plan_item[i], plan_grid, 1, i, 1, 1);
-	gtk_widget_set_margin_left (item_lbl, 5);
-	gtk_widget_set_margin_left (item_val, 5);
+	if (init == TRUE)
+	{
+	    create_label(&(item_lbl), "lbl", (char *) item_names[i], m_ui->plan_grid, 0, i, 1, 1);
+	    create_label(&(item_val), "data_1", s, m_ui->plan_grid, 1, i, 1, 1);
+	    g_object_set_data_full (G_OBJECT (item_val), 
+				    "lbl_name", 
+				    g_strdup (item_names[i]), 
+				    (GDestroyNotify) g_free);
+	    //create_label(&(item_val), "data_1", srv_plan.srv_plan_item[i], plan_grid, 1, i, 1, 1);
+	    gtk_widget_set_margin_left (item_lbl, 5);
+	    gtk_widget_set_margin_left (item_val, 5);
+	}
+	else
+	{
+	    item_val = find_widget_by_name(m_ui->plan_grid, (char *) item_names[i]);
+
+	    if (item_val != NULL)
+	    	gtk_label_set_text (GTK_LABEL (item_val), s);
+	}
 
 	if (unit_free == TRUE)
 	    free(s);
     }
-
-    /* Pack */
-    gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), plan_grid);
 
     return;
 }

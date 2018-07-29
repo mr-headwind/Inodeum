@@ -111,6 +111,7 @@ typedef struct _main_ui
     LineGraph *hist_usg_graph;
 
     /* Widgets - service plan */
+    GtkWidget *plan_grid;
 
     /* Widgets - about */
     GtkWidget *hdr_box, *misc_box, *tab_nb;

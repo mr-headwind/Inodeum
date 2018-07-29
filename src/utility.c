@@ -86,6 +86,7 @@ int stat_file(char *, struct stat *);
 long read_file_all(char *, char *);
 FILE * open_file(char *, char *);
 int read_file(FILE *, char *, int);
+GtkWidget * find_widget_by_name(GtkWidget *, char *);
 
 extern void cur_date_str(char *, int, char *);
 
@@ -773,4 +774,44 @@ int read_file(FILE *fd, char *buf, int sz_len)
     {
 	return i;
     }
+}
+
+
+/* Search for a child widget using the widget name */
+
+GtkWidget * find_widget_by_name(GtkWidget *parent_contnr, char *nm)
+{
+    GtkWidget *widget;
+    const gchar *widget_name;
+
+    if (! GTK_IS_CONTAINER(parent_contnr))
+    {
+	log_msg("SYS9011", "By name", NULL, NULL);
+    	return NULL;
+    }
+
+    GList *child_widgets = gtk_container_get_children(GTK_CONTAINER (parent_contnr));
+
+    child_widgets = g_list_first(child_widgets);
+
+    while (child_widgets != NULL)
+    {
+	widget = child_widgets->data;
+	widget_name = gtk_widget_get_name (widget);
+
+	if (widget_name != NULL)
+	{
+	    if (strcmp(widget_name, nm) == 0)
+	    {
+		g_list_free (child_widgets);
+		return widget;
+	    }
+	}
+
+	child_widgets = g_list_next(child_widgets);
+    }
+
+    g_list_free (child_widgets);
+
+    return NULL;
 }

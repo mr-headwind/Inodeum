@@ -81,7 +81,7 @@ extern int ssl_service_details(IspData *, MainUi *);
 extern void overview_panel(MainUi *);
 extern void load_overview(IspData *, MainUi *);
 extern void serv_plan_panel(MainUi *);
-extern void serv_plan_details(MainUi *);
+extern void serv_plan_details(int, MainUi *);
 extern void history_panel(MainUi *);
 extern void pref_panel(MainUi *);
 extern void about_panel(MainUi *);
@@ -481,7 +481,7 @@ void start_usage_mon(IspData *isp_data, MainUi *m_ui)
 {  
     set_connect_btns(m_ui, TRUE);
     disable_login(m_ui);
-    serv_plan_details(m_ui);
+    serv_plan_details(TRUE, m_ui);
     load_overview(isp_data, m_ui);
     show_panel(m_ui->oview_cntr, m_ui);
 
@@ -577,10 +577,8 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     gtk_label_set_text (GTK_LABEL (m_ui->status_info), ref_tmr->info_txt);
     gtk_widget_show (m_ui->status_info);
 
-printf("%s refresh_main_loop_fn 1\n", debug_hdr);fflush(stdout);
     if (ref_tmr->refresh_req == FALSE)
     	return TRUE;
-printf("%s refresh_main_loop_fn 2\n", debug_hdr);fflush(stdout);
 
     /* Reset usage data */
     if (ssl_service_details(isp_data, m_ui) != TRUE)
@@ -589,14 +587,10 @@ printf("%s refresh_main_loop_fn 2\n", debug_hdr);fflush(stdout);
     	return TRUE;
     }
 
-printf("%s refresh_main_loop_fn 3\n", debug_hdr);fflush(stdout);
-    serv_plan_details(m_ui);
+    serv_plan_details(FALSE, m_ui);
 
-printf("%s refresh_main_loop_fn 4\n", debug_hdr);fflush(stdout);
     init_history(m_ui);
-printf("%s refresh_main_loop_fn 5\n", debug_hdr);fflush(stdout);
     load_overview(isp_data, m_ui);
-printf("%s refresh_main_loop_fn 6\n", debug_hdr);fflush(stdout);
     refresh_thread(m_ui);
 
     return TRUE;
