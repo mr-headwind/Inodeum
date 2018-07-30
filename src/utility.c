@@ -86,7 +86,7 @@ int stat_file(char *, struct stat *);
 long read_file_all(char *, char *);
 FILE * open_file(char *, char *);
 int read_file(FILE *, char *, int);
-GtkWidget * find_widget_by_name(GtkWidget *, char *);
+GtkWidget * find_widget_by_data(GtkWidget *, char *, const gchar *, char *);
 
 extern void cur_date_str(char *, int, char *);
 
@@ -99,6 +99,7 @@ static const char *app_messages[][2] =
     { "MSG0002", "Session ends. "},
     { "MSG0003", "%s "},
     { "MSG0004", "Warning: Inconsistent 'Unit' encountered - %s. "},
+    { "MSG0005", "The Service Plan has changed significantly. Please restart Inodeum. "},
     { "INF0001", "Connection error (see log file) %s "},
     { "INF0002", "Service query error (see log file) %s "},
     { "INF0003", "Connecting... %s "},
@@ -161,7 +162,7 @@ static const char *app_messages[][2] =
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 64;
+static const int Msg_Count = 65;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
@@ -777,12 +778,13 @@ int read_file(FILE *fd, char *buf, int sz_len)
 }
 
 
-/* Search for a child widget using the widget name */
+/* Search for a child widget using object data for the widget */
 
-GtkWidget * find_widget_by_name(GtkWidget *parent_contnr, char *nm)
+GtkWidget * find_widget_by_data(GtkWidget *parent_contnr, char *nm, const gchar *data_key, char *data_val)
 {
     GtkWidget *widget;
     const gchar *widget_name;
+    char *val;
 
     if (! GTK_IS_CONTAINER(parent_contnr))
     {
@@ -803,8 +805,16 @@ GtkWidget * find_widget_by_name(GtkWidget *parent_contnr, char *nm)
 	{
 	    if (strcmp(widget_name, nm) == 0)
 	    {
-		g_list_free (child_widgets);
-		return widget;
+		val = g_object_get_data(G_OBJECT (widget), data_key);
+
+		if (val != NULL)
+		{
+		    if (strcmp(val, data_val) == 0)
+		    {
+			g_list_free (child_widgets);
+			return widget;
+		    }
+		}
 	    }
 	}
 

@@ -86,7 +86,7 @@ extern time_t string2tm(char *, struct tm *);
 extern double difftime_days(time_t, time_t);
 extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void set_sz_abbrev(char *);
-extern GtkWidget * find_widget_by_name(GtkWidget *, char *);
+extern GtkWidget * find_widget_by_data(GtkWidget *, char *, const gchar *, char *);
 
 
 /* Globals */
@@ -110,6 +110,10 @@ void serv_plan_panel(MainUi *m_ui)
     gtk_widget_set_margin_left (m_ui->srv_cntr, 10);
     gtk_widget_set_margin_right (m_ui->srv_cntr, 10);
 
+    /* Add the Plan Items grid, but populate it when the plan details have been requested */
+    m_ui->plan_grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), m_ui->plan_grid);
+
     /* Add to the panel stack */
     gtk_stack_add_named (GTK_STACK (m_ui->panel_stk), m_ui->srv_cntr, "service_panel");
 
@@ -128,12 +132,6 @@ void serv_plan_details(int init, MainUi *m_ui)
     				 "Rollover:", "Excess Cost:", "Excess Charging:", "Excess Shaping:", 
     				 "Excess Restrict:", "Plan Interval:", "Cost:" }; 
     const int item_cnt = 13;
-
-    if (init == TRUE)
-    {
-	m_ui->plan_grid = gtk_grid_new();
-	gtk_container_add(GTK_CONTAINER (m_ui->srv_cntr), m_ui->plan_grid);
-    }
 
     /* Display each service plan item found */
     for(i = 0; i < item_cnt; i++)
@@ -178,24 +176,30 @@ void serv_plan_details(int init, MainUi *m_ui)
 		break;
 	}
 	
+	/* First time requires widgets to be created and populated */
 	if (init == TRUE)
 	{
+	    /* Create an entry for each service plan item found */
 	    create_label(&(item_lbl), "lbl", (char *) item_names[i], m_ui->plan_grid, 0, i, 1, 1);
 	    create_label(&(item_val), "data_1", s, m_ui->plan_grid, 1, i, 1, 1);
 	    g_object_set_data_full (G_OBJECT (item_val), 
 				    "lbl_name", 
 				    g_strdup (item_names[i]), 
 				    (GDestroyNotify) g_free);
-	    //create_label(&(item_val), "data_1", srv_plan.srv_plan_item[i], plan_grid, 1, i, 1, 1);
 	    gtk_widget_set_margin_left (item_lbl, 5);
 	    gtk_widget_set_margin_left (item_val, 5);
 	}
 	else
 	{
-	    item_val = find_widget_by_name(m_ui->plan_grid, (char *) item_names[i]);
+	    // Re-populate plan details - potentially a problem here should the plan change with
+	    // new or fewer items (rare) and messy to make perfect. A restart is probably the easiest
+	    // and simplest fix.
+	    item_val = find_widget_by_data(m_ui->plan_grid, "data_1", "lbl_name", (char *) item_names[i]);
 
 	    if (item_val != NULL)
 	    	gtk_label_set_text (GTK_LABEL (item_val), s);
+	    else
+	    	app_msg("MSG0005", NULL, m_ui->window);
 	}
 
 	if (unit_free == TRUE)
