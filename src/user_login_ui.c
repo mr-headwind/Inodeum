@@ -89,8 +89,8 @@ gboolean OnUserDelete(GtkWidget*, GdkEvent *, gpointer);
 void close_login_ui(GtkWidget *, UserLoginUi *);
 
 extern void log_msg(char*, char*, char*, GtkWidget*);
-extern void create_entry(GtkWidget **, char *, int, int, GtkWidget **);
-extern void create_label(char *, int, int, GtkWidget **);
+extern void create_entry(GtkWidget **, char *, GtkWidget *, int, int);
+extern void create_label(GtkWidget **, char *, char *, GtkWidget *, int, int, int, int);
 extern void register_window(GtkWidget *);
 extern void deregister_window(GtkWidget *);
 extern void OnQuit(GtkWidget*, gpointer);
@@ -215,7 +215,7 @@ void user_ui(IspData *isp_data, UserLoginUi *u_ui)
 
 void user_control(UserLoginUi *u_ui)
 {  
-    GtkWidget *label;  
+    GtkWidget *lbl, *lbl2;  
 
     /* Main container */
     u_ui->user_cntr = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -228,11 +228,11 @@ void user_control(UserLoginUi *u_ui)
     gtk_container_set_border_width (GTK_CONTAINER (u_ui->ctrl_grid), 3);
 
     /* Add user and password fields with labels */
-    create_label("Username", 1, 1, &(u_ui->ctrl_grid));
-    create_entry(&(u_ui->uname_ent), "uname", 2, 1, &(u_ui->ctrl_grid));
+    create_label(&lbl, "uname", "Username", u_ui->ctrl_grid, 1, 1, 1, 1);
+    create_entry(&(u_ui->uname_ent), "uname", u_ui->ctrl_grid, 2, 1);
 
-    create_label("Password", 1, 2, &(u_ui->ctrl_grid));
-    create_entry(&(u_ui->pw_ent), "pw", 2, 2, &(u_ui->ctrl_grid));
+    create_label(&lbl2, "pwd", "Password", u_ui->ctrl_grid, 1, 2, 1, 1);
+    create_entry(&(u_ui->pw_ent), "pw", u_ui->ctrl_grid, 2, 2);
     gtk_entry_set_visibility (GTK_ENTRY (u_ui->pw_ent), FALSE);
 
     gtk_box_pack_start (GTK_BOX (u_ui->user_cntr), u_ui->ctrl_grid, FALSE, FALSE, 0);
@@ -564,7 +564,7 @@ void OnUserCancel(GtkWidget *window, gpointer user_data)
     close_login_ui(window, ui);
 
     /* Quit Inodeum */
-    OnQuit(ui->parent_win, NULL);
+    OnQuit(ui->parent_win, ui->parent_win);
 
     return;
 }

@@ -651,19 +651,26 @@ void OnQuit(GtkWidget *w, gpointer user_data)
     void *res;
     GtkWidget *window;
     MainUi *m_ui;
+    RefreshTmr *ref_tmr;
 
     /* Initial */
     window = (GtkWidget *) user_data;
     m_ui = g_object_get_data (G_OBJECT(window), "ui");
 
     /* Clean up threads */
-    if ((r = pthread_cancel(m_ui->RefTmr.refresh_tid)) == 0)
-    	pthread_join(m_ui->RefTmr.refresh_tid, &res);
+    ref_tmr = &(m_ui->RefTmr);
 
-    g_source_remove (m_ui->RefTmr.tmr_id);
+    if (ref_tmr->tmr_id != 0)
+    {
+	if ((r = pthread_cancel(m_ui->RefTmr.refresh_tid)) == 0)
+	    pthread_join(m_ui->RefTmr.refresh_tid, &res);
 
-    if ((r = pthread_cancel(m_ui->net_speed_tid)) == 0)
-    	pthread_join(m_ui->net_speed_tid, &res);
+	g_source_remove (m_ui->RefTmr.tmr_id);
+    }
+
+    if (m_ui->net_speed_tid != 0)
+	if ((r = pthread_cancel(m_ui->net_speed_tid)) == 0)
+	    pthread_join(m_ui->net_speed_tid, &res);
 
     /* Close any open windows */
     close_open_ui();

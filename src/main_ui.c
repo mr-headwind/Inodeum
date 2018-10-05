@@ -551,7 +551,9 @@ gboolean connect_main_loop_fn(gpointer user_data)
 
     /* User login or display usage details */
     if (login_req == TRUE)
+{
     	user_login_main(isp_data, m_ui->window);
+    	}
     else
 	start_usage_mon(isp_data, m_ui);
 
