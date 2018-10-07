@@ -499,6 +499,9 @@ void add_connect_loop(MainUi *m_ui)
 {  
     g_timeout_add(1, connect_main_loop_fn, m_ui);
 
+    /* Appears to need a short delay to avoid bus connection error - for main loop to start? */
+    usleep(5);
+
     return;
 }
 
@@ -551,9 +554,7 @@ gboolean connect_main_loop_fn(gpointer user_data)
 
     /* User login or display usage details */
     if (login_req == TRUE)
-{
     	user_login_main(isp_data, m_ui->window);
-    	}
     else
 	start_usage_mon(isp_data, m_ui);
 
