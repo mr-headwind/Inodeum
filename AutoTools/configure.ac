@@ -58,6 +58,15 @@ if test "x${not_inst}" != x; then
   echo " The following will need to be installed to build Inodeum:  "
   echo ${not_inst}
   echo " "
+  echo " As a guide you may any of the following to build Inodeum:  "
+  echo "      [sudo] apt-get update                   # Get latest "
+  echo "      [sudo] apt-get install build-essential  # Base dev system "
+  echo "      [sudo] apt-get install libgtk-3-dev  "
+  echo "                             libgnome-keyring-dev*  "
+  echo "                             libcairo2-dev*  "
+  echo "      [sudo] apt-get install libpcap-dev  "
+  echo "                             libssl-dev  "
+  echo " "
   echo " To view a list of installed packages enter:  pkg-config --list-all  "
   echo "------------------------------------------"
 
