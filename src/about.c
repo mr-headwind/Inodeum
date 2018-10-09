@@ -60,6 +60,8 @@ GtkWidget * about_tabnb(MainUi *);
 GtkWidget * new_page(int);
 void add_lic_link(GtkTextBuffer **, GtkWidget **);
 
+extern void strlower(char *, char *);
+
 
 /* Globals */
 
@@ -127,7 +129,7 @@ GtkWidget * about_hdr(MainUi *m_ui)
     GtkWidget *hdr_box;
     GtkWidget *label_t, *label_v;
     char *app_icon;
-    char *s;
+    char *s, *lwr_title;
 
     /* Title and version */
     label_t = gtk_label_new(TITLE);
@@ -143,10 +145,13 @@ GtkWidget * about_hdr(MainUi *m_ui)
     gtk_widget_set_valign (label_v, GTK_ALIGN_END);
 
     /* Icon */
-    app_icon = g_strconcat (PACKAGE_DATA_DIR, "/pixmaps/", TITLE, "/inodeum.png",NULL);
+    lwr_title = (char *) malloc(strlen(TITLE) + 1);
+    strlower(TITLE, lwr_title);
+    app_icon = g_strconcat (PACKAGE_DATA_DIR, "/pixmaps/", lwr_title, "/inodeum.png",NULL);
     m_ui->app_icon = gtk_image_new_from_file(app_icon);
     g_free(app_icon);
     gtk_widget_set_margin_end(GTK_WIDGET (m_ui->app_icon), 15);
+    free(lwr_title);
 
     /* Pack */
     hdr_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);

@@ -79,8 +79,8 @@ extern const GdkRGBA DARK_MAROON;
 #ifndef TITLE
 #define TITLE "Inodeum"
 #define APP_URI "http://Inodeum.sourceforge.net"
-//#define PACKAGE_DATA_DIR "/usr/share" // Not sure of PACKAGE_DATA_DIR name, also -D on compile may be better
-#define PACKAGE_DATA_DIR "/home/tony/.local/share"      // Dev only
+#define PACKAGE_DATA_DIR "/usr/share" // Not sure of PACKAGE_DATA_DIR name, also -D on compile may be better
+//#define PACKAGE_DATA_DIR "/home/tony/.local/share"      // Dev only
 #endif
 
 
