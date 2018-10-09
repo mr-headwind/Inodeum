@@ -474,6 +474,7 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     /* Get data */
     u_ui = (UserLoginUi *) user_data;
     isp_data = (IspData *) g_object_get_data (G_OBJECT (u_ui->window), "isp");
+    m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");
 
     /* Read and store details */
     uname = gtk_entry_get_text (GTK_ENTRY (u_ui->uname_ent));
@@ -508,8 +509,6 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     	store_user_creds(isp_data, m_ui);
 
     /* Initiate a service request, close if failure, return to login if auth error */
-    m_ui = (MainUi *) g_object_get_data (G_OBJECT (u_ui->parent_win), "ui");
-
     r = ssl_service_details(isp_data, m_ui);
 
     if (r == TRUE)
