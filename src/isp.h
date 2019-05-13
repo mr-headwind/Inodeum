@@ -58,6 +58,8 @@
 #define SSL_PORT "443"					// 443 = https
 #define SSL_CERT_PATH "/etc/ssl/certs"				
 #define HOST "customer-webtools-api.internode.on.net"
+#define VER_HOST "github.com"
+#define GIT_OWNER "mr-headwind"
 #define REALM "internode-api"
 // GET message template is as follows:
 //	"GET "\						Method (POST is more secure - below)

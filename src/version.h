@@ -39,20 +39,14 @@
 typedef struct _ver_data
 {
     /* Base detail */
-    /*
-    char *uname;
-    char *pw;
-    gchar *enc64;
-    char user_agent[50];
     char url[500];
-    */
 
     /* Standard and SSL connection */
     char *ip;
     int tcp_sock;
     struct sockaddr_in *isp_addr;
     char *xml_recv;
-    SSL_CTX* ctx;
+    SSL_CTX *ctx;
     BIO *web;
     SSL *ssl;
 } VersionData;

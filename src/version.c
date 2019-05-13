@@ -64,46 +64,24 @@
 
 /* Prototypes */
 
-int version_check_init(IspData *, MainUi *);
-int ssl_service_init(IspData *, MainUi *);
-int ssl_isp_connect(IspData *, MainUi *);
-int service_list(IspData *, MainUi *);
-int get_serv_list(BIO *, IspData *, MainUi *);
-int srv_resource_list(IspData *, MainUi *);
-int get_resource_list(BIO *, IspListObj *, IspData *, MainUi *);
-int get_default_service(IspData *, MainUi *);
-IspListObj * get_resource(char *, IspData *, MainUi *);
-int get_usage(IspListObj *, IspData *, MainUi *);
-int get_service(IspListObj *, IspData *, MainUi *);
-int get_history(IspListObj *, int, IspData *, MainUi *);
-int get_hist_service_usage(IspData *, MainUi *);
-void encode_un_pw(IspData *, MainUi *);
+int setup_version_check(IspData *, MainUi *);
+int version_check_init(VersionData *, MainUi *);
+int ssl_version_connect(IspData *, MainUi *);
+int get_release_file(VersionData *, MainUi *);
+
 char * setup_get(char *, IspData *);
 char * setup_get_param(char *, char *, IspData *);
 int bio_send_query(BIO *, char *, MainUi *);
 char * bio_read_xml(BIO *, MainUi *);
 void set_param(int, char *);
 
-extern int parse_serv_list(char *, IspData *, MainUi *);
-extern int parse_resource_list(char *, IspListObj *, IspData *, MainUi *);
-extern IspListObj * default_srv_type(IspData *, MainUi *);
-extern int load_usage(char *, IspData *, MainUi *);
-extern int load_service(char *, IspData *, MainUi *);
-extern int load_usage_hist(char *, IspData *, MainUi *);
-extern ServUsage * get_service_usage();
-extern void set_retry_txt(MainUi *, char *, int);
-extern void set_service_retry_txt(MainUi *, char *);
 extern void log_status_msg(char *, char *, char *, char *, GtkWidget *);
-extern void date_tm_add(struct tm *, char *, int);
-extern time_t string2tm(char *, struct tm *);
-extern char * next_rollover_dt();
 extern int check_http_status(char *, int *, MainUi *);
 
 
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-version.c ";
-static char retry_txt[RETRY_SZ];
 
 
 
@@ -115,35 +93,19 @@ int setup_version_check(IspData *isp_data, MainUi *m_ui)
     VersionData ver;
 
     /* Initial */
-    if (version_check_init(&ver, isp_data, m_ui) == FALSE)
+    if (version_check_init(&ver, m_ui) == FALSE)
 	return FALSE;
 
     /* Connection */
-    if (ssl_isp_connect(isp_data, m_ui) == FALSE)
+    if (ssl_version_connect(&ver, m_ui) == FALSE)
 	return FALSE;
 
-    /* User Agent and encoded username/password */
-    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
-    encode_un_pw(isp_data, m_ui);
-
-    /* 1. Service Listing */
-    if ((r = service_list(isp_data, m_ui)) != TRUE)
+    /* Latest release file */
+    if ((r = get_release_file(&ver, m_ui)) != TRUE)
     	return r;
 
-    BIO_reset(isp_data->web);
-
-    /* 2. Service Resource Listing */
-    if (srv_resource_list(isp_data, m_ui) == FALSE)
-    	return FALSE;
-
-    BIO_reset(isp_data->web);
-
-    /* 3. Usage and Service details for 'Default' service */
-    if (get_default_service(isp_data, m_ui) == FALSE)
-    	return FALSE;
-
-    BIO_free_all(isp_data->web);
-    SSL_CTX_free(isp_data->ctx);
+    BIO_free_all(ver.web);
+    SSL_CTX_free(ver.ctx);
 
     log_status_msg("INF0005", "Success", "INF0005", "Success", m_ui->status_info);
     return TRUE;
@@ -152,7 +114,7 @@ int setup_version_check(IspData *isp_data, MainUi *m_ui)
 
 /* Initialise the ssl and bio setup */
 
-int version_check_init(VersionData *ver, IspData *isp_data, MainUi *m_ui)
+int version_check_init(VersionData *ver, MainUi *m_ui)
 {  
     /* Initialise */
     ver->ctx = NULL;
@@ -169,7 +131,7 @@ int version_check_init(VersionData *ver, IspData *isp_data, MainUi *m_ui)
 
     if (!(NULL != method))
     {
-	log_status_msg("ERR0012", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0012", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
@@ -178,7 +140,7 @@ int version_check_init(VersionData *ver, IspData *isp_data, MainUi *m_ui)
 
     if (!(ver->ctx != NULL))
     {
-	log_status_msg("ERR0013", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0013", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
@@ -189,7 +151,7 @@ int version_check_init(VersionData *ver, IspData *isp_data, MainUi *m_ui)
     /* Certificate chain */
     if (! SSL_CTX_load_verify_locations(ver->ctx, NULL, SSL_CERT_PATH))
     {
-	log_status_msg("ERR0014", SSL_CERT_PATH, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0014", SSL_CERT_PATH, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
@@ -199,70 +161,59 @@ int version_check_init(VersionData *ver, IspData *isp_data, MainUi *m_ui)
 
 /* Setup the BIO connection and verify */
 
-int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
+int ssl_version_connect(VersionData *ver, MainUi *m_ui)
 {  
     /* New connection */
-    if ((isp_data->web = BIO_new_ssl_connect(isp_data->ctx)) == NULL)
+    if ((ver->web = BIO_new_ssl_connect(ver->ctx)) == NULL)
     {
-	log_status_msg("ERR0015", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0015", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
     /* Host and port */
-    if (! BIO_set_conn_hostname(isp_data->web, HOST ":" SSL_PORT))
+    if (! BIO_set_conn_hostname(ver->web, VER_HOST ":" SSL_PORT))
     {
-	log_status_msg("ERR0016", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0016", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
     /* Connection object */
-    BIO_get_ssl(isp_data->web, &(isp_data->ssl));
+    BIO_get_ssl(ver->web, &(ver->ssl));
 
-    if (isp_data->ssl == NULL)
+    if (ver->ssl == NULL)
     {
-	log_status_msg("ERR0017", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0017", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
-    SSL_set_mode(isp_data->ssl, SSL_MODE_AUTO_RETRY);
-
-    /* Remove unwanted ciphers */
-    /* PRETTY SURE RC4-MD5 IS OK, but connection still fails if the list below is set 
-    const char* const PREFERRED_CIPHERS = "HIGH:RC4:MD5:!aNULL:!kRSA:!PSK:!SRP";
-
-    if (! SSL_set_cipher_list(isp_data->ssl, PREFERRED_CIPHERS))
-    {
-	log_status_msg("ERR0018", NULL, "INF0001", retry_txt, m_ui->status_info);
-    	return FALSE;
-    }
-    */
+    SSL_set_mode(ver->ssl, SSL_MODE_AUTO_RETRY);
 
     /* Fine tune host if possible */
-    if (! SSL_set_tlsext_host_name(isp_data->ssl, HOST))
+    if (! SSL_set_tlsext_host_name(ver->ssl, HOST))
     {
-	log_status_msg("ERR0019", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0019", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
     /* Connection and handshake */
     log_status_msg("INF0003", NULL, "INF0003", NULL, m_ui->status_info);
 
-    if (BIO_do_connect(isp_data->web) <= 0)
+    if (BIO_do_connect(ver->web) <= 0)
     {
-	log_status_msg("ERR0020", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0020", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
     log_status_msg("INF0004", NULL, "INF0004", NULL, m_ui->status_info);
 
-    if (BIO_do_handshake(isp_data->web) <= 0)
+    if (BIO_do_handshake(ver->web) <= 0)
     {
-	log_status_msg("ERR0020", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0020", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
     /* Verify a server certificate was presented during the negotiation */
-    X509* cert = SSL_get_peer_certificate(isp_data->ssl);
+    X509* cert = SSL_get_peer_certificate(ver->ssl);
 
     if (cert) 
     {
@@ -270,14 +221,14 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
     }
     else if (NULL == cert)
     {
-	log_status_msg("ERR0021", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0021", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
     /* Verify the certificate */
-    if (SSL_get_verify_result(isp_data->ssl) != X509_V_OK)
+    if (SSL_get_verify_result(ver->ssl) != X509_V_OK)
     {
-	log_status_msg("ERR0022", NULL, "INF0001", retry_txt, m_ui->status_info);
+	log_status_msg("ERR0022", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
     }
 
@@ -285,23 +236,23 @@ int ssl_isp_connect(IspData *isp_data, MainUi *m_ui)
 }  
 
 
-/* ISP service listing */
+/* Read the latest version file in the repo releases folder */
 
-int service_list(IspData *isp_data, MainUi *m_ui)
+int get_release_file(VersionData *ver, MainUi *m_ui)
 {  
     int r;
     char *get_qry;
 
     r = TRUE;
-    sprintf(isp_data->url, "/api/%s/", API_VER);
+    sprintf(ver->url, "/%s/%s/tree/master/DIST_PACKAGES/latest_version", GIT_OWNER, TITLE);
     log_status_msg("INF0005", NULL, "INF0005", NULL, m_ui->status_info);
     
     /* Construct GET */
-    get_qry = setup_get(isp_data->url, isp_data);
+    get_qry = setup_get(ver->url, ver);
 
     /* Send the query */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    r = get_serv_list(isp_data->web, isp_data, m_ui);
+    bio_send_query(ver->web, get_qry, m_ui);
+    r = get_version(ver->web, ver, m_ui);
 
     /* Clean up */
     free(get_qry);
