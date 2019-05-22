@@ -34,6 +34,17 @@
 #define VERSION_DATE "14-May-2018"
 
 
+/* Fixed info */
+
+#define GET_VER_TPL "POST "\
+		    "%s "\
+		    "HTTP/1.0\r\n"\
+		    "Host: %s\r\n"\
+		    "User-Agent: %s\r\n"\
+		    "Accept-Language: en\r\n"\
+		    "\r\n"
+
+
 /* Structure to contain version related details, connection fields & results */
 
 typedef struct _ver_data

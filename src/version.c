@@ -100,6 +100,9 @@ int setup_version_check(IspData *isp_data, MainUi *m_ui)
     if (ssl_version_connect(&ver, m_ui) == FALSE)
 	return FALSE;
 
+    /* User Agent and encoded username/password */
+    sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
+
     /* Latest release file */
     if ((r = get_release_file(&ver, m_ui)) != TRUE)
     	return r;
@@ -107,7 +110,7 @@ int setup_version_check(IspData *isp_data, MainUi *m_ui)
     BIO_free_all(ver.web);
     SSL_CTX_free(ver.ctx);
 
-    log_status_msg("INF0005", "Success", "INF0005", "Success", m_ui->status_info);
+    log_status_msg("INF0005", "Version check success", "INF0005", "Version check success", m_ui->status_info);
     return TRUE;
 }  
 
@@ -189,7 +192,7 @@ int ssl_version_connect(VersionData *ver, MainUi *m_ui)
     SSL_set_mode(ver->ssl, SSL_MODE_AUTO_RETRY);
 
     /* Fine tune host if possible */
-    if (! SSL_set_tlsext_host_name(ver->ssl, HOST))
+    if (! SSL_set_tlsext_host_name(ver->ssl, VER_HOST))
     {
 	log_status_msg("ERR0019", NULL, "INF0001", "Version check", m_ui->status_info);
     	return FALSE;
@@ -248,7 +251,7 @@ int get_release_file(VersionData *ver, MainUi *m_ui)
     log_status_msg("INF0005", NULL, "INF0005", NULL, m_ui->status_info);
     
     /* Construct GET */
-    get_qry = setup_get(ver->url, ver);
+    get_qry = setup_ver_get(ver->url, ver);
 
     /* Send the query */
     bio_send_query(ver->web, get_qry, m_ui);
@@ -259,6 +262,25 @@ int get_release_file(VersionData *ver, MainUi *m_ui)
 
     return r;
 }  
+
+
+/* Set up the query */
+
+char * setup_ver_get(char *url, VersionData *ver)
+{  
+    char *query;
+
+    query = (char *) malloc(strlen(url) +
+			    strlen(HOST) +
+			    strlen(isp_data->user_agent) +
+			    strlen(isp_data->enc64) +
+			    strlen(REALM) +
+			    strlen(GET_TPL) - 7);	// Note 7 accounts for 4 x %s in template plus \0
+
+    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, isp_data->enc64, REALM);
+
+    return query;
+}
 
 
 /* Read and Parse xml and set up a list of services */
