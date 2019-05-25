@@ -67,14 +67,12 @@
 int setup_version_check(IspData *, MainUi *);
 int version_check_init(VersionData *, MainUi *);
 int ssl_version_connect(IspData *, MainUi *);
-int get_release_file(VersionData *, MainUi *);
+int get_release_file(VersionData *, IspData *, MainUi *);
+int get_version(BIO *, VersionData *, MainUi *);
+char * setup_ver_get(char *, VersionData *, IspData *);
 
-char * setup_get(char *, IspData *);
-char * setup_get_param(char *, char *, IspData *);
-int bio_send_query(BIO *, char *, MainUi *);
-char * bio_read_xml(BIO *, MainUi *);
-void set_param(int, char *);
-
+extern int bio_send_query(BIO *, char *, MainUi *);
+extern char * bio_read_xml(BIO *, MainUi *);
 extern void log_status_msg(char *, char *, char *, char *, GtkWidget *);
 extern int check_http_status(char *, int *, MainUi *);
 
@@ -104,7 +102,7 @@ int setup_version_check(IspData *isp_data, MainUi *m_ui)
     sprintf(isp_data->user_agent, "%s %s", TITLE, VERSION);
 
     /* Latest release file */
-    if ((r = get_release_file(&ver, m_ui)) != TRUE)
+    if ((r = get_release_file(&ver, isp_data, m_ui)) != TRUE)
     	return r;
 
     BIO_free_all(ver.web);
@@ -241,7 +239,7 @@ int ssl_version_connect(VersionData *ver, MainUi *m_ui)
 
 /* Read the latest version file in the repo releases folder */
 
-int get_release_file(VersionData *ver, MainUi *m_ui)
+int get_release_file(VersionData *ver, IspData *isp_data, MainUi *m_ui)
 {  
     int r;
     char *get_qry;
@@ -251,7 +249,7 @@ int get_release_file(VersionData *ver, MainUi *m_ui)
     log_status_msg("INF0005", NULL, "INF0005", NULL, m_ui->status_info);
     
     /* Construct GET */
-    get_qry = setup_ver_get(ver->url, ver);
+    get_qry = setup_ver_get(ver->url, ver, isp_data);
 
     /* Send the query */
     bio_send_query(ver->web, get_qry, m_ui);
@@ -266,33 +264,31 @@ int get_release_file(VersionData *ver, MainUi *m_ui)
 
 /* Set up the query */
 
-char * setup_ver_get(char *url, VersionData *ver)
+char * setup_ver_get(char *url, VersionData *ver, IspData *isp_data)
 {  
     char *query;
 
     query = (char *) malloc(strlen(url) +
-			    strlen(HOST) +
+			    strlen(VER_HOST) +
 			    strlen(isp_data->user_agent) +
-			    strlen(isp_data->enc64) +
-			    strlen(REALM) +
-			    strlen(GET_TPL) - 7);	// Note 7 accounts for 4 x %s in template plus \0
+			    strlen(GET_TPL) - 6);	// Note 6 accounts for 3 x %s in template plus \0
 
-    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, isp_data->enc64, REALM);
+    sprintf(query, GET_VER_TPL, url, VER_HOST, isp_data->user_agent);
 
     return query;
 }
 
 
-/* Read and Parse xml and set up a list of services */
+/* Read and Parse xml and find current version */
 
-int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
+int get_version(BIO *web, VersionData *ver, MainUi *m_ui)
 {  
     char *xml = NULL;
     int r, html_code;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
-printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+printf("%s get_version:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
@@ -308,455 +304,8 @@ printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     }
 
     /* Services list */
-    r = parse_serv_list(xml, isp_data, m_ui);
+    //r = parse_serv_list(xml, isp_data, m_ui);
     free(xml);
 
     return r;
 }
-
-
-/* Iterate each service type found and get the associated resource listing */
-
-int srv_resource_list(IspData *isp_data, MainUi *m_ui)
-{  
-    int r;
-    char *get_qry;
-    IspListObj *isp_srv;
-
-    GList *l;
-    r = TRUE;
-
-    for(l = isp_data->srv_list_head; l != NULL; l = l->next)
-    {
-    	isp_srv = (IspListObj *) l->data;
-	sprintf(isp_data->url, "/api/%s/%s/", API_VER, isp_srv->val);
-	
-	/* Construct GET */
-	get_qry = setup_get(isp_data->url, isp_data);
-
-	/* Send the query, then clean up */
-	bio_send_query(isp_data->web, get_qry, m_ui);
-	free(get_qry);
-
-	r = get_resource_list(isp_data->web, isp_srv, isp_data, m_ui);
-	 
-	if (r == FALSE)
-	    break;
-    }
-
-    return r;
-}  
-
-
-/* Read and Parse xml and set up a list of resources for a service type */
-
-int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *m_ui)
-{  
-    char *xml = NULL;
-    int i, r, html_code;
-
-    /* Read xml */
-    xml = bio_read_xml(web, m_ui);
-printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    if (check_http_status(xml, &html_code, m_ui) == FALSE)
-    	return FALSE;
-
-    /* Resources list */
-    r = parse_resource_list(xml, isp_srv, isp_data, m_ui);
-    free(xml);
-    
-    return r;
-}  
-
-
-/* Get the current usage and details for the default service */
-
-int get_default_service(IspData *isp_data, MainUi *m_ui)
-{  
-    int r;
-    IspListObj *srv_type, *rsrc;
-    GList *l;
-
-    /* Determine the appropriate default */
-    if ((srv_type = default_srv_type(isp_data, m_ui)) == NULL)
-    	return FALSE;
-
-    /* Get the current Usage */
-    r = TRUE;
-    isp_data->curr_srv_id = srv_type->val;
-
-    for(l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
-    {
-    	rsrc = (IspListObj *) l->data;
-    	
-    	if (strcmp(rsrc->type, USAGE) == 0)
-    	{
-	    r = get_usage(rsrc, isp_data, m_ui);
-	    BIO_reset(isp_data->web);
-	}
-	else if (strcmp(rsrc->type, SERVICE) == 0)
-    	{
-	    r = get_service(rsrc, isp_data, m_ui);
-	    BIO_reset(isp_data->web);
-	}
-	else if (strcmp(rsrc->type, HISTORY) == 0)
-    	{
-	    r = get_history(rsrc, 2, isp_data, m_ui);
-	    BIO_reset(isp_data->web);
-	}
-
-	if (r == FALSE)
-	    break;
-    }
-
-    return r;
-}  
-
-
-/* Get a specific resource for the default service */
-
-IspListObj * get_resource(char *rsrc_type, IspData *isp_data, MainUi *m_ui)
-{  
-    IspListObj *srv_type, *rsrc;
-    GList *l;
-
-    /* Determine the appropriate default */
-    if ((srv_type = default_srv_type(isp_data, m_ui)) == NULL)
-    	return FALSE;
-
-    /* Find resource */
-    for(l = g_list_last(srv_type->sub_list_head); l != NULL; l = l->prev)
-    {
-    	rsrc = (IspListObj *) l->data;
-    	
-	if (strcmp(rsrc->type, rsrc_type) == 0)
-	    return rsrc;
-    }
-
-    return NULL;
-}  
-
-
-/* Get the current period usage */
-
-int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
-{  
-    int r, html_code;
-    char *get_qry;
-    char *xml = NULL;
-    
-    r = TRUE;
-
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-// ******* either verbose is wrong here - does nothing as it is here - INVESTIGATE!!!
-    /* Construct GET */
-    //get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
-    get_qry = setup_get(isp_data->url, isp_data);
-printf("%s get_usage:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
-
-    /* Send the query and read xml result */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    free(get_qry);
-
-    xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_usage:xml\n%s\n", debug_hdr, xml); fflush(stdout);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    if (check_http_status(xml, &html_code, m_ui) == FALSE)
-    	return FALSE;
-
-    /* Save the current usage data */
-    r = load_usage(xml, isp_data, m_ui);
-
-    return r;
-}
-
-
-/* Get the service details */
-
-int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
-{  
-    int r, html_code;
-    char *get_qry;
-    char *xml = NULL;
-    
-    r = TRUE;
-
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-	
-    /* Construct GET */
-    get_qry = setup_get(isp_data->url, isp_data);
-printf("%s get_service:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
-
-    /* Send the query and read xml result */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    free(get_qry);
-
-    xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_service:xml\n%s\n", debug_hdr, xml); fflush(stdout);
-
-    if (check_http_status(xml, &html_code, m_ui) == FALSE)
-    	return FALSE;
-
-    if (xml == NULL)
-    	return FALSE;
-
-    /* Save the current service data */
-    r = load_service(xml, isp_data, m_ui);
-
-    return r;
-}
-
-
-/* Get the usage day history details as per a parameter type */
-
-int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_ui)
-{  
-    int r, html_code;
-    char s_param[60];
-    char *get_qry;
-    char *xml = NULL;
-    
-    r = TRUE;
-
-    sprintf(isp_data->url, "/api/%s/%s/%s/", API_VER, isp_data->curr_srv_id, rsrc->type);
-	
-    /* Build an appropriate parameter string */
-    set_param(param_type, s_param);
-
-    /* Construct GET */
-    get_qry = setup_get_param(isp_data->url, s_param, isp_data);
-printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
-
-    /* Send the query and read xml result */
-    bio_send_query(isp_data->web, get_qry, m_ui);
-    free(get_qry);
-
-    xml = bio_read_xml(isp_data->web, m_ui);
-//printf("%s get_history:xml\n%s\n", debug_hdr, xml); fflush(stdout);
-
-    if (xml == NULL)
-    	return FALSE;
-
-    if (check_http_status(xml, &html_code, m_ui) == FALSE)
-    	return FALSE;
-
-    /* Save a list of the usage data days */
-    r = load_usage_hist(xml, isp_data, m_ui);
-
-    return r;
-}
-
-
-/* Get the usage day history details for a requested date range */
-
-int get_hist_service_usage(IspData *isp_data, MainUi *m_ui)
-{  
-    int r;
-    IspListObj *rsrc;
-
-    /* Set up a connection to retrieve history */
-    if (ssl_service_init(isp_data, m_ui) == FALSE)
-	return FALSE;
-
-    if (ssl_isp_connect(isp_data, m_ui) == FALSE)
-	return FALSE;
-
-    /* Set up History resource and get */
-    rsrc = get_resource(HISTORY, isp_data, m_ui);
-    r = get_history(rsrc, 3, isp_data, m_ui);
-
-    return r;
-}
-
-
-/* Encode the username and password in base64 */
-
-void encode_un_pw(IspData *isp_data, MainUi *m_ui)
-{ 
-    gchar *unpw_b64;
-    int len;
-    char *tmp;
-
-    len = strlen(isp_data->uname) + strlen(isp_data->pw);
-    tmp = (char *) malloc(len + 2);
-    sprintf(tmp, "%s:%s", isp_data->uname, isp_data->pw);
-
-    isp_data->enc64 = g_base64_encode ((const guchar *) tmp, len + 1);
-
-    free(tmp);
-
-    return;
-}  
-
-
-/* Set up the query */
-
-char * setup_get(char *url, IspData *isp_data)
-{  
-    char *query;
-
-    query = (char *) malloc(strlen(url) +
-			    strlen(HOST) +
-			    strlen(isp_data->user_agent) +
-			    strlen(isp_data->enc64) +
-			    strlen(REALM) +
-			    strlen(GET_TPL) - 7);	// Note 7 accounts for 4 x %s in template plus \0
-
-    sprintf(query, GET_TPL, url, HOST, isp_data->user_agent, isp_data->enc64, REALM);
-
-    return query;
-}  
-
-
-/* Set up the query and parameters */
-
-char * setup_get_param(char *url, char *param, IspData *isp_data)
-{  
-    int param_len;
-    char *query;
-
-    param_len = strlen(param);
-
-    query = (char *) malloc(strlen(url) +
-			    strlen(HOST) +
-			    strlen(isp_data->user_agent) +
-			    param_len +
-			    strlen(isp_data->enc64) +
-			    strlen(REALM) +
-			    strlen(PARAM_GET_TPL) - 8);	// Note 8 accounts for 4 x %s, %d and \0 in template
-
-    sprintf(query, PARAM_GET_TPL, url, HOST, isp_data->user_agent, param_len, isp_data->enc64, REALM);
-    strcat(query, param);
-
-    return query;
-}  
-
-
-/* Send the query to the server - encrypted */
-
-int bio_send_query(BIO *web, char *get_qry, MainUi *m_ui)
-{  
-    int r, sent, qlen;
-    char s[20];
-
-    sent = 0;
-    qlen = strlen(get_qry);
-
-    while(sent < qlen)
-    {
-	r = BIO_write(web, get_qry + sent, qlen - sent);
-
-	if (r <= 0)
-	{
-	    log_status_msg("ERR0010", NULL, "INF0002", retry_txt, m_ui->status_info);
-	    return FALSE;
-	}
-	else
-	{
-	    sent += r;
-	}
-    }
-
-    return TRUE;
-}  
-
-
-/* Read the encrypted output from the server */
-
-char * bio_read_xml(BIO *web, MainUi *m_ui)
-{  
-    int len = 0, txt_sz;
-    char buf[BUFSIZ + 1];
-    char *txt, *p;
-    //GtkTextBuffer *txt_buffer;  		// Debug
-    //GtkTextIter iter;				// Debug
-
-    /* Initial */
-    //txt_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (m_ui->txt_view));	// Debug
-    txt = NULL;
-    p = NULL;
-    txt_sz = 0;
-
-    /* Get the return text */
-    do
-    {
-	memset(buf, 0, sizeof(buf));
-	len = BIO_read(web, buf, sizeof(buf));
-            
-	if (len > 0)
-	{
-	    txt = (char *) realloc(txt, txt_sz + len + 1);
-	    p = txt + txt_sz;
-	    txt_sz += len;
-	    *(txt + txt_sz) = '\0';
-	    memcpy((char *) p, (char *) buf, len);
-	    	
-	    //gtk_text_buffer_get_end_iter (txt_buffer, &iter);			// Debug
-	    //gtk_text_buffer_insert (txt_buffer, &iter, buf, -1);		// Debug
-	    //gtk_text_iter_forward_to_end (&iter);				// Debug
-	}
-    } while(len > 0 || BIO_should_retry(web));
-    
-    return txt;
-}  
-
-
-/* Set up an appropriate parameter string */
-
-void set_param(int param_type, char *s_param)
-{  
-    time_t current_tm;
-    struct tm *tm;
-    struct tm p_tm;
-    size_t sz;
-    char s[20], s_dt[20];
-    char *dt;
-    ServUsage *srv_usg;
-
-    *s_param = '\0';
-    current_tm = time(NULL);
-    tm = localtime(&current_tm);
-    sz = strftime(s_dt, 11, "%Y-%m-%d", tm);
-    srv_usg = get_service_usage();
-
-    switch(param_type)
-    {
-    	case 1:						// Total all for month to date
-	    sz = strftime(s, 11, "%Y-%m-01", tm);
-	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
-
-	    strcpy(srv_usg->hist_from_dt, s);
-	    strcpy(srv_usg->hist_to_dt, s_dt);
-
-	    break;
-
-    	case 2:						// Total all for period to date
-	    dt = next_rollover_dt();			// Next Rollover date
-	    string2tm(dt, &p_tm);
-
-	    date_tm_add(&p_tm, "Month", -1);
-	    sz = strftime(s, 11, "%Y-%m-%d", &p_tm);
-	    sprintf(s_param, "start=%s&stop=%s&verbose=1", s, s_dt);
-
-	    strcpy(srv_usg->hist_from_dt, s);
-	    strcpy(srv_usg->hist_to_dt, s_dt);
-
-	    break;
-
-    	case 3:						// History for a specified period
-	    sprintf(s_param, "start=%s&stop=%s&verbose=1", srv_usg->hist_from_dt, srv_usg->hist_to_dt);
-	    break;
-
-    	default:
-	    break;
-    }
-
-    return;
-}  

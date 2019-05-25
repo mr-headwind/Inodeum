@@ -171,7 +171,7 @@ GtkWidget * about_hdr(MainUi *m_ui)
 GtkWidget * about_misc(MainUi *m_ui)
 {  
     int i;
-    char *s;
+    char *s, *app_uri;
     GtkWidget *misc_box;
     GtkWidget *label_t[DESC_MAX];
 
@@ -190,9 +190,12 @@ GtkWidget * about_misc(MainUi *m_ui)
 
     /* Web page */
     s = (char *) malloc(strlen(TITLE) + 10);
-    sprintf(s, "%s Web Page", TITLE);
-    m_ui->home_page = gtk_link_button_new_with_label (APP_URI, s);
+    sprintf(s, "%s at GitHub", TITLE);
+    app_uri = (char *) malloc(strlen(APP_URI) + strlen(GIT_OWNER) + strlen(TITLE) + 2);
+    sprintf(app_uri, "%s%s/%s", APP_URI, GIT_OWNER, TITLE);
+    m_ui->home_page = gtk_link_button_new_with_label (app_uri, s);
     free(s);
+    free(app_uri);
     gtk_widget_set_halign (m_ui->home_page, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_top(GTK_WIDGET (m_ui->home_page), 5);
     gtk_widget_set_margin_bottom(GTK_WIDGET (m_ui->home_page), 5);
