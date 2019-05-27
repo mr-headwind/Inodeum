@@ -114,8 +114,9 @@ typedef struct _main_ui
     GtkWidget *plan_grid;
 
     /* Widgets - about */
-    GtkWidget *hdr_box, *misc_box, *tab_nb;
+    GtkWidget *hdr_box, *misc_box, *nver_box, *tab_nb;
     GtkWidget *app_icon, *home_page;
+    GtkWidget *new_vers_info;
 
     /* Widgets - monitor */
     GtkWidget *log_cntr, *net_cntr;

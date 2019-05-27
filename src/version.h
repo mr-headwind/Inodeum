@@ -34,6 +34,12 @@
 #define VERSION_DATE "14-May-2018"
 
 
+/* Includes */
+
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+
+
 /* Fixed info */
 
 #define GET_VER_TPL "POST "\

@@ -86,6 +86,7 @@ extern void user_login_main(IspData *, GtkWidget *);
 extern int delete_user_creds(IspData *, MainUi *);
 extern void load_history(IspData *isp_data, MainUi *m_ui);
 extern void reset_history(MainUi *);
+extern int version_req_chk(MainUi *);
 extern void log_msg(char*, char*, char*, GtkWidget*);
 extern void app_msg(char*, char*, GtkWidget*);
 extern void show_panel(GtkWidget *, MainUi *);
@@ -227,6 +228,7 @@ void OnAbout(GtkWidget *btn, gpointer user_data)
     m_ui = (MainUi *) user_data;
 
     /* Display About details */
+    version_req_chk(m_ui);
     show_panel(m_ui->about_cntr, m_ui);
 
     return;

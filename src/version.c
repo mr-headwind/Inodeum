@@ -64,9 +64,10 @@
 
 /* Prototypes */
 
+int version_req_chk(MainUi *);
 int setup_version_check(IspData *, MainUi *);
 int version_check_init(VersionData *, MainUi *);
-int ssl_version_connect(IspData *, MainUi *);
+int ssl_version_connect(VersionData *, MainUi *);
 int get_release_file(VersionData *, IspData *, MainUi *);
 int get_version(BIO *, VersionData *, MainUi *);
 char * setup_ver_get(char *, VersionData *, IspData *);
@@ -81,6 +82,14 @@ extern int check_http_status(char *, int *, MainUi *);
 
 static const char *debug_hdr = "DEBUG-version.c ";
 
+
+
+/* Check if already checked for a new version */
+
+int version_req_chk(MainUi *m_ui)
+{  
+    return TRUE;
+}  
 
 
 /* Go to the application GitHub repo url and determine the latest version */

@@ -62,6 +62,7 @@ static const gchar *css_data =
 	"GtkLabel#title_2 { font-family: Serif; font-size: 15px; font-style: italic; color: #fa8072; }"
 	"GtkLabel#title_3 { font-family: Sans; font-size: 9px; color: @DARK_BLUE;}"
 	"GtkLabel#title_4 { font-family: Sans; font-size: 9px; font-weight: bold; }"
+	"GtkLabel#title_5 { font-family: Sans; font-size: 9px; color: #e00b40;}"
 	"GtkLabel#status { font-family: Sans; font-size: 9px; color: #b8860b; font-style: italic; }"
 	"GtkEntry#ent_1 { color: @DARK_BLUE; }"
 	"GtkRadioButton#rad_1 { color: @DARK_BLUE; font-family: Sans; font-size: 9px; }"

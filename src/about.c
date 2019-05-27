@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <gtk/gtk.h>  
 #include <main.h>
+#include <isp.h>
 #include <defs.h>
 #include <version.h>
 
@@ -55,6 +56,7 @@
 
 void about_panel(MainUi *m_ui);
 GtkWidget * about_hdr(MainUi *);
+GtkWidget * about_nver(MainUi *);
 GtkWidget * about_misc(MainUi *);
 GtkWidget * about_tabnb(MainUi *);
 GtkWidget * new_page(int);
@@ -99,6 +101,9 @@ void about_panel(MainUi *m_ui)
     /* Header */
     m_ui->hdr_box = about_hdr(m_ui);
 
+    /* Version */
+    m_ui->nver_box = about_nver(m_ui);
+
     /* General information */
     m_ui->misc_box = about_misc(m_ui);
 
@@ -112,6 +117,7 @@ void about_panel(MainUi *m_ui)
     gtk_widget_set_margin_left (m_ui->about_cntr, 5);
 
     gtk_box_pack_start (GTK_BOX (m_ui->about_cntr), m_ui->hdr_box, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (m_ui->about_cntr), m_ui->nver_box, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (m_ui->about_cntr), m_ui->misc_box, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (m_ui->about_cntr), m_ui->tab_nb, FALSE, FALSE, 0);
 
@@ -126,7 +132,7 @@ void about_panel(MainUi *m_ui)
 
 GtkWidget * about_hdr(MainUi *m_ui)
 {  
-    GtkWidget *hdr_box;
+    GtkWidget *hdr_box, *ver_box;
     GtkWidget *label_t, *label_v;
     char *app_icon;
     char *s, *lwr_title;
@@ -163,6 +169,32 @@ GtkWidget * about_hdr(MainUi *m_ui)
     gtk_box_pack_start (GTK_BOX (hdr_box), label_v, FALSE, FALSE, 0);
 
     return hdr_box;
+}
+
+
+/* New version information */
+
+GtkWidget * about_nver(MainUi *m_ui)
+{  
+    GtkWidget *nver_box;
+    char *s;
+
+    s = (char *) malloc(30);
+    sprintf(s, "   ");
+    m_ui->new_vers_info = gtk_label_new(s);
+    gtk_widget_set_name(m_ui->new_vers_info, "title_5");
+    gtk_widget_set_margin_start(GTK_WIDGET (m_ui->new_vers_info), 30);
+    free(s);
+    gtk_widget_set_halign (m_ui->new_vers_info, GTK_ALIGN_END);
+    gtk_widget_set_valign (m_ui->new_vers_info, GTK_ALIGN_END);
+
+    nver_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_widget_set_halign (nver_box, GTK_ALIGN_END);
+    gtk_widget_set_valign (nver_box, GTK_ALIGN_END);
+
+    gtk_box_pack_start (GTK_BOX (nver_box), m_ui->new_vers_info, FALSE, FALSE, 0);
+
+    return nver_box;
 }
 
 
