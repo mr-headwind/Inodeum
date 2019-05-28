@@ -141,7 +141,7 @@ typedef struct _main_ui
     int dvcbx_hndlr_id;
 
     /* Misc */
-    int duration, user_cd;
+    int duration, user_cd, ver_chk_flg;
     double rx1, tx1;
     double sn_rx_kbps, sn_tx_kbps, max_kbps;
     char *rxfn, *txfn;

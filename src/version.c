@@ -64,7 +64,7 @@
 
 /* Prototypes */
 
-int version_req_chk(MainUi *);
+int version_req_chk(IspData *, MainUi *);
 int setup_version_check(IspData *, MainUi *);
 int version_check_init(VersionData *, MainUi *);
 int ssl_version_connect(VersionData *, MainUi *);
@@ -86,9 +86,12 @@ static const char *debug_hdr = "DEBUG-version.c ";
 
 /* Check if already checked for a new version */
 
-int version_req_chk(MainUi *m_ui)
-{  
-    return TRUE;
+int version_req_chk(IspData *isp_data, MainUi *m_ui)
+{
+    if (m_ui->ver_chk_flg == FALSE)
+    	setup_version_check(isp_data, m_ui);
+
+    return m_ui->ver_chk_flg;
 }  
 
 
@@ -116,6 +119,7 @@ int setup_version_check(IspData *isp_data, MainUi *m_ui)
 
     BIO_free_all(ver.web);
     SSL_CTX_free(ver.ctx);
+    m_ui->ver_chk_flg = TRUE;
 
     log_status_msg("INF0005", "Version check success", "INF0005", "Version check success", m_ui->status_info);
     return TRUE;
