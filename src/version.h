@@ -42,7 +42,7 @@
 
 /* Fixed info */
 
-#define GET_VER_TPL "POST "\
+#define GET_VER_TPL "GET "\
 		    "%s "\
 		    "HTTP/1.0\r\n"\
 		    "Host: %s\r\n"\

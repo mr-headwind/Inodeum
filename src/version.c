@@ -258,11 +258,13 @@ int get_release_file(VersionData *ver, IspData *isp_data, MainUi *m_ui)
     char *get_qry;
 
     r = TRUE;
-    sprintf(ver->url, "/%s/%s/tree/master/DIST_PACKAGES/latest_version", GIT_OWNER, TITLE);
+    //sprintf(ver->url, "/%s/%s/tree/master/DIST_PACKAGES/latest_version", GIT_OWNER, TITLE); *** REDIRECTION
+    sprintf(ver->url, "/%s/%s/blob/master/DIST_PACKAGES/latest_version", GIT_OWNER, TITLE);
     log_status_msg("INF0005", NULL, "INF0005", NULL, m_ui->status_info);
     
     /* Construct GET */
     get_qry = setup_ver_get(ver->url, ver, isp_data);
+printf("%s get_release_file  get_qry\n%s\n", debug_hdr, get_qry); fflush(stdout);
 
     /* Send the query */
     bio_send_query(ver->web, get_qry, m_ui);
@@ -297,6 +299,7 @@ char * setup_ver_get(char *url, VersionData *ver, IspData *isp_data)
 int get_version(BIO *web, VersionData *ver, MainUi *m_ui)
 {  
     char *xml = NULL;
+    char *s;
     int r, html_code;
 
     /* Read xml */
@@ -316,8 +319,16 @@ printf("%s get_version:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 	    return r;
     }
 
-    /* Services list */
-    //r = parse_serv_list(xml, isp_data, m_ui);
+    /* Search for latest version string */
+    s = strstr(xml, LATEST_VERSION);
+
+    if (s == NULL)
+    	return -2;
+
+    for(s + 15; *s != '<'; s++)
+    {
+    }
+
     free(xml);
 
     return r;
