@@ -89,6 +89,8 @@ static const gchar *css_data =
 
 void set_css()
 {
+    GError *err = NULL;
+
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
     GdkScreen *screen = gdk_display_get_default_screen(display);
@@ -100,7 +102,14 @@ void set_css()
     gtk_css_provider_load_from_data(GTK_CSS_PROVIDER(provider),
 				    css_data,
 				    -1,
-				    NULL);
+				    &err);
+				    //NULL);
+
+    if (err != NULL)
+    {
+    	printf("%s set_css  ****css error  %s\n", debug_hdr, err->message); fflush(stdout);
+    	g_clear_error (&err);
+    }
 
     g_object_unref(provider);
 

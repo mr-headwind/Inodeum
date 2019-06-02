@@ -300,11 +300,12 @@ int get_version(BIO *web, VersionData *ver, MainUi *m_ui)
 {  
     char *xml = NULL;
     char *s;
-    int r, html_code;
+    char latestv[20];
+    int i, r, html_code;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
-printf("%s get_version:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+//printf("%s get_version:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
@@ -320,16 +321,22 @@ printf("%s get_version:xml\n%s\n", debug_hdr, xml); fflush(stdout);
     }
 
     /* Search for latest version string */
+    memset(latestv, '\0', sizeof(latestv));
     s = strstr(xml, LATEST_VERSION);
 
     if (s == NULL)
     	return -2;
 
-    for(s + 15; *s != '<'; s++)
-    {
-    }
+    for(s += strlen(LATEST_VERSION), i = 0; *s != '<'; s++, i++)
+    	latestv[i] = *s;
 
     free(xml);
+    m_ui->ver_chk_flg = TRUE;
+
+printf("%s get_version: VERS %s  latesv %s\n", debug_hdr, VERSION, latestv); fflush(stdout);
+    /* Notify if version changed */
+    if (strcmp(VERSION, latestv) != 0)
+    	gtk_label_set_text (GTK_LABEL(m_ui->new_vers_info), latestv);
 
     return r;
 }
