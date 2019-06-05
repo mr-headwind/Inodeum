@@ -54,6 +54,7 @@ static const char *debug_hdr = "DEBUG-css.c ";
 static const gchar *css_data = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
+	"label { color: @DARK_BLUE; } "
 	".button, .entry, .label { font-family: Sans; font-size: 9px; }"
 	".label#data_1 { color: @DARK_BLUE; }"
 	".label#data_2 { color: #800000; font-family: Sans; font-size: 8px; }"
