@@ -45,6 +45,7 @@
 /* Prototypes */
 
 void set_css();
+void get_sceen_res();
 
 
 /* Globals */
@@ -111,6 +112,21 @@ void set_css()
     }
 
     g_object_unref(provider);
+
+    return;
+}
+
+
+/* Get the screen resolution and apply the appropriate font */
+
+void get_sceen_res()
+{
+    GdkRectangle workarea = {0};
+
+    gdk_monitor_get_workarea (gdk_display_get_primary_monitor (gdk_display_get_default()),
+			      &workarea);
+
+    printf ("W: %u x H:%u\n", workarea.width, workarea.height);
 
     return;
 }

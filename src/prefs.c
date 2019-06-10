@@ -178,7 +178,7 @@ GtkWidget * std_prefs(MainUi *m_ui)
 
     /* Create version check radio button(s) */
     pref_radio("title_4", "Check New Version", OV_VER_LBL, 
-	       "At start", "Manual", "Auto (ppa)", 4, &vbox, m_ui);
+	       "At start", "In 'About'", "Never", 4, &vbox, m_ui);
 
     /* Label */
     tbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);

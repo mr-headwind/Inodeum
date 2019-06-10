@@ -89,6 +89,7 @@ extern void monitor_panel(MainUi *);
 extern void init_history(MainUi *);
 extern void set_css();
 extern int get_user_pref(char *, char **);
+extern int version_req_chk(IspData *, MainUi *);
 
 extern void OnOverview(GtkWidget*, gpointer);
 extern void OnService(GtkWidget*, gpointer);
@@ -580,6 +581,10 @@ gboolean refresh_main_loop_fn(gpointer user_data)
     gtk_label_set_text (GTK_LABEL (m_ui->status_info), ref_tmr->info_txt);
     gtk_widget_show (m_ui->status_info);
 
+    /* One-off new version check */
+    version_req_chk(isp_data, m_ui);
+
+    /* Check refresh required */
     if (ref_tmr->refresh_req == FALSE)
     	return TRUE;
 

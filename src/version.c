@@ -76,6 +76,8 @@ extern int bio_send_query(BIO *, char *, MainUi *);
 extern char * bio_read_xml(BIO *, MainUi *);
 extern void log_status_msg(char *, char *, char *, char *, GtkWidget *);
 extern int check_http_status(char *, int *, MainUi *);
+extern void app_msg(char*, char*, GtkWidget*);
+extern int get_user_pref(char *, char **);
 
 
 /* Globals */
@@ -84,10 +86,17 @@ static const char *debug_hdr = "DEBUG-version.c ";
 
 
 
-/* Check if already checked for a new version */
+/* Check if already checked (or need to) for a new version */
 
 int version_req_chk(IspData *isp_data, MainUi *m_ui)
 {
+    char *p;
+
+    get_user_pref(VER_CHQ, &p);
+
+    if (strcmp(p, "0") != 0)
+	m_ui->ver_chk_flg = TRUE;
+
     if (m_ui->ver_chk_flg == FALSE)
     	setup_version_check(isp_data, m_ui);
 
@@ -264,7 +273,6 @@ int get_release_file(VersionData *ver, IspData *isp_data, MainUi *m_ui)
     
     /* Construct GET */
     get_qry = setup_ver_get(ver->url, ver, isp_data);
-printf("%s get_release_file  get_qry\n%s\n", debug_hdr, get_qry); fflush(stdout);
 
     /* Send the query */
     bio_send_query(ver->web, get_qry, m_ui);
@@ -300,12 +308,11 @@ int get_version(BIO *web, VersionData *ver, MainUi *m_ui)
 {  
     char *xml = NULL;
     char *s;
-    char latestv[20];
+    char latestv[20], lbl[50];
     int i, r, html_code;
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
-//printf("%s get_version:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
@@ -333,10 +340,19 @@ int get_version(BIO *web, VersionData *ver, MainUi *m_ui)
     free(xml);
     m_ui->ver_chk_flg = TRUE;
 
-printf("%s get_version: VERS %s  latesv %s\n", debug_hdr, VERSION, latestv); fflush(stdout);
     /* Notify if version changed */
     if (strcmp(VERSION, latestv) != 0)
-    	gtk_label_set_text (GTK_LABEL(m_ui->new_vers_info), latestv);
+    {
+    	sprintf(lbl, "New version: %s available", latestv);
+    	gtk_label_set_text (GTK_LABEL(m_ui->new_vers_info), lbl);
+
+    	sprintf(app_msg_extra, 
+    		"\nA new version of %s is available for download.\n"
+    		"For more details, check the %s website and downloads at -\n"
+    		"https://%s/%s/%s/blob/master/DIST_PACKAGES",
+    		TITLE, TITLE, VER_HOST, GIT_OWNER, TITLE);
+    	app_msg("INF0011", latestv, m_ui->window);
+    }
 
     return r;
 }

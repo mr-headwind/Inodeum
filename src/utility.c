@@ -110,6 +110,7 @@ static const char *app_messages[][2] =
     { "INF0008", "HTML error (see log file) %s "},
     { "INF0009", "Username / Password invalid (see log file) %s "},
     { "INF0010", "Client error (see log file) %s "},
+    { "INF0011", "A new version of the application (%s) is available. "},
     { "ERR0001", "Failed to create log file: %s "},
     { "ERR0002", "Failed to read $HOME variable. "},
     { "ERR0003", "Failed to create Application directory: %s "},
@@ -162,7 +163,7 @@ static const char *app_messages[][2] =
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 65;
+static const int Msg_Count = 66;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
