@@ -39,13 +39,13 @@
 
 #include <stdio.h>
 #include <gtk/gtk.h>  
-#include <gdk/gdkkeysyms.h> 
+#include <gdk/gdkwayland.h> 
 
 
 /* Prototypes */
 
 void set_css();
-void get_sceen_res();
+void get_screen_res();
 
 
 /* Globals */
@@ -91,6 +91,8 @@ void set_css()
 {
     GError *err = NULL;
 
+    get_screen_res();
+
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
     GdkScreen *screen = gdk_display_get_default_screen(display);
@@ -119,14 +121,14 @@ void set_css()
 
 /* Get the screen resolution and apply the appropriate font */
 
-void get_sceen_res()
+void get_screen_res()
 {
     GdkRectangle workarea = {0};
 
     gdk_monitor_get_workarea (gdk_display_get_primary_monitor (gdk_display_get_default()),
 			      &workarea);
 
-    printf ("W: %u x H:%u\n", workarea.width, workarea.height);
+    printf ("%s get_screen_res W: %u x H:%u\n", debug_hdr, workarea.width, workarea.height);
 
     return;
 }
