@@ -123,10 +123,18 @@ void set_css()
 
 void get_screen_res()
 {
+    gdouble res;
+    GdkScreen *scr;
     GdkRectangle workarea = {0};
 
     gdk_monitor_get_workarea (gdk_display_get_primary_monitor (gdk_display_get_default()),
 			      &workarea);
+
+    if ((scr = gdk_screen_get_default ()) != NULL)
+    {
+    	res = gdk_screen_get_resolution (scr);
+	printf ("%s get_screen_res res: %f\n", debug_hdr, res);
+    }
 
     printf ("%s get_screen_res W: %u x H:%u\n", debug_hdr, workarea.width, workarea.height);
 
