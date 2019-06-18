@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 #include <gtk/gtk.h>  
-#include <gdk/gdkwayland.h> 
+#include <gdk/gdk.h> 
 
 
 /* Prototypes */
@@ -51,6 +51,37 @@ void get_screen_res();
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-css.c ";
+
+/*  16.04
+*/
+
+static const gchar *css_data = 
+	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
+	"@define-color METAL_GREY rgba(55,83,103,1.0); "
+	"GtkButton, GtkEntry, GtkLabel { font-family: Sans; font-size: 9px; }"
+	"GtkLabel#data_1 { color: @DARK_BLUE; }"
+	"GtkLabel#data_2 { color: #800000; font-family: Sans; font-size: 8px; }"
+	"GtkLabel#data_3 { color: #400080; font-family: Sans; font-size: 7px; }"
+	"GtkLabel#title_1 { font-family: Sans; font-size: 15px; font-weight: bold; }"
+	"GtkLabel#title_2 { font-family: Serif; font-size: 15px; font-style: italic; color: #fa8072; }"
+	"GtkLabel#title_3 { font-family: Sans; font-size: 9px; color: @DARK_BLUE;}"
+	"GtkLabel#title_4 { font-family: Sans; font-size: 9px; font-weight: bold; }"
+	"GtkLabel#title_5 { font-family: Sans; font-size: 9px; color: #e00b40;}"
+	"GtkLabel#status { font-family: Sans; font-size: 9px; color: #b8860b; font-style: italic; }"
+	"GtkEntry#ent_1 { color: @DARK_BLUE; }"
+	"GtkRadioButton#rad_1 { color: @DARK_BLUE; font-family: Sans; font-size: 9px; }"
+	"GtkRadioButton > GtkLabel { color: @DARK_BLUE; font-family: Sans; font-size: 9px; }"
+	"GtkFrame { background-color: #e6e6fa; border-radius: 5px}"
+	"GtkFrame > GtkLabel { color: #800000; font-weight: 500; }"
+	"GtkComboboxText * { color: @METAL_GREY; font-family: Sans; font-size: 10px; }"
+	"GtkProgressBar#pbar_1 { color: @DARK_BLUE; font-family: Sans; font-size: 7px; }"
+	"#button_1 * { color: #708090; font-weight: bold; }"
+	"GtkNotebook * { font-family: Sans; font-size: 8px; }"
+	"GtkTextView { font-family: Sans; font-size: 9px; }"
+	"GtkTextView#txtview_1 { font-family: Sans; font-size: 8px; }"
+	"GtkLinkButton { font-family: Sans; font-size: 9px; color: @DARK_BLUE; }";
+
+/*  18.04
 
 static const gchar *css_data = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
@@ -70,7 +101,6 @@ static const gchar *css_data =
 	"radiobutton > label { color: @DARK_BLUE; font-family: Sans; font-size: 12px; }"
 	"frame { background-color: #e6e6fa; border-radius: 8px}"
 	"frame > label { color: #800000; font-weight: 500; }"
-	//"GtkDrawingArea#draw_1 { background-color: #ffffff;}"
 	"combobox * { color: @METAL_GREY; font-family: Sans; font-size: 13px; }"
 	"progressbar#pbar_1 { color: @DARK_BLUE; font-family: Sans; font-size: 10px; }"
 	"#button_1 * { color: #708090; font-weight: bold; }"
@@ -78,6 +108,7 @@ static const gchar *css_data =
 	"textview { font-family: Sans; font-size: 12px; }"
 	"textview#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"button.link { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
+*/
 
 
 // These don't work
@@ -127,6 +158,17 @@ void get_screen_res()
     GdkScreen *scr;
     GdkRectangle workarea = {0};
 
+    /* 16.04
+    */
+
+    if ((scr = gdk_screen_get_default ()) == NULL)
+    	return;
+    
+    gdk_screen_get_monitor_workarea (scr, 0, &workarea);
+
+
+    /* 18.04
+    
     gdk_monitor_get_workarea (gdk_display_get_primary_monitor (gdk_display_get_default()),
 			      &workarea);
 
@@ -135,6 +177,7 @@ void get_screen_res()
     	res = gdk_screen_get_resolution (scr);
 	printf ("%s get_screen_res res: %f\n", debug_hdr, res);
     }
+    */
 
     printf ("%s get_screen_res W: %u x H:%u\n", debug_hdr, workarea.width, workarea.height);
 
