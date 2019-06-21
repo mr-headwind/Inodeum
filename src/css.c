@@ -35,6 +35,7 @@
 
 #define SD_W 1600
 #define SD_H 900
+#define SD_SZ 3
 
 
 /* Includes */
@@ -61,7 +62,7 @@ static const char *debug_hdr = "DEBUG-css.c ";
 /*  16.04
 */
 
-static const gchar *css_data = 
+static gchar *css_data = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
 	"GtkButton, GtkEntry, GtkLabel { font-family: Sans; font-size: 12px; }"
@@ -139,7 +140,7 @@ void set_css()
     					      GTK_STYLE_PROVIDER_PRIORITY_USER);
 
     gtk_css_provider_load_from_data(GTK_CSS_PROVIDER(provider),
-				    css_data,
+				    (const char *) css_data,
 				    -1,
 				    &err);
 
@@ -206,12 +207,12 @@ void get_screen_res(GdkRectangle *workarea)
 
 void css_adjust_font_sz()
 {
-    int i, j;
+    int i, j, fn_len, new_fn_len;
     char *p;
     char num[4];
 
-    /* Extract and adjust the font size, max 2 bytes */
-    p = (char *) css_data;
+    /* Extract and adjust the font size */
+    p = css_data;
 
     while ((p = strstr(p, "px")) != NULL)
     {
@@ -220,6 +221,8 @@ void css_adjust_font_sz()
     	
     	j = 0;
     	i--;
+    	fn_len = i;
+	printf("%s fn_len is: %d\n", debug_hdr, fn_len); fflush(stdout);
 
 	while(j < i)
 	{
@@ -230,14 +233,23 @@ void css_adjust_font_sz()
 	num[j] = '\0';
 
 	/* Convert and decrease */
-	i = atoi(num) - 3;
-	sprintf(num, "%02d", i);
+	i = atoi(num) - SD_SZ;
+	sprintf(num, "%d", i);
 	printf("%s new num is: %s\n", debug_hdr, num); fflush(stdout);
 
-	/* Substitute new number */
+	/* Substitute new number, may have tp pad some spaces */
+	new_fn_len = strlen(num);
 
+	for(i = new_fn_len; i < fn_len; i++)
+	    *(p - fn_len + i) = ' ';
+
+	for(i = 0; i < new_fn_len; i++)
+	    *(p - new_fn_len + i) = num[i];
+
+	/* Advance to next */
 	p++;
     }
+	printf("%s css is: %s\n", debug_hdr, css_data); fflush(stdout);
 
     return;
 }
