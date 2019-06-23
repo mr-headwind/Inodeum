@@ -62,6 +62,7 @@ static const char *debug_hdr = "DEBUG-css.c ";
 /*  16.04
 */
 
+//static const gchar *css_data = 
 static gchar *css_data = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
@@ -241,8 +242,13 @@ void css_adjust_font_sz()
 	new_fn_len = strlen(num);
 
 	for(i = new_fn_len; i < fn_len; i++)
+	{
+	    j = p - fn_len + i;
+	    printf("%s j: %d  fn_len: %d  new_fn_len: %d   i: %d\n", debug_hdr, j, fn_len, new_fn_len, i); fflush(stdout);
 	    *(p - fn_len + i) = ' ';
+	}
 
+	printf("%s num: %s\n", debug_hdr, num); fflush(stdout);
 	for(i = 0; i < new_fn_len; i++)
 	    *(p - new_fn_len + i) = num[i];
 
