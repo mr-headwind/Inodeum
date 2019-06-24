@@ -109,7 +109,7 @@ static const gchar *css_data =
 	"radiobutton > label { color: @DARK_BLUE; font-family: Sans; font-size: 12px; }"
 	"frame { background-color: #e6e6fa; border-radius: 8px}"
 	"frame > label { color: #800000; font-weight: 500; }"
-	"combobox * { color: @METAL_GREY; font-family: Sans; font-size: 13px; }"
+	"combobox * { color: @METAL_GREY; font-family: Sans; font-size: 12px; }"
 	"progressbar#pbar_1 { color: @DARK_BLUE; font-family: Sans; font-size: 10px; }"
 	"#button_1 * { color: #708090; font-weight: bold; }"
 	"notebook * { font-family: Sans; font-size: 11px; }"
