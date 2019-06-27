@@ -60,9 +60,7 @@ void css_adjust_font_sz(char **);
 static const char *debug_hdr = "DEBUG-css.c ";
 
 /*  16.04
-*/
 
-//static const gchar *css_data = 
 static char *css_data_fhd = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
@@ -88,8 +86,10 @@ static char *css_data_fhd =
 	"GtkTextView { font-family: Sans; font-size: 12px; }"
 	"GtkTextView#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"GtkLinkButton { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
+*/
 
 /*  18.04     !@#$%^ Pain! At 18.04 the selectors became proper selector names, not the Gtk name
+*/
 
 static char *css_data_fhd = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
@@ -116,7 +116,6 @@ static char *css_data_fhd =
 	"textview { font-family: Sans; font-size: 12px; }"
 	"textview#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"button.link { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
-*/
 
 
 // These don't work
@@ -170,7 +169,7 @@ char * check_screen_res(int *sd_flg)
     char *css_data_sd;
 
     get_screen_res(&workarea); 
-    printf ("%s get_screen_res W: %u x H:%u\n", debug_hdr, workarea.width, workarea.height);
+    //printf ("%s get_screen_res W: %u x H:%u\n", debug_hdr, workarea.width, workarea.height);
 	
     // Default font size suits Full HD resolution, but lesser res needs needs lesser font size to stop
     // Inodeum looking too large. If approaching FHD, keep the default.
@@ -220,14 +219,13 @@ void get_screen_res(GdkRectangle *workarea)
 void css_adjust_font_sz(char **css)
 {
     int i, j, fn_len, new_fn_len;
-    char *p, *p_new, *p_fhd;
+    char *p, *p_new, *p_fhd, *last_p;
     char num[4];
 
     /* Copy to a new css string and extract and adjust the font size */
     *css = (char *) malloc(strlen(css_data_fhd) + 1);
     p_new = *css;
     p_fhd = css_data_fhd;
-    p = p_new;
 
     while ((p = strstr(p_fhd, "px")) != NULL)
     {
@@ -235,7 +233,6 @@ void css_adjust_font_sz(char **css)
     	for(fn_len = 1; *(p - fn_len) != ' '; fn_len++);
     	
     	fn_len--;
-	printf("%s fn_len is: %d\n", debug_hdr, fn_len); fflush(stdout);
 
     	/* Determine the font value */
     	i = 0;
@@ -247,16 +244,18 @@ void css_adjust_font_sz(char **css)
 	}
 
 	num[i] = '\0';
+	//printf("%s fn_len is: %d  font sz: %s\n", debug_hdr, fn_len, num); fflush(stdout);
 
     	/* Copy up to font */
     	memcpy(p_new, p_fhd, p - p_fhd - fn_len);
-    	p_new = p_new + p + 2;
+    	p_new = p_new + (p - p_fhd - fn_len);
 
-	/* Convert, decrease and add to new string */
+	/* Adjust to new font size */
 	i = atoi(num) - SD_SZ;
 	sprintf(num, "%d", i);
-	printf("%s new num is: %s\n", debug_hdr, num); fflush(stdout);
+	//printf("%s new num is: %s\n", debug_hdr, num); fflush(stdout);
 
+	/* Convert back to string and add to new string */
 	for(i = 0; num[i] != '\0'; i++)
 	{
 	    *p_new = num[i];
@@ -269,8 +268,19 @@ void css_adjust_font_sz(char **css)
 
 	/* Advance to next */
 	p_fhd = p + 2;
+	last_p = p_fhd;
     }
-    printf("%s new css is: %s\n", debug_hdr, *css); fflush(stdout);
+
+    /* Copy any residual bytes */
+    while(*p_fhd != '\0')
+    {
+    	*p_new = *p_fhd;
+    	p_new++;
+    	p_fhd++;
+    }
+
+    *p_new = '\0';
+    //printf("%s new css is: %s\n", debug_hdr, *css); fflush(stdout);
 
     return;
 }
