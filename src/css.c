@@ -59,8 +59,10 @@ void css_adjust_font_sz(char **);
 
 static const char *debug_hdr = "DEBUG-css.c ";
 
-/*  16.04
+/*  Yuk! Pain!  !@#$%^  At 18.04 the selectors became proper selector names, not the Gtk name */
 
+/*  16.04
+*/
 static char *css_data_fhd = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
@@ -86,11 +88,8 @@ static char *css_data_fhd =
 	"GtkTextView { font-family: Sans; font-size: 12px; }"
 	"GtkTextView#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"GtkLinkButton { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
-*/
 
-/*  18.04     !@#$%^ Pain! At 18.04 the selectors became proper selector names, not the Gtk name
-*/
-
+/*  18.04  
 static char *css_data_fhd = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
@@ -116,6 +115,7 @@ static char *css_data_fhd =
 	"textview { font-family: Sans; font-size: 12px; }"
 	"textview#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"button.link { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
+*/
 
 
 // These don't work
@@ -161,7 +161,7 @@ void set_css()
 }
 
 
-/* Check the screen resolution and need to adjust the font size */
+/* Check the screen resolution and whether to adjust the font size */
 
 char * check_screen_res(int *sd_flg)
 {
@@ -219,7 +219,7 @@ void get_screen_res(GdkRectangle *workarea)
 void css_adjust_font_sz(char **css)
 {
     int i, j, fn_len, new_fn_len;
-    char *p, *p_new, *p_fhd, *last_p;
+    char *p, *p_new, *p_fhd;
     char num[4];
 
     /* Copy to a new css string and extract and adjust the font size */
@@ -250,12 +250,12 @@ void css_adjust_font_sz(char **css)
     	memcpy(p_new, p_fhd, p - p_fhd - fn_len);
     	p_new = p_new + (p - p_fhd - fn_len);
 
-	/* Adjust to new font size */
+	/* Adjust to new font size and convert back to string */
 	i = atoi(num) - SD_SZ;
 	sprintf(num, "%d", i);
 	//printf("%s new num is: %s\n", debug_hdr, num); fflush(stdout);
 
-	/* Convert back to string and add to new string */
+	/* Add to new string */
 	for(i = 0; num[i] != '\0'; i++)
 	{
 	    *p_new = num[i];
@@ -268,7 +268,6 @@ void css_adjust_font_sz(char **css)
 
 	/* Advance to next */
 	p_fhd = p + 2;
-	last_p = p_fhd;
     }
 
     /* Copy any residual bytes */
