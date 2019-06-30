@@ -23,6 +23,7 @@ inodeum_SOURCES = \
 		um_main.c           \
 		user_login_ui.c     \
 		utility.c           \
+		version.c           \
 		version.h           \
 		view_file_ui.c
 

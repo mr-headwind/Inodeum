@@ -221,7 +221,7 @@ GtkWidget * about_misc(MainUi *m_ui)
     }
 
     /* Web page */
-    s = (char *) malloc(strlen(TITLE) + 10);
+    s = (char *) malloc(strlen(TITLE) + 12);
     sprintf(s, "%s at GitHub", TITLE);
     app_uri = (char *) malloc(strlen(APP_URI) + strlen(GIT_OWNER) + strlen(TITLE) + 2);
     sprintf(app_uri, "%s%s/%s", APP_URI, GIT_OWNER, TITLE);
