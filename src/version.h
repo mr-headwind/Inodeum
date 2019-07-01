@@ -31,8 +31,8 @@
 
 
 //#define VERSION "0.53"    ** debug only
-#define VERSION "0.60"
-#define VERSION_DATE "30-Jun-2019"
+#define VERSION "0.61"
+#define VERSION_DATE "01-Jul-2019"
 #define LATEST_VERSION "Inodeum version: "
 
 
