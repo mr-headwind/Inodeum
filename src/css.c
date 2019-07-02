@@ -62,7 +62,6 @@ static const char *debug_hdr = "DEBUG-css.c ";
 /*  Yuk! Pain!  !@#$%^  At 18.04 the selectors became proper selector names, not the Gtk name */
 
 /*  16.04
-*/
 static char *css_data_fhd = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
@@ -88,8 +87,10 @@ static char *css_data_fhd =
 	"GtkTextView { font-family: Sans; font-size: 12px; }"
 	"GtkTextView#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"GtkLinkButton { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
+*/
 
 /*  18.04  
+*/
 static char *css_data_fhd = 
 	"@define-color DARK_BLUE rgba(0%,0%,50%,1.0); "
 	"@define-color METAL_GREY rgba(55,83,103,1.0); "
@@ -115,7 +116,6 @@ static char *css_data_fhd =
 	"textview { font-family: Sans; font-size: 12px; }"
 	"textview#txtview_1 { font-family: Sans; font-size: 11px; }"
 	"button.link { font-family: Sans; font-size: 12px; color: @DARK_BLUE; }";
-*/
 
 
 // These don't work
@@ -196,19 +196,16 @@ void get_screen_res(GdkRectangle *workarea)
     GdkScreen *scr;
 
     /* 16.04
-    */
-
     if ((scr = gdk_screen_get_default ()) == NULL)
     	return;
     
     gdk_screen_get_monitor_workarea (scr, 0, workarea);
-
+    */
 
     /* 18.04
-    
+    */
     gdk_monitor_get_workarea (gdk_display_get_primary_monitor (gdk_display_get_default()),
 			      workarea);
-    */
 
     return;
 }
