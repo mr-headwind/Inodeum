@@ -53,7 +53,7 @@
 
 void main_ui(IspData *, MainUi *);
 void create_menu(IspData *, MainUi *);
-void create_main_view(IspData *, MainUi *);
+void create_main_view(MainUi *);
 void usage_btns(MainUi *);
 void set_connect_btns(MainUi *, int); 
 void set_panel_btn(GtkWidget *, char *, GtkWidget *, int, int, int, int);
@@ -131,7 +131,7 @@ void main_ui(IspData *isp_data, MainUi *m_ui)
     create_menu(isp_data, m_ui);
 
     /* CONTROL PANEL */
-    create_main_view(isp_data, m_ui);
+    create_main_view(m_ui);
 
     /* INFORMATION AREA AT BOTTOM OF WINDOW */
     m_ui->status_info = gtk_label_new(NULL);
@@ -235,7 +235,7 @@ void create_menu(IspData *isp_data, MainUi *m_ui)
 
 /* Main view */
 
-void create_main_view(IspData *isp_data, MainUi *m_ui)
+void create_main_view(MainUi *m_ui)
 {  
     /* New container for main view */
     m_ui->ctrl_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
@@ -332,7 +332,7 @@ void set_panel_btn(GtkWidget *btn, char *nm, GtkWidget *cntr,
 }
 
 
-/* Enable or disable the date panel buttons */
+/* Enable or disable panel buttons */
 
 void set_connect_btns(MainUi *m_ui, int sens) 
 {
