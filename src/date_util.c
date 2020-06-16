@@ -179,6 +179,7 @@ time_t strdt2tmt(char *yyyy, char *mm, char *dd, char *hh, char *min, char *sec)
     dtm.tm_hour = ((int) strtol(hh, &end, 10));
     dtm.tm_min = ((int) strtol(min, &end, 10));
     dtm.tm_sec = ((int) strtol(sec, &end, 10));
+    dtm.tm_isdst = -1;
 
     tm_t = mktime(&dtm);
 

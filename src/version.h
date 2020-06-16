@@ -26,13 +26,14 @@
 **
 ** History
 **	10-Jan-2017	Initial
+**	15-Jun-2020	Need to set daylight saving flag in function strdt2tmt (date_util.c)
 **
 */
 
 
 //#define VERSION "0.53"    ** debug only
-#define VERSION "0.61"
-#define VERSION_DATE "01-Jul-2019"
+#define VERSION "0.62"
+#define VERSION_DATE "15-Jun-2020"
 #define LATEST_VERSION "Inodeum version: "
 
 
