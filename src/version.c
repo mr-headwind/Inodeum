@@ -145,12 +145,13 @@ int version_check_init(VersionData *ver, MainUi *m_ui)
     ver->ssl = NULL;
 
     /* Initialise the ssl and crypto libraries and load required algorithms */
-    SSL_library_init();
-    SSL_load_error_strings();
-    ERR_load_BIO_strings();
+    //SSL_library_init();				// Not required Openssl 1.1
+    //SSL_load_error_strings();				// Not required Openssl 1.1
+    ERR_load_BIO_strings();				// ????
 
     /* Set SSLv2 client hello, also announce SSLv3 and TLSv1 */
-    const SSL_METHOD* method = SSLv23_method();		// SSLv23_client_method ?
+    //const SSL_METHOD* method = SSLv23_method();		// Openssl 1.0
+    const SSL_METHOD* method = TLS_method();			// Openssl 1.1
 
     if (!(NULL != method))
     {

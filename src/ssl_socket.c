@@ -164,12 +164,13 @@ int ssl_service_init(IspData *isp_data, MainUi *m_ui)
     isp_data->ssl = NULL;
 
     /* Initialise the ssl and crypto libraries and load required algorithms */
-    SSL_library_init();
-    SSL_load_error_strings();
-    ERR_load_BIO_strings();
+    //SSL_library_init();				// Not required Openssl 1.1
+    //SSL_load_error_strings();				// Not required Openssl 1.1
+    ERR_load_BIO_strings();				// ????
 
     /* Set SSLv2 client hello, also announce SSLv3 and TLSv1 */
-    const SSL_METHOD* method = SSLv23_method();		// SSLv23_client_method ?
+    //const SSL_METHOD* method = SSLv23_method();		// Openssl 1.0
+    const SSL_METHOD* method = TLS_method();			// Openssl 1.1		
 
     if (!(NULL != method))
     {
@@ -323,7 +324,7 @@ int get_serv_list(BIO *web, IspData *isp_data, MainUi *m_ui)
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
-printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+//printf("%s get_serv_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
@@ -388,7 +389,7 @@ int get_resource_list(BIO *web, IspListObj *isp_srv, IspData *isp_data, MainUi *
 
     /* Read xml */
     xml = bio_read_xml(web, m_ui);
-printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+//printf("%s get_resource_list:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
@@ -487,14 +488,14 @@ int get_usage(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
     /* Construct GET */
     //get_qry = setup_get_param(isp_data->url, "verbose=1", isp_data);
     get_qry = setup_get(isp_data->url, isp_data);
-printf("%s get_usage:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
+//printf("%s get_usage:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
 
     /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);
     free(get_qry);
 
     xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_usage:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+//printf("%s get_usage:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (xml == NULL)
     	return FALSE;
@@ -523,14 +524,14 @@ int get_service(IspListObj *rsrc, IspData *isp_data, MainUi *m_ui)
 	
     /* Construct GET */
     get_qry = setup_get(isp_data->url, isp_data);
-printf("%s get_service:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
+//printf("%s get_service:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
 
     /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);
     free(get_qry);
 
     xml = bio_read_xml(isp_data->web, m_ui);
-printf("%s get_service:xml\n%s\n", debug_hdr, xml); fflush(stdout);
+//printf("%s get_service:xml\n%s\n", debug_hdr, xml); fflush(stdout);
 
     if (check_http_status(xml, &html_code, m_ui) == FALSE)
     	return FALSE;
@@ -563,7 +564,7 @@ int get_history(IspListObj *rsrc, int param_type, IspData *isp_data, MainUi *m_u
 
     /* Construct GET */
     get_qry = setup_get_param(isp_data->url, s_param, isp_data);
-printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
+//printf("%s get_history:query\n%s\n", debug_hdr, get_qry); fflush(stdout);
 
     /* Send the query and read xml result */
     bio_send_query(isp_data->web, get_qry, m_ui);
