@@ -286,8 +286,7 @@ void OnResetPW(GtkWidget *menu_item, gpointer user_data)
     if (response == GTK_RESPONSE_CANCEL)
 	return;
 
-    if (delete_user_creds(isp_data, m_ui) == FALSE)
-    	log_msg("ERR0028", NULL, "ERR0028", m_ui->window);
+    delete_user_creds(isp_data, m_ui);
 
     return;
 }  

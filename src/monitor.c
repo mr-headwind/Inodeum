@@ -246,14 +246,14 @@ GtkWidget * monitor_net(MainUi *m_ui)
     gtk_widget_set_name (m_ui->rx_bar, "pbar_1");
     gtk_widget_set_margin_bottom (m_ui->rx_bar, 5);
     gtk_widget_set_margin_start (m_ui->rx_bar, 10);
-    gtk_widget_set_margin_end (m_ui->rx_bar, 10);
+    gtk_widget_set_margin_end (m_ui->rx_bar, 5);
 
     m_ui->tx_bar = gtk_progress_bar_new();
     gtk_progress_bar_set_show_text (GTK_PROGRESS_BAR (m_ui->tx_bar), TRUE);
     gtk_widget_set_name (m_ui->tx_bar, "pbar_1");
     gtk_widget_set_margin_bottom (m_ui->tx_bar, 3);
     gtk_widget_set_margin_start (m_ui->tx_bar, 10);
-    gtk_widget_set_margin_end (m_ui->tx_bar, 10);
+    gtk_widget_set_margin_end (m_ui->tx_bar, 5);
 
     gtk_grid_attach(GTK_GRID (bar_grid), m_ui->rx_bar, 1, 0, 1, 1);
     gtk_grid_attach(GTK_GRID (bar_grid), m_ui->tx_bar, 1, 1, 1, 1);

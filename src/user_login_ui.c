@@ -27,20 +27,22 @@
 **
 ** History
 **	02-Apr-2017	Initial code
+**	19-Oct-2020	Changes to convert from gnome keyring to gnome libsecret
 **
 */
 
 
 /* Includes */
 
+#include <unistd.h>  
 #include <stdlib.h>  
 #include <string.h>  
 #include <libgen.h>  
+#include <errno.h>  
 #include <gtk/gtk.h>  
 #include <gdk/gdkkeysyms.h>  
 #include <glib.h>  
-#include <gnome-keyring.h>  
-#include <gnome-keyring-memory.h>  
+#include <libsecret/secret.h>  
 #include <isp.h>
 #include <defs.h>
 #include <main.h>
@@ -80,8 +82,16 @@ void user_control(UserLoginUi *);
 int check_user_creds(IspData *, MainUi *);
 int store_user_creds(IspData *, MainUi *);
 int delete_user_creds(IspData *, MainUi *);
-void keyring_error(GnomeKeyringResult, char *, char *, GnomeKeyringItemInfo *, 
-		   GnomeKeyringAttributeList *, GtkWidget *);
+int load_isp_uname(IspData *, MainUi *);
+int load_isp_pw(IspData *, MainUi *);
+int store_isp_uname(IspData *, MainUi *);
+int store_isp_pw(IspData *, MainUi *);
+int clear_isp_uname(IspData *, MainUi *);
+int clear_isp_pw(IspData *, MainUi *);
+int create_secret(const gchar *, IspData *, MainUi *);
+int check_keyring_old(IspData *, MainUi *);
+const SecretSchema * app_schema_1 (void);
+const SecretSchema * app_schema_2 (void);
 
 void OnUserOK(GtkWidget*, gpointer);
 void OnUserCancel(GtkWidget*, gpointer);
@@ -108,7 +118,8 @@ extern void set_css();
 /* Globals */
 
 static const char *debug_hdr = "DEBUG-user_login_ui.c ";
-static const char *keyring = "login";
+static const SecretSchema *SEC_SCHEMA_1;
+static const SecretSchema *SEC_SCHEMA_2;
 
 
 /* Display and maintenance of user preferences */
@@ -137,11 +148,10 @@ void user_login_main(IspData *isp_data, GtkWidget *parent_win)
 void initial(IspData *isp_data)
 {
     if (isp_data->uname != NULL)
-        free(isp_data->uname);
+        secret_password_free(isp_data->uname);
 
     if (isp_data->pw != NULL)
-        gnome_keyring_memory_free (isp_data->pw);
-        //free(isp_data->pw);
+        secret_password_free (isp_data->pw);
 
     return;
 }
@@ -246,94 +256,40 @@ void user_control(UserLoginUi *u_ui)
 }
 
 
-/* Check Gnome (login) keyring for stored user credentials */
+/* Check Gnome (login) keyring (secret) for stored user credentials */
 
 int check_user_creds(IspData *isp_data, MainUi *m_ui)
 {
-    GList *item_ids, *l;
-    GnomeKeyringResult res;
-    GnomeKeyringItemInfo *info;
-    GnomeKeyringAttributeList *attrs;
-    GnomeKeyringAttribute *attr;
-    int i, fnd;
-    guint32 id;
-    char *display_name, *tmp;
+    /* Initial */
+    m_ui->user_cd = FALSE;
 
-    /* List all the keyring items */
-    res = gnome_keyring_list_item_ids_sync (keyring, &item_ids);
+    /* Load secret schemas */
+    SEC_SCHEMA_1 = app_schema_1();		// Username
+    SEC_SCHEMA_2 = app_schema_2();		// Password
 
-    if (res != GNOME_KEYRING_RESULT_OK)
+    /* Get the isp username and password */
+    if (load_isp_uname(isp_data, m_ui) == TRUE)
     {
-	keyring_error(res, "(list ids)", NULL, NULL, NULL, m_ui->window);
+	if (load_isp_pw(isp_data, m_ui) == TRUE)
+	{
+	    m_ui->user_cd = TRUE;
+	    return TRUE;
+	}
+    }
+
+    /* Not found, check for former old style gnome keyring and convert */
+    log_msg("INF0016", "found", NULL, NULL);
+
+    if (check_keyring_old(isp_data, m_ui) == FALSE)
+    {
+	log_msg("INF0015", "found", NULL, NULL);
     	return FALSE;
     }
-
-    /* Examine each item until the desired one is found */
-    fnd = FALSE;
-
-    for(l = item_ids; l != NULL && fnd == FALSE; l = l->next)
+    else
     {
-	/* Get the keyring item info */
-    	id = GPOINTER_TO_UINT (l->data);
-
-    	res = gnome_keyring_item_get_info_sync (keyring, id, &info);
-
-	if (res != GNOME_KEYRING_RESULT_OK)
-	{
-	    keyring_error(res, "(item info)", NULL, NULL, NULL, m_ui->window);
-	    break;
-	}
-
-	/* Get the display name for comparison */
-	display_name = gnome_keyring_item_info_get_display_name (info);
-
-	if (strncmp(display_name, TITLE, strlen(TITLE)) == 0)
-	{
-	    /* Found it, get the attributes */
-	    res = gnome_keyring_item_get_attributes_sync (keyring, id, &attrs);
-
-	    if (res != GNOME_KEYRING_RESULT_OK)
-	    {
-		keyring_error(res, "(item attributes list)", display_name, info, NULL, m_ui->window);
-		break;
-	    }
-	    /* Get the username and password */
-	    for(i = 0; i < attrs->len; i++)
-	    {
-	    	attr = &gnome_keyring_attribute_list_index(attrs, i);
-
-	    	if (attr->type == GNOME_KEYRING_ATTRIBUTE_TYPE_STRING)
-		    if (strcmp(attr->name, "username") == 0)
-		    	break;
-	    }
-
-	    if (i >= attrs->len)
-	    {
-		keyring_error(res, "(username attribute)", display_name, info, attrs, m_ui->window);
-		break;
-	    }
-
-	    isp_data->uname = (char *) malloc(strlen(attr->value.string) + 1);
-	    strcpy(isp_data->uname, (char *) attr->value.string);
-
-	    tmp = gnome_keyring_item_info_get_secret (info);
-	    isp_data->pw = gnome_keyring_memory_alloc((gulong) strlen(tmp) + 1);
-	    isp_data->pw = gnome_keyring_memory_strdup(tmp);
-
-	    free(tmp);
-	    gnome_keyring_attribute_list_free (attrs);
-	    fnd = TRUE;
-	}
-
-	gnome_keyring_item_info_free (info);
-	free(display_name);
+	m_ui->user_cd = TRUE;
+	return TRUE;
     }
-
-    /* Clean up */
-    m_ui->user_cd = fnd;
-    g_list_free(item_ids);
-
-    return fnd;
 }
 
 
@@ -341,31 +297,24 @@ int check_user_creds(IspData *isp_data, MainUi *m_ui)
 
 int store_user_creds(IspData *isp_data, MainUi *m_ui)
 {  
-    GnomeKeyringResult res;
-    GnomeKeyringAttributeList *attrs;
-    guint32 id;
-    char *display_name;
+    char *logname;
+    GError *error = NULL;
 
-    display_name = (char *) malloc(strlen(TITLE) + strlen(isp_data->uname) + 3);
-    sprintf(display_name, "%s: %s", TITLE, isp_data->uname);
-
-    attrs = gnome_keyring_attribute_list_new ();
-    gnome_keyring_attribute_list_append_string (attrs, "username", isp_data->uname);
-    gnome_keyring_attribute_list_append_string (attrs, "application", TITLE);
-
-    res = gnome_keyring_item_create_sync (keyring, GNOME_KEYRING_ITEM_GENERIC_SECRET, display_name,
-					  attrs, isp_data->pw, TRUE, &id);
-
-    if (res != GNOME_KEYRING_RESULT_OK)
+    /* Load secret schemas if necessary */
+    if (! SEC_SCHEMA_1)
     {
-	keyring_error(res, "(item create)", display_name, NULL, attrs, m_ui->window);
-	return FALSE;
+	SEC_SCHEMA_1 = app_schema_1();		// Username
+	SEC_SCHEMA_2 = app_schema_2();		// Password
     }
 
-    m_ui->user_cd = TRUE;
-    free(display_name);
-    gnome_keyring_attribute_list_free (attrs);
+    /* Save the isp username and password */
+    if (store_isp_uname(isp_data, m_ui) == FALSE)
+    	return FALSE;
 
+    if (store_isp_pw(isp_data, m_ui) == FALSE)
+	return FALSE;
+
+    log_msg("INF0015", "stored", NULL, NULL);
     return TRUE;
 }
 
@@ -374,90 +323,369 @@ int store_user_creds(IspData *isp_data, MainUi *m_ui)
 
 int delete_user_creds(IspData *isp_data, MainUi *m_ui)
 {
-    GList *item_ids, *l;
-    GnomeKeyringResult res;
-    GnomeKeyringItemInfo *info;
-    int fnd;
-    guint32 id;
-    char *display_name;
+    char *logname;
+    GError *error = NULL;
 
-    /* List all the keyring items */
-    res = gnome_keyring_list_item_ids_sync (keyring, &item_ids);
-
-    if (res != GNOME_KEYRING_RESULT_OK)
-    {
-	keyring_error(res, "(list ids)", NULL, NULL, NULL, m_ui->window);
+    /* Clear the stored isp username and password */
+    if (clear_isp_uname(isp_data, m_ui) == FALSE)
     	return FALSE;
+
+    if (clear_isp_pw(isp_data, m_ui) == FALSE)
+	return FALSE;
+
+    log_msg("INF0015", "removed", NULL, NULL);
+    return TRUE;
+}
+
+
+/* Get Isp username */
+
+int load_isp_uname(IspData *isp_data, MainUi *m_ui)
+{
+    int r;
+    char *logname;
+    GError *error = NULL;
+
+    /* Initial */
+    r = TRUE;
+
+    /* Get the login username */
+    logname = strdup(getlogin());
+
+    /* The attributes used to lookup the username should conform to the schema */
+    isp_data->uname = secret_password_lookup_sync (SEC_SCHEMA_1, NULL, &error,
+						   "logname", logname, "application", TITLE, NULL);
+
+    /* Information only - may be first usage or user may opt not to save */
+    if (error != NULL)
+    {
+	r = FALSE;
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+    } 
+    else if (isp_data->uname == NULL)
+    {
+	r = FALSE;
+    } 
+
+    if (r == FALSE)
+	log_msg("INF0012", logname, NULL, NULL);
+
+    free(logname);
+
+    return r;
+}
+
+
+/* Get Isp password */
+
+int load_isp_pw(IspData *isp_data, MainUi *m_ui)
+{
+    int r;
+    GError *error = NULL;
+
+    /* Initial */
+    r = TRUE;
+
+    /* The attributes used to lookup the password should conform to the schema */
+    isp_data->pw = secret_password_lookup_nonpageable_sync (SEC_SCHEMA_2, NULL, &error,
+							    "username", isp_data->uname, "application", TITLE, NULL);
+
+    if (error != NULL)
+    {
+	r = FALSE;
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+    } 
+    else if (isp_data->pw == NULL)
+    {
+	r = FALSE;
+    } 
+
+    if (r == FALSE)
+	log_msg("ERR0049", isp_data->uname, "ERR0049", m_ui->window);
+
+    return r;
+}
+
+
+/* Store Isp username */
+
+int store_isp_uname(IspData *isp_data, MainUi *m_ui)
+{
+    int r;
+    char *logname;
+    GError *error = NULL;
+
+    /* Initial */
+    r = TRUE;
+
+    /* Get the login username */
+    logname = strdup(getlogin());
+
+    /* The attributes used to store the username should conform to the schema */
+    secret_password_store_sync (SEC_SCHEMA_1, SECRET_COLLECTION_DEFAULT,
+				"ISP_Username", isp_data->uname, NULL, &error,
+				"logname", logname, "application", TITLE, NULL);
+
+    if (error != NULL)
+    {
+	r = FALSE;
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+	log_msg("ERR0050", logname, "ERR0050", m_ui->window);
+    } 
+
+    free(logname);
+
+    return r;
+}
+
+
+/* Store Isp password */
+
+int store_isp_pw(IspData *isp_data, MainUi *m_ui)
+{
+    int r;
+    GError *error = NULL;
+
+    /* Initial */
+    r = TRUE;
+
+    /* The attributes used to store the password should conform to the schema */
+    secret_password_store_sync (SEC_SCHEMA_2, SECRET_COLLECTION_DEFAULT,
+				"ISP_Password", isp_data->pw, NULL, &error,
+				"username", isp_data->uname, "application", TITLE, NULL);
+
+    if (error != NULL)
+    {
+	r = FALSE;
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+	log_msg("ERR0050", isp_data->uname, "ERR0050", m_ui->window);
+    } 
+
+    return r;
+}
+
+
+/* Clear stored Isp username */
+
+int clear_isp_uname(IspData *isp_data, MainUi *m_ui)
+{
+    int r;
+    char *logname;
+    GError *error = NULL;
+    gboolean removed;
+
+    /* Initial */
+    r = TRUE;
+
+    /* Get the login username */
+    logname = strdup(getlogin());
+
+    /* The attributes used to clear the username should conform to the schema */
+    removed = secret_password_clear_sync (SEC_SCHEMA_1, NULL, &error,
+					  "logname", logname, "application", TITLE, NULL);
+
+    if (error != NULL)
+    {
+	r = FALSE;
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+	log_msg("ERR0028", logname, "ERR0051", m_ui->window);
+    } 
+    else if (removed == FALSE)
+    {
+	r = FALSE;
+	log_msg("ERR0028", logname, "ERR0051", m_ui->window);
     }
 
-    /* Examine each item until the desired one is found */
+    free(logname);
+
+    return r;
+}
+
+
+/* Clear stored Isp password */
+
+int clear_isp_pw(IspData *isp_data, MainUi *m_ui)
+{
+    int r;
+    GError *error = NULL;
+    gboolean removed;
+
+    /* Initial */
+    r = TRUE;
+
+    /* The attributes used to clear the password should conform to the schema */
+    removed = secret_password_clear_sync (SEC_SCHEMA_2, NULL, &error,
+					  "username", isp_data->uname, "application", TITLE, NULL);
+
+    if (error != NULL)
+    {
+	r = FALSE;
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+	log_msg("ERR0028", isp_data->uname, "ERR0051", m_ui->window);
+    } 
+    else if (removed == FALSE)
+    {
+	r = FALSE;
+	log_msg("ERR0028", isp_data->uname, "ERR0051", m_ui->window);
+    }
+
+    return r;
+}
+
+
+/* Create a temportary secret */
+
+int create_secret(const gchar *pw, IspData *isp_data, MainUi *m_ui)
+{
+    SecretValue *temp_pw;
+    gsize len;
+
+    /* Create a temporary secret and steal it to a password */
+    len = (gsize) (strlen(pw) + 1);
+    temp_pw = secret_value_new(pw, (gssize) len, "text/plain");
+    isp_data->pw = secret_value_unref_to_password(temp_pw, &len);
+
+    return TRUE;
+}
+
+
+/* Check for and convert an old style gnome keyring */
+
+int check_keyring_old(IspData *isp_data, MainUi *m_ui)
+{
+    GHashTable *passwd_attrs, *secret_attrs;
+    GHashTableIter iter;
+    GList *items, *l;
+    gpointer key, value;
+    GError *error = NULL;
+    int fnd;
+    gboolean removed;
+
+    /* Old schema */
     fnd = FALSE;
 
-    for(l = item_ids; l != NULL && fnd == FALSE; l = l->next)
+    static const SecretSchema SEC_SCHEMA_OLD = 
     {
-	/* Get the keyring item info */
-    	id = GPOINTER_TO_UINT (l->data);
-
-    	res = gnome_keyring_item_get_info_sync (keyring, id, &info);
-
-	if (res != GNOME_KEYRING_RESULT_OK)
+	"org.freedesktop.Secret.Generic", SECRET_SCHEMA_NONE,
 	{
-	    keyring_error(res, "(item info)", NULL, NULL, NULL, m_ui->window);
+	    { "application", SECRET_SCHEMA_ATTRIBUTE_STRING },
+	    { "username", SECRET_SCHEMA_ATTRIBUTE_STRING },
+	    { "NULL", 0 },
+	}
+    };
+
+    /* Search for attributes */
+    passwd_attrs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+    g_hash_table_insert (passwd_attrs, g_strdup ("application"), g_strdup (TITLE));
+
+    items = secret_password_searchv_sync (&SEC_SCHEMA_OLD, passwd_attrs, SECRET_SEARCH_ALL, NULL, &error);
+    g_hash_table_unref (passwd_attrs);
+
+    if (error != NULL)
+    {
+	sprintf(app_msg_extra, "%s\n", strerror(errno));
+	g_error_free (error);
+	log_msg("ERR0051", "Failed to search items", "ERR0051", m_ui->window);
+	return FALSE;
+    }
+
+    for(l = items; l != NULL; l = l->next)
+    {
+    	SecretRetrievable *retrievable = SECRET_RETRIEVABLE (l->data);
+    	SecretValue *sec_val = secret_retrievable_retrieve_secret_sync (retrievable, NULL, &error);
+
+	if (error != NULL)
+	{
+	    sprintf(app_msg_extra, "%s\n", strerror(errno));
+	    g_error_free (error);
+	    log_msg("ERR0051", "Failed to retrieve secret", "ERR0051", m_ui->window);
 	    break;
 	}
 
-	/* Get the display name for comparison */
-	display_name = gnome_keyring_item_info_get_display_name (info);
+	isp_data->pw = (gchar *) secret_value_get_text (sec_val);
 
-	if (strncmp(display_name, TITLE, strlen(TITLE)) == 0)
+	secret_attrs = secret_retrievable_get_attributes (retrievable);
+	g_hash_table_iter_init (&iter, secret_attrs);
+
+	while (g_hash_table_iter_next (&iter, (void **)&key, (void **)&value))
 	{
-	    /* Found it, delete it */
-	    res = gnome_keyring_item_delete_sync (keyring, id);
-
-	    if (res != GNOME_KEYRING_RESULT_OK)
+	    if (strcmp (key, "xdg:schema") != 0)
 	    {
-		keyring_error(res, "(item delete)", display_name, info, NULL, m_ui->window);
-		break;
-	    }
+		if (strcmp (key, "username") == 0)
+		{
+		    isp_data->uname = strdup((char *) value);
+		    log_msg("INF0013", NULL, NULL, NULL);
+		    store_user_creds(isp_data, m_ui);
+		    check_user_creds(isp_data, m_ui);
+		    log_msg("INF0017", "removed", NULL, NULL);
+		    //delete_user_creds(isp_data, m_ui);
 
-	    fnd = TRUE;
+		    removed = secret_password_clear_sync (&SEC_SCHEMA_OLD, NULL, &error,
+					  "application", TITLE, "username", isp_data->uname, NULL);
+
+		    if (! removed)
+		    {
+			sprintf(app_msg_extra, "%s\n", strerror(errno));
+			g_error_free (error);
+			log_msg("ERR0051", "Failed to remove old keyring", "ERR0051", m_ui->window);
+			break;
+		    }
+
+		    fnd = TRUE;
+		    break;
+		}
+	    }
 	}
 
-	gnome_keyring_item_info_free (info);
-	free(display_name);
+	g_hash_table_unref (secret_attrs);
+    	secret_value_unref(sec_val);
     }
 
-    /* Clean up */
-    g_list_free(item_ids);
+    g_list_free_full (items, g_object_unref);
 
     return fnd;
 }
 
 
-/* General Keyring error reporting function */
+/* Define the Inodeum username schema */
 
-void keyring_error(GnomeKeyringResult res, 
-		   char *txt, 
-		   char *display_name,
-		   GnomeKeyringItemInfo *info, 
-		   GnomeKeyringAttributeList *attrs,
-		   GtkWidget *window)
+const SecretSchema * app_schema_1 (void)
 {
-    char s[30];
+    static const SecretSchema inodeum_schema_1 = 
+    {
+	"org.inodeum.keyring.Username", SECRET_SCHEMA_NONE,
+	{
+	    { "logname", SECRET_SCHEMA_ATTRIBUTE_STRING },
+	    { "application", SECRET_SCHEMA_ATTRIBUTE_STRING },
+	    { "NULL", 0 },
+	}
+    };
 
-    sprintf(s, "%d %s", res, txt);
-    log_msg("ERR0027", s, "ERR0027", window);
+    return &inodeum_schema_1;
+}
 
-    if (display_name != NULL)
-    	free(display_name);
 
-    if (info != NULL)
-	gnome_keyring_item_info_free (info);
+/* Define the Inodeum password schema */
 
-    if (attrs != NULL)
-	gnome_keyring_attribute_list_free (attrs);
+const SecretSchema * app_schema_2 (void)
+{
+    static const SecretSchema inodeum_schema_2 = 
+    {
+	"org.inodeum.keyring.Password", SECRET_SCHEMA_NONE,
+	{
+	    { "username", SECRET_SCHEMA_ATTRIBUTE_STRING },
+	    { "application", SECRET_SCHEMA_ATTRIBUTE_STRING },
+	    { "NULL", 0 },
+	}
+    };
 
-    return;
+    return &inodeum_schema_2;
 }
 
 
@@ -499,14 +727,17 @@ void OnUserOK(GtkWidget *btn, gpointer user_data)
     	return;
     }
 
-    //isp_data->pw = (char *) malloc(len + 1);
-    //strcpy(isp_data->pw, pw);
-    isp_data->pw = gnome_keyring_memory_alloc((gulong) len + 1);
-    isp_data->pw = gnome_keyring_memory_strdup(pw);
-
-    /* Check if save requested */
+    /* If save requested, store and reload pw. If no save, create a temporary secret. */
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (u_ui->secure_opt)) == TRUE)
+    {
+	isp_data->pw = strdup(pw);
     	store_user_creds(isp_data, m_ui);
+    	load_isp_pw(isp_data, m_ui);
+    }
+    else
+    {
+	create_secret(pw, isp_data, m_ui);
+    }
 
     /* Initiate a service request, close if failure, return to login if auth error */
     r = ssl_service_details(isp_data, m_ui);

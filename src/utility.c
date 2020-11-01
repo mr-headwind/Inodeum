@@ -111,6 +111,12 @@ static const char *app_messages[][2] =
     { "INF0009", "Username / Password invalid (see log file) %s "},
     { "INF0010", "Client error (see log file) %s "},
     { "INF0011", "A new version of the application (%s) is available. "},
+    { "INF0012", "Failed to get ISP login Username for %s. "},
+    { "INF0013", "Old style keyring found ... converting... "},
+    { "INF0014", "Old style keyring removed. "},
+    { "INF0015", "User credentials %s. "},
+    { "INF0016", "User credentials not found. Attempting to locate former style keyring. "},
+    { "INF0017", "Removing credentials for former style keyring... "},
     { "ERR0001", "Failed to create log file: %s "},
     { "ERR0002", "Failed to read $HOME variable. "},
     { "ERR0003", "Failed to create Application directory: %s "},
@@ -159,11 +165,14 @@ static const char *app_messages[][2] =
     { "ERR0046", "Calendar date field cannot be NULL. "},
     { "ERR0047", "Error determining Network devices. "},
     { "ERR0048", "Error starting network speed monitor thread. "},
+    { "ERR0049", "Failed to get ISP login Password for %s. "},
+    { "ERR0050", "Failed to store ISP login / Password for %s. "},
+    { "ERR0051", "Keyring Convert Error: %s. "},
     { "ERR9998", "Error: %s. "},
     { "ERR9999", "Error - Unknown error message given. "}			// NB - MUST be last
 };
 
-static const int Msg_Count = 66;
+static const int Msg_Count = 75;
 static char *Home;
 static char *logfile = NULL;
 static char *app_dir;
