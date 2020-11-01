@@ -28,13 +28,14 @@
 **	10-Jan-2017	Initial
 **	15-Jun-2020	Need to set daylight saving flag in function strdt2tmt (date_util.c)
 **	05-Jul-2020	Update code to use openssl 1.1 (ssl_socket.c, version.c)
+**	01-Nov-2020	Changes for Gnome update (libgnome) keyring to (lib) secret
 **
 */
 
 
 //#define VERSION "0.53"    ** debug only
-#define VERSION "0.63"
-#define VERSION_DATE "05-Jul-2020"
+#define VERSION "0.64"
+#define VERSION_DATE "01-Nov-2020"
 #define LATEST_VERSION "Inodeum version: "
 
 
