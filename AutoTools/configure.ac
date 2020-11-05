@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([inodeum], [0.63], [tony.buckley000@gmail.com])
+AC_INIT([inodeum], [0.64], [tony.buckley000@gmail.com])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/um_main.c])
 AC_CONFIG_HEADERS([config.h])
@@ -48,7 +48,7 @@ PKG_PROG_PKG_CONFIG
 
 not_inst=""
 PKG_CHECK_MODULES([GTK], [gtk+-3.0], [], [not_inst="${not_inst} gtk+3.0"])
-PKG_CHECK_MODULES([KEYR], [gnome-keyring-1], [], [not_inst="${not_inst} gnome-keyring-1"])
+PKG_CHECK_MODULES([KEYR], [libsecret-1], [], [not_inst="${not_inst} libsecret-1"])
 PKG_CHECK_MODULES([SSL], [openssl], [], [not_inst="${not_inst} openssl"])
 PKG_CHECK_MODULES([CAIRO], [cairo], [], [not_inst="${not_inst} cairo"])
 
@@ -62,7 +62,7 @@ if test "x${not_inst}" != x; then
   echo "      [sudo] apt-get update                   # Get latest "
   echo "      [sudo] apt-get install build-essential  # Base dev system "
   echo "      [sudo] apt-get install libgtk-3-dev  "
-  echo "                             libgnome-keyring-dev*  "
+  echo "                             libsecret-1-dev  "
   echo "                             libcairo2-dev*  "
   echo "      [sudo] apt-get install libpcap-dev  "
   echo "                             libssl-dev  "
